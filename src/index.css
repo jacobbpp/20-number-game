@@ -75,6 +75,23 @@ button:focus-visible {
   letter-spacing: 0.2px;
 }
 
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header__restart {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(241, 237, 249, 0.08);
+  border: 1px solid rgba(241, 237, 249, 0.2);
+  border-radius: 999px;
+}
+
 .header__best {
   font-size: 13px;
   font-weight: 600;
@@ -217,17 +234,6 @@ button:focus-visible {
   }
 }
 
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.controls__row {
-  display: flex;
-  gap: 8px;
-}
-
 .btn {
   min-height: 48px;
   border-radius: 14px;
@@ -237,29 +243,8 @@ button:focus-visible {
 }
 
 .btn--primary {
-  flex: 2;
   background: var(--amber);
   color: var(--amber-text);
-}
-
-.btn--primary:disabled {
-  background: rgba(239, 159, 39, 0.35);
-  color: rgba(65, 36, 2, 0.6);
-}
-
-.btn--secondary {
-  flex: 1;
-  background: rgba(241, 237, 249, 0.08);
-  color: var(--text);
-  border: 1px solid rgba(241, 237, 249, 0.2);
-}
-
-.btn--ghost {
-  background: transparent;
-  color: var(--text-dim);
-  min-height: 40px;
-  font-weight: 500;
-  font-size: 13px;
 }
 
 .overlay {

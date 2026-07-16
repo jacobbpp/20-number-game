@@ -1,19 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Board } from './components/Board'
-import { Controls } from './components/Controls'
 import { GameOverScreen } from './components/GameOverScreen'
 import { Header } from './components/Header'
 import { RollDisplay } from './components/RollDisplay'
 import { WinScreen } from './components/WinScreen'
-import { place, restart, roll } from './game/engine'
+import { place, roll } from './game/engine'
 import { BOARD_SIZE, createInitialState } from './game/types'
 import { useBestScore } from './hooks/useBestScore'
 import { vibrate } from './utils/haptics'
 
+function startGame() {
+  return roll(createInitialState())
+}
+
 function App() {
-  const [state, setState] = useState(createInitialState)
+  const [state, setState] = useState(startGame)
   const [gameId, setGameId] = useState(0)
   const { bestScore, reportScore } = useBestScore()
+  const prevPlacedRef = useRef(state.placedCount)
 
   useEffect(() => {
     if (state.status === 'won') {
@@ -25,44 +29,33 @@ function App() {
     }
   }, [state.status, state.placedCount, reportScore])
 
-  const handleRoll = () => {
-    setState(prev => roll(prev))
-  }
+  useEffect(() => {
+    if (state.placedCount > prevPlacedRef.current) vibrate('place')
+    prevPlacedRef.current = state.placedCount
+  }, [state.placedCount])
 
   const handleSelect = (index: number) => {
     setState(prev => {
-      const next = place(prev, index)
-      if (next !== prev) vibrate('place')
-      return next
+      const placed = place(prev, index)
+      if (placed === prev || placed.status !== 'idle') return placed
+      return roll(placed)
     })
   }
 
   const handleRestart = () => {
-    setState(restart())
+    setState(startGame())
     setGameId(id => id + 1)
   }
-  const handleNewGame = handleRestart
 
   return (
     <div className="app">
-      <Header bestScore={bestScore} />
-      <RollDisplay
-        currentRoll={state.currentRoll}
-        placedCount={state.placedCount}
-        total={BOARD_SIZE}
-        awaitingPlacement={state.status === 'rolled'}
-      />
+      <Header bestScore={bestScore} onRestart={handleRestart} />
+      <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={BOARD_SIZE} />
       <Board
         key={gameId}
         positions={state.positions}
         validPositions={state.validPositions}
         onSelect={handleSelect}
-      />
-      <Controls
-        canRoll={state.status === 'idle'}
-        onRoll={handleRoll}
-        onRestart={handleRestart}
-        onNewGame={handleNewGame}
       />
 
       {state.status === 'lost' && (
@@ -70,10 +63,10 @@ function App() {
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
           bestScore={bestScore}
-          onNewGame={handleNewGame}
+          onNewGame={handleRestart}
         />
       )}
-      {state.status === 'won' && <WinScreen onNewGame={handleNewGame} />}
+      {state.status === 'won' && <WinScreen onNewGame={handleRestart} />}
     </div>
   )
 }
