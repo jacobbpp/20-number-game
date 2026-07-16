@@ -6,15 +6,19 @@ correctly to win — one illegal roll ends the run.
 
 ## Rules
 
-- Press **Roll** to draw a random whole number between 1 and 1,000. Numbers never repeat within a game.
-- Tap one of the highlighted positions to place the number there.
+- A random whole number between 1 and 1,000 rolls automatically at the start of each game, and
+  again after every placement. Numbers never repeat within a game.
+- Tap one of the highlighted positions to place the current number there.
 - A position only accepts a number if it is greater than every occupied position above it and
   lower than every occupied position below it.
 - Once placed, a number cannot be moved.
 - If the rolled number has no legal position, the game ends immediately.
 - Fill all 20 positions to win.
 
-Your best score (most positions filled across all attempts) is saved on this device.
+Your best score (most positions filled across all attempts) is saved on this device. The stats
+screen (bar-chart icon in the header) also tracks, across every completed game, which value range
+tends to land at which position — shown as a heatmap with the most recent game's placements
+outlined, plus a one-line callout on whether the last game followed or broke the pattern.
 
 ## Tech stack
 
@@ -23,8 +27,8 @@ Your best score (most positions filled across all attempts) is saved on this dev
 - `vite-plugin-pwa` for installable, offline-capable PWA support
 
 Game logic lives entirely in [`src/game/`](src/game) as plain, framework-free TypeScript
-(`engine.ts`, `types.ts`). Presentation components in [`src/components/`](src/components) only
-render state and call back into the engine — no rules are duplicated in the UI layer.
+(`engine.ts`, `types.ts`, `stats.ts`). Presentation components in [`src/components/`](src/components)
+only render state and call back into the engine — no rules are duplicated in the UI layer.
 
 ## Setup
 
@@ -49,7 +53,8 @@ npm run test:watch   # watch mode
 ```
 
 Tests cover: valid placement, invalid placement, duplicate-number prevention, winning, and losing
-(see [`src/game/engine.test.ts`](src/game/engine.test.ts)).
+(see [`src/game/engine.test.ts`](src/game/engine.test.ts)), plus the value-bucket heatmap and
+last-game insight logic (see [`src/game/stats.test.ts`](src/game/stats.test.ts)).
 
 ## Type checking & build
 

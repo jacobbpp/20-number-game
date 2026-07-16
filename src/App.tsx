@@ -3,10 +3,13 @@ import { Board } from './components/Board'
 import { GameOverScreen } from './components/GameOverScreen'
 import { Header } from './components/Header'
 import { RollDisplay } from './components/RollDisplay'
+import { StatsScreen } from './components/StatsScreen'
 import { WinScreen } from './components/WinScreen'
 import { place, roll } from './game/engine'
+import { extractPlacements } from './game/stats'
 import { BOARD_SIZE, createInitialState } from './game/types'
 import { useBestScore } from './hooks/useBestScore'
+import { useGameStats } from './hooks/useGameStats'
 import { vibrate } from './utils/haptics'
 
 function startGame() {
@@ -16,18 +19,22 @@ function startGame() {
 function App() {
   const [state, setState] = useState(startGame)
   const [gameId, setGameId] = useState(0)
+  const [isStatsOpen, setIsStatsOpen] = useState(false)
   const { bestScore, reportScore } = useBestScore()
+  const { stats, recordCompletedGame } = useGameStats()
   const prevPlacedRef = useRef(state.placedCount)
 
   useEffect(() => {
     if (state.status === 'won') {
       vibrate('win')
       reportScore(state.placedCount)
+      recordCompletedGame(extractPlacements(state.positions), 'won')
     } else if (state.status === 'lost') {
       vibrate('lose')
       reportScore(state.placedCount)
+      recordCompletedGame(extractPlacements(state.positions), 'lost')
     }
-  }, [state.status, state.placedCount, reportScore])
+  }, [state.status, state.placedCount, state.positions, reportScore, recordCompletedGame])
 
   useEffect(() => {
     if (state.placedCount > prevPlacedRef.current) vibrate('place')
@@ -49,16 +56,22 @@ function App() {
 
   return (
     <div className="app">
-      <Header bestScore={bestScore} onRestart={handleRestart} />
-      <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={BOARD_SIZE} />
-      <Board
-        key={gameId}
-        positions={state.positions}
-        validPositions={state.validPositions}
-        onSelect={handleSelect}
-      />
+      {isStatsOpen ? (
+        <StatsScreen stats={stats} onClose={() => setIsStatsOpen(false)} />
+      ) : (
+        <>
+          <Header bestScore={bestScore} onRestart={handleRestart} onOpenStats={() => setIsStatsOpen(true)} />
+          <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={BOARD_SIZE} />
+          <Board
+            key={gameId}
+            positions={state.positions}
+            validPositions={state.validPositions}
+            onSelect={handleSelect}
+          />
+        </>
+      )}
 
-      {state.status === 'lost' && (
+      {!isStatsOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
@@ -66,7 +79,7 @@ function App() {
           onNewGame={handleRestart}
         />
       )}
-      {state.status === 'won' && <WinScreen onNewGame={handleRestart} />}
+      {!isStatsOpen && state.status === 'won' && <WinScreen onNewGame={handleRestart} />}
     </div>
   )
 }
