@@ -44,6 +44,14 @@ describe('SettingsScreen', () => {
     expect(screen.getByText(/Reset everything\?/)).toBeInTheDocument()
   })
 
+  it('moves focus to Cancel — the safe option — when the confirm step appears', () => {
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset all data' }))
+
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus()
+  })
+
   it('cancel backs out without touching localStorage', () => {
     localStorage.setItem('order20-best-score', '16')
     renderScreen()

@@ -84,7 +84,7 @@ export function SettingsScreen({ muted, onToggleMuted, theme, onToggleTheme, onC
               Reset everything? This clears your best score, stats, streak, and preferences and can't be undone.
             </p>
             <div className="settings-reset__actions">
-              <button type="button" className="btn btn--secondary" onClick={() => setIsConfirmingReset(false)}>
+              <button type="button" className="btn btn--secondary" onClick={() => setIsConfirmingReset(false)} autoFocus>
                 Cancel
               </button>
               <button type="button" className="btn btn--danger" onClick={handleConfirmReset}>
