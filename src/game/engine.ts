@@ -30,16 +30,22 @@ export function computeValidPositions(positions: (number | null)[], value: numbe
   return valid
 }
 
+const ROLL_RANGE = MAX_VALUE - MIN_VALUE + 1
+// Generous headroom over the worst real case (999 of 1000 numbers used,
+// where expected retries stay low) so a broken rng — not real gameplay —
+// is what this bound is actually there to catch.
+const MAX_ROLL_ATTEMPTS = ROLL_RANGE * 10
+
 export function rollNumber(usedNumbers: number[], rng: () => number = Math.random): number {
-  if (usedNumbers.length >= MAX_VALUE - MIN_VALUE + 1) {
+  if (usedNumbers.length >= ROLL_RANGE) {
     throw new Error('No numbers remain to roll')
   }
   const used = new Set(usedNumbers)
-  let candidate: number
-  do {
-    candidate = Math.floor(rng() * (MAX_VALUE - MIN_VALUE + 1)) + MIN_VALUE
-  } while (used.has(candidate))
-  return candidate
+  for (let attempt = 0; attempt < MAX_ROLL_ATTEMPTS; attempt++) {
+    const candidate = Math.floor(rng() * ROLL_RANGE) + MIN_VALUE
+    if (!used.has(candidate)) return candidate
+  }
+  throw new Error('rollNumber exceeded its retry limit — rng may be malfunctioning')
 }
 
 export function roll(state: GameState, rng?: () => number): GameState {

@@ -1,9 +1,10 @@
 import { act, renderHook } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { STATS_STORAGE_KEY, useGameStats } from './useGameStats'
 
 afterEach(() => {
   localStorage.clear()
+  vi.restoreAllMocks()
 })
 
 describe('useGameStats', () => {
@@ -46,5 +47,20 @@ describe('useGameStats', () => {
 
     expect(result.current.stats.totalWins).toBe(1)
     expect(result.current.stats.lossBucketCounts.every(c => c === 0)).toBe(true)
+  })
+
+  it('keeps the in-memory update even when localStorage.setItem throws', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+    const { result } = renderHook(() => useGameStats())
+
+    expect(() => {
+      act(() => {
+        result.current.recordCompletedGame([{ position: 0, value: 10 }], 'won')
+      })
+    }).not.toThrow()
+
+    expect(result.current.stats.totalWins).toBe(1)
   })
 })

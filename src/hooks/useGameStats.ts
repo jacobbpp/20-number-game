@@ -45,7 +45,11 @@ export function useGameStats() {
   const recordCompletedGame = useCallback((placements: Placement[], result: 'won' | 'lost', losingValue: number | null = null) => {
     setStats(prev => {
       const next = recordGame(prev, placements, result, losingValue)
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      } catch {
+        // Storage unavailable (private browsing, quota, etc.) — stats just won't persist across reloads.
+      }
       return next
     })
   }, [])

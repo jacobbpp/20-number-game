@@ -44,6 +44,14 @@ describe('rollNumber', () => {
     expect(used).not.toContain(result)
     expect(calls).toBe(4)
   })
+
+  it('throws instead of retrying forever when the rng always collides', () => {
+    const used = [10]
+    // A malfunctioning rng that only ever produces an already-used value —
+    // proves the retry loop has a real ceiling instead of spinning forever.
+    const rng = () => 0.009
+    expect(() => rollNumber(used, rng)).toThrow(/retry limit/)
+  })
 })
 
 describe('roll', () => {
