@@ -112,21 +112,6 @@ describe('recordGame', () => {
     expect(stats.bestWinStreak).toBe(3)
   })
 
-  it('counts a loss as a close call only within the margin of a full board', () => {
-    let stats = createEmptyStats()
-    // 18 of 20 placed then lost — within the close-call margin.
-    stats = recordGame(stats, Array.from({ length: 18 }, (_, i) => ({ position: i, value: i + 1 })), 'lost', 999, 20)
-    expect(stats.closeCallCount).toBe(1)
-
-    // 5 of 20 placed then lost — not close.
-    stats = recordGame(stats, Array.from({ length: 5 }, (_, i) => ({ position: i, value: i + 1 })), 'lost', 999, 20)
-    expect(stats.closeCallCount).toBe(1)
-
-    // A win at the full board isn't a "close call" — it's a win.
-    stats = recordGame(stats, Array.from({ length: 20 }, (_, i) => ({ position: i, value: i + 1 })), 'won', null, 20)
-    expect(stats.closeCallCount).toBe(1)
-  })
-
   it('buckets placedCount into scoreDistribution relative to the board size', () => {
     let stats = createEmptyStats()
     stats = recordGame(stats, Array.from({ length: 3 }, (_, i) => ({ position: i, value: i + 1 })), 'lost', 999, 20) // bucket 0 (0-5)

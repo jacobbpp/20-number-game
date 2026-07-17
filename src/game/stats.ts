@@ -6,9 +6,6 @@ export const SCORE_BUCKETS = 4
 const MIN_SIGNAL = 2
 const MIN_GAMES_FOR_INSIGHT = 3
 const MIN_LOSSES_FOR_LOSS_INSIGHT = 3
-// A loss this close to the end feels different from a routine early loss —
-// worth calling out on its own rather than folding into the score distribution.
-export const CLOSE_CALL_MARGIN = 2
 
 export interface Placement {
   position: number
@@ -28,7 +25,6 @@ export interface StatsData {
   winTurns: number // sum of placements across won games only, for average-turns-in-wins
   currentWinStreak: number // consecutive wins, resets to 0 on any loss
   bestWinStreak: number // longest currentWinStreak has ever reached
-  closeCallCount: number // losses within CLOSE_CALL_MARGIN of a full board
   scoreDistribution: number[] // placedCount bucketed into SCORE_BUCKETS ranges, across all games
   matrix: number[][] // matrix[position][bucket], across all games
   winMatrix: number[][] // same shape, won games only
@@ -57,7 +53,6 @@ export function createEmptyStats(): StatsData {
     winTurns: 0,
     currentWinStreak: 0,
     bestWinStreak: 0,
-    closeCallCount: 0,
     scoreDistribution: createEmptyScoreDistribution(),
     matrix: createEmptyMatrix(),
     winMatrix: createEmptyMatrix(),
@@ -133,7 +128,6 @@ export function recordGame(
   scoreDistribution[scoreBucketForCount(placements.length, total)] += 1
 
   const isWin = result === 'won'
-  const isCloseCall = !isWin && placements.length >= total - CLOSE_CALL_MARGIN
   const currentWinStreak = isWin ? stats.currentWinStreak + 1 : 0
 
   return {
@@ -143,7 +137,6 @@ export function recordGame(
     winTurns: stats.winTurns + (isWin ? placements.length : 0),
     currentWinStreak,
     bestWinStreak: Math.max(stats.bestWinStreak, currentWinStreak),
-    closeCallCount: stats.closeCallCount + (isCloseCall ? 1 : 0),
     scoreDistribution,
     matrix,
     winMatrix,

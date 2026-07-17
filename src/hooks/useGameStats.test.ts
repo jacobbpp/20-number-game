@@ -26,7 +26,7 @@ describe('useGameStats', () => {
     expect(result.current.stats.lossBucketCounts).toEqual(Array(10).fill(0))
   })
 
-  it('fills in winTurns/currentWinStreak/closeCallCount/scoreDistribution/winMatrix/lossMatrix for older stats', () => {
+  it('fills in winTurns/currentWinStreak/scoreDistribution/winMatrix/lossMatrix for older stats', () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
@@ -44,7 +44,6 @@ describe('useGameStats', () => {
     expect(result.current.stats.winTurns).toBe(0)
     expect(result.current.stats.currentWinStreak).toBe(0)
     expect(result.current.stats.bestWinStreak).toBe(0)
-    expect(result.current.stats.closeCallCount).toBe(0)
     expect(result.current.stats.scoreDistribution).toEqual([0, 0, 0, 0])
     expect(result.current.stats.winMatrix).toEqual(Array.from({ length: 20 }, () => Array(10).fill(0)))
     expect(result.current.stats.lossMatrix).toEqual(Array.from({ length: 20 }, () => Array(10).fill(0)))
@@ -95,12 +94,13 @@ describe('useGameStats', () => {
     expect(result.current.stats.lossBucketCounts.every(c => c === 0)).toBe(true)
   })
 
-  it('threads a passed board size through to scoreDistribution/closeCallCount', () => {
+  it('threads a passed board size through to scoreDistribution', () => {
     const { result } = renderHook(() => useGameStats())
 
     act(() => {
-      // 8 of 10 placed on a 10-slot board — within the close-call margin for
-      // that board size, even though it wouldn't be for a 20-slot one.
+      // 8 of 10 placed on a 10-slot board falls in the top quarter (6-10) for
+      // that board size — a different bucket than it would land in on a
+      // 20-slot board.
       result.current.recordCompletedGame(
         Array.from({ length: 8 }, (_, i) => ({ position: i, value: i + 1 })),
         'lost',
@@ -109,7 +109,7 @@ describe('useGameStats', () => {
       )
     })
 
-    expect(result.current.stats.closeCallCount).toBe(1)
+    expect(result.current.stats.scoreDistribution).toEqual([0, 0, 0, 1])
   })
 
   it('keeps the in-memory update even when localStorage.setItem throws', () => {

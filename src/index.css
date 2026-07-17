@@ -616,17 +616,6 @@ button:focus-visible {
   color: var(--text-disabled);
 }
 
-.stats-overview__card--wide {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.stats-overview__card--wide .stats-overview__value {
-  font-size: 15px;
-}
-
 .score-distribution {
   display: flex;
   flex-direction: column;
@@ -637,7 +626,7 @@ button:focus-visible {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  height: 56px;
+  height: 46px;
 }
 
 .score-distribution__col {
@@ -713,7 +702,7 @@ button:focus-visible {
 
 .heatmap__cell {
   width: 100%;
-  aspect-ratio: 1.5;
+  aspect-ratio: 1.6;
   border-radius: 3px;
 }
 

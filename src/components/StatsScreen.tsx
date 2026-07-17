@@ -1,7 +1,6 @@
 import { Fragment, useState } from 'react'
 import {
   BUCKET_SIZE,
-  CLOSE_CALL_MARGIN,
   VALUE_BUCKETS,
   averageTurns,
   averageTurnsInWins,
@@ -49,6 +48,7 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
   const avgTurnsWins = averageTurnsInWins(stats)
   const lossBucket = mostCommonLossBucket(stats)
   const scoreMax = Math.max(...stats.scoreDistribution, 1)
+  const scoreCaption = `How far your runs usually get — avg ${avgTurns?.toFixed(1)} turns${avgTurnsWins !== null ? `, ${avgTurnsWins.toFixed(1)} in wins` : ''}`
 
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
@@ -88,24 +88,7 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
               <span className="stats-overview__value">{stats.currentWinStreak}</span>
               {stats.bestWinStreak > 0 && <span className="stats-overview__sublabel">Best: {stats.bestWinStreak}</span>}
             </div>
-            <div className="stats-overview__card">
-              <span className="stats-overview__label">Avg. turns</span>
-              <span className="stats-overview__value">{avgTurns?.toFixed(1)}</span>
-            </div>
-            <div className="stats-overview__card">
-              <span className="stats-overview__label">Avg. turns (wins)</span>
-              <span className="stats-overview__value">{avgTurnsWins !== null ? avgTurnsWins.toFixed(1) : '—'}</span>
-            </div>
           </div>
-
-          {stats.closeCallCount > 0 && (
-            <div className="stats-overview__card stats-overview__card--wide">
-              <span className="stats-overview__label">So close ({BOARD_SIZE - CLOSE_CALL_MARGIN}+ of {BOARD_SIZE})</span>
-              <span className="stats-overview__value">
-                {stats.closeCallCount} game{stats.closeCallCount === 1 ? '' : 's'}
-              </span>
-            </div>
-          )}
 
           {(lossBucket !== null || insight) && (
             <div className="stats-screen__insight">
@@ -115,11 +98,11 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
           )}
 
           <div className="score-distribution">
-            <p className="stats-screen__caption">How far your runs usually get</p>
+            <p className="stats-screen__caption">{scoreCaption}</p>
             <div
               className="score-distribution__bars"
               role="img"
-              aria-label={`How far your runs usually get: ${describeScoreDistribution(stats.scoreDistribution, BOARD_SIZE)}`}
+              aria-label={`${scoreCaption}: ${describeScoreDistribution(stats.scoreDistribution, BOARD_SIZE)}`}
             >
               {stats.scoreDistribution.map((count, bucket) => (
                 <div key={bucket} className="score-distribution__col" aria-hidden="true">

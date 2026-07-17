@@ -43,7 +43,6 @@ function normalizeStats(data: StatsData): StatsData {
         : typeof data.currentWinStreak === 'number'
           ? data.currentWinStreak
           : 0,
-    closeCallCount: typeof data.closeCallCount === 'number' ? data.closeCallCount : 0,
     scoreDistribution:
       Array.isArray(data.scoreDistribution) && data.scoreDistribution.length === SCORE_BUCKETS
         ? data.scoreDistribution

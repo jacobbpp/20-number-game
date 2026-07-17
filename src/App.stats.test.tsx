@@ -40,8 +40,7 @@ describe('stats screen', () => {
 
     expect(await screen.findByText('Win rate')).toBeInTheDocument()
     expect(screen.getByText('33%')).toBeInTheDocument()
-    expect(screen.getByText('Avg. turns')).toBeInTheDocument()
-    expect(screen.getByText('4.5')).toBeInTheDocument()
+    expect(screen.getByText(/avg 4\.5 turns/)).toBeInTheDocument()
     expect(screen.getByText(/Most losses happen when rolling in the 201–300 range/)).toBeInTheDocument()
   })
 
@@ -65,7 +64,7 @@ describe('stats screen', () => {
     expect(screen.queryByText(/Most losses happen when rolling/)).not.toBeInTheDocument()
   })
 
-  it('shows win streak and avg. turns in wins, with a placeholder when there are no wins yet', async () => {
+  it('shows win streak, and folds avg. turns (overall and in wins) into the distribution caption', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
@@ -74,7 +73,6 @@ describe('stats screen', () => {
         totalTurns: 9,
         winTurns: 0,
         currentWinStreak: 0,
-        closeCallCount: 0,
         scoreDistribution: [3, 0, 0, 0],
         matrix: emptyMatrix(),
         winMatrix: emptyMatrix(),
@@ -88,8 +86,32 @@ describe('stats screen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
 
     expect(await screen.findByText('Win streak')).toBeInTheDocument()
-    expect(screen.getByText('Avg. turns (wins)')).toBeInTheDocument()
-    expect(screen.getByText('—')).toBeInTheDocument()
+    // No wins yet, so the "in wins" clause is omitted rather than showing a placeholder.
+    expect(screen.getByText('How far your runs usually get — avg 3.0 turns')).toBeInTheDocument()
+  })
+
+  it('adds an "in wins" clause to the distribution caption once there are wins', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 4,
+        totalWins: 1,
+        totalTurns: 20,
+        winTurns: 5,
+        currentWinStreak: 1,
+        scoreDistribution: [0, 1, 0, 3],
+        matrix: emptyMatrix(),
+        winMatrix: emptyMatrix(),
+        lossMatrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+
+    expect(await screen.findByText('How far your runs usually get — avg 5.0 turns, 5.0 in wins')).toBeInTheDocument()
   })
 
   it('shows a best-win-streak record only once one has been set', async () => {
@@ -102,7 +124,6 @@ describe('stats screen', () => {
         winTurns: 5,
         currentWinStreak: 1,
         bestWinStreak: 4,
-        closeCallCount: 0,
         scoreDistribution: [0, 1, 0, 3],
         matrix: emptyMatrix(),
         winMatrix: emptyMatrix(),
@@ -128,7 +149,6 @@ describe('stats screen', () => {
         winTurns: 0,
         currentWinStreak: 0,
         bestWinStreak: 0,
-        closeCallCount: 0,
         scoreDistribution: [2, 0, 0, 0],
         matrix: emptyMatrix(),
         winMatrix: emptyMatrix(),
@@ -155,7 +175,6 @@ describe('stats screen', () => {
         winTurns: 5,
         currentWinStreak: 1,
         bestWinStreak: 1,
-        closeCallCount: 0,
         scoreDistribution: [1, 2, 0, 1],
         matrix: emptyMatrix(),
         winMatrix: emptyMatrix(),
@@ -170,34 +189,8 @@ describe('stats screen', () => {
 
     const chart = await screen.findByRole('img', { name: /How far your runs usually get/ })
     expect(chart).toHaveAccessibleName(
-      'How far your runs usually get: 1 game placed 0–5, 2 games placed 6–10, 0 games placed 11–15, 1 game placed 16–20',
+      'How far your runs usually get — avg 5.0 turns, 5.0 in wins: 1 game placed 0–5, 2 games placed 6–10, 0 games placed 11–15, 1 game placed 16–20',
     )
-  })
-
-  it('shows the "so close" row only once there is a close-call loss', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 4,
-        totalWins: 1,
-        totalTurns: 60,
-        winTurns: 20,
-        currentWinStreak: 0,
-        closeCallCount: 2,
-        scoreDistribution: [0, 0, 1, 3],
-        matrix: emptyMatrix(),
-        winMatrix: emptyMatrix(),
-        lossMatrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
-
-    expect(await screen.findByText(/So close/)).toBeInTheDocument()
-    expect(screen.getByText('2 games')).toBeInTheDocument()
   })
 
   it('switches the heatmap between All, Wins, and Losses', async () => {
@@ -214,7 +207,6 @@ describe('stats screen', () => {
         totalTurns: 20,
         winTurns: 7,
         currentWinStreak: 0,
-        closeCallCount: 0,
         scoreDistribution: [0, 1, 0, 4],
         matrix: emptyMatrix(),
         winMatrix,
