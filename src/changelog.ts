@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.11.0',
+    date: '2026-07-17',
+    title: 'Light theme',
+    description: 'A light option alongside the original dark look. Matches your device setting by default, or switch it yourself from the Stats screen.',
+  },
+  {
     version: '1.10.0',
     date: '2026-07-17',
     title: 'See your best run',

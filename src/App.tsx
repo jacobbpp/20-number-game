@@ -20,6 +20,7 @@ import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useGameStats } from './hooks/useGameStats'
 import { useOnboarding } from './hooks/useOnboarding'
 import { useSoundSetting } from './hooks/useSoundSetting'
+import { useTheme } from './hooks/useTheme'
 import { useWhatsNew } from './hooks/useWhatsNew'
 import { vibrate } from './utils/haptics'
 import { playSound } from './utils/sound'
@@ -35,6 +36,7 @@ function App() {
   const { stats, recordCompletedGame } = useGameStats()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
+  const { theme, toggleTheme } = useTheme()
   const { isOpen: isWhatsNewOpen, unseenEntries, close: closeWhatsNew } = useWhatsNew(hasSeenOnboarding)
 
   // Frozen once per session — every daily-mode concept ("today's" rng,
@@ -186,6 +188,8 @@ function App() {
       ) : isStatsOpen ? (
         <StatsScreen
           stats={stats}
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onClose={() => setIsStatsOpen(false)}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
         />
