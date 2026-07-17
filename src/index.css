@@ -516,7 +516,7 @@ button:focus-visible {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .stats-screen__header {
@@ -544,7 +544,7 @@ button:focus-visible {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   scrollbar-width: thin;
 }
 
@@ -557,7 +557,8 @@ button:focus-visible {
 .heatmap {
   display: grid;
   grid-template-columns: 20px repeat(10, 1fr);
-  gap: 3px;
+  row-gap: 2px;
+  column-gap: 3px;
   align-items: center;
 }
 
@@ -575,7 +576,7 @@ button:focus-visible {
 
 .heatmap__cell {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 1.15;
   border-radius: 3px;
 }
 
@@ -586,11 +587,11 @@ button:focus-visible {
 .heatmap__legend {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   font-size: 11px;
   color: var(--text-dim);
   border-top: 0.5px solid rgba(var(--surface-tint-rgb), 0.12);
-  padding-top: 12px;
+  padding-top: 8px;
 }
 
 .heatmap__legend-row {
@@ -617,7 +618,7 @@ button:focus-visible {
   color: var(--purple-pill-text);
   line-height: 1.5;
   margin: 0;
-  padding: 12px 14px;
+  padding: 10px 14px;
   background: var(--purple-tint-bg);
   border-radius: 12px;
 }
