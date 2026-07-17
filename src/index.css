@@ -261,7 +261,7 @@ button:focus-visible {
 }
 
 .overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(10, 6, 20, 0.72);
   display: flex;
