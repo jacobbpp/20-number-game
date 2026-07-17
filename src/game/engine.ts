@@ -1,4 +1,4 @@
-import { BOARD_SIZE, MAX_VALUE, MIN_VALUE, type GameState, createInitialState } from './types'
+import { BOARD_SIZE, MAX_VALUE, MIN_VALUE, type GameState } from './types'
 
 export function computeValidPositions(positions: (number | null)[], value: number): number[] {
   const valid: number[] = []
@@ -96,8 +96,4 @@ export function place(state: GameState, position: number): GameState {
     currentRoll: null,
     validPositions: [],
   }
-}
-
-export function restart(): GameState {
-  return createInitialState()
 }
