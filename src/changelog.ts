@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.17.0',
+    date: '2026-07-18',
+    title: 'Hard mode',
+    description: 'A new toggle in Settings turns off the valid-position highlight in free play and the daily challenge. Nothing tells you where a number goes — a wrong tap just does nothing.',
+  },
+  {
     version: '1.16.0',
     date: '2026-07-18',
     title: 'Cleaner header, streak moved to stats',

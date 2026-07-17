@@ -4,10 +4,11 @@ import { sequenceColor } from '../utils/color'
 interface BoardProps {
   positions: (number | null)[]
   validPositions: number[]
+  hardMode: boolean
   onSelect: (index: number) => void
 }
 
-export function Board({ positions, validPositions, onSelect }: BoardProps) {
+export function Board({ positions, validPositions, hardMode, onSelect }: BoardProps) {
   const size = positions.length
   const columns = Math.max(1, Math.ceil(size / 10))
   const rows = Math.ceil(size / columns)
@@ -28,6 +29,7 @@ export function Board({ positions, validPositions, onSelect }: BoardProps) {
           index={index}
           value={value}
           isValid={validPositions.includes(index)}
+          hardMode={hardMode}
           accentColor={sequenceColor(size <= 1 ? 0 : index / (size - 1))}
           onSelect={onSelect}
         />

@@ -7,6 +7,8 @@ interface SettingsScreenProps {
   onToggleMuted: () => void
   theme: Theme
   onToggleTheme: () => void
+  hardMode: boolean
+  onToggleHardMode: () => void
   version: string
   onOpenChangelog: () => void
   onClose: () => void
@@ -17,6 +19,8 @@ export function SettingsScreen({
   onToggleMuted,
   theme,
   onToggleTheme,
+  hardMode,
+  onToggleHardMode,
   version,
   onOpenChangelog,
   onClose,
@@ -81,6 +85,31 @@ export function SettingsScreen({
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 3v2M12 19v2M5 5l1.4 1.4M17.6 17.6 19 19M3 12h2M19 12h2M5 19l1.4-1.4M17.6 6.4 19 5" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        <div className="settings-row">
+          <span>Hard mode</span>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={onToggleHardMode}
+            aria-label={hardMode ? 'Turn off hard mode' : 'Turn on hard mode'}
+            aria-pressed={hardMode}
+          >
+            {hardMode ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 3l18 18" />
+                <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                <path d="M6.6 6.6C4 8.3 2 12 2 12s4 7 10 7c1.8 0 3.4-.5 4.8-1.3" />
+                <path d="M17.9 17.9C20 16.2 22 12 22 12s-1.6-2.8-4.3-4.8" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                <circle cx="12" cy="12" r="3" />
               </svg>
             )}
           </button>

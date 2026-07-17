@@ -17,6 +17,7 @@ interface DailyChallengeScreenProps {
   streak: StreakData
   history: DailyResult[]
   today: string
+  hardMode: boolean
   onSelect: (index: number) => void
   onClose: () => void
 }
@@ -27,6 +28,7 @@ export function DailyChallengeScreen({
   streak,
   history,
   today,
+  hardMode,
   onSelect,
   onClose,
 }: DailyChallengeScreenProps) {
@@ -145,7 +147,12 @@ export function DailyChallengeScreen({
             placedCount={dailyState.placedCount}
             total={dailyState.positions.length}
           />
-          <Board positions={dailyState.positions} validPositions={dailyState.validPositions} onSelect={onSelect} />
+          <Board
+            positions={dailyState.positions}
+            validPositions={dailyState.validPositions}
+            hardMode={hardMode}
+            onSelect={onSelect}
+          />
         </>
       )}
     </div>

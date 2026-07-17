@@ -14,6 +14,9 @@ correctly to win — one illegal roll ends the run.
 - Once placed, a number cannot be moved.
 - If the rolled number has no legal position, the game ends immediately.
 - Fill all 20 positions to win.
+- Hard mode (Settings) removes the highlight — every empty position looks the same, and it's on
+  you to work out where the number legally goes. A wrong tap just does nothing; there's no penalty
+  for guessing.
 
 Your best score (most positions filled across all attempts) is saved on this device, along with
 the board from that specific run — tap the Best pill in the header to see it. A short "What's
@@ -55,6 +58,8 @@ The gear icon in the header opens sound, theme, and data controls:
 - **Sound** — mutes or unmutes the placement, win, loss, and share effects.
 - **Theme** — switches between dark and light. Defaults to the device's own light/dark setting
   until changed here, then remembers the explicit choice.
+- **Hard mode** — turns off the valid-position highlight in both free play and the daily
+  challenge, so nothing tells you where a number can legally go.
 - **Version** — shows the installed version; tap it to browse the full release history.
 - **Reset all data** — clears every saved score, stat, streak, and preference on this device.
   Requires a second tap to confirm.

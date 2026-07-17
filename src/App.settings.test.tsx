@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { CHANGELOG } from './changelog'
@@ -62,9 +62,10 @@ describe('settings screen', () => {
     // would show nothing. This one shows the full history regardless.
     const latest = CHANGELOG[0]
     const older = CHANGELOG[CHANGELOG.length - 1]
-    expect(await screen.findByText("What's new")).toBeInTheDocument()
-    expect(screen.getByText(latest.title)).toBeInTheDocument()
-    expect(screen.getByText(`v${older.version}`)).toBeInTheDocument()
-    expect(screen.getByText(older.title)).toBeInTheDocument()
+    const dialog = await screen.findByRole('alertdialog')
+    expect(within(dialog).getByText("What's new")).toBeInTheDocument()
+    expect(within(dialog).getByText(latest.title)).toBeInTheDocument()
+    expect(within(dialog).getByText(`v${older.version}`)).toBeInTheDocument()
+    expect(within(dialog).getByText(older.title)).toBeInTheDocument()
   })
 })

@@ -8,6 +8,8 @@ function renderScreen(overrides: Partial<Parameters<typeof SettingsScreen>[0]> =
     onToggleMuted: vi.fn(),
     theme: 'dark' as const,
     onToggleTheme: vi.fn(),
+    hardMode: false,
+    onToggleHardMode: vi.fn(),
     version: '1.0.0',
     onOpenChangelog: vi.fn(),
     onClose: vi.fn(),
@@ -35,6 +37,17 @@ describe('SettingsScreen', () => {
     const props = renderScreen()
     fireEvent.click(screen.getByRole('button', { name: 'Switch to light theme' }))
     expect(props.onToggleTheme).toHaveBeenCalledOnce()
+  })
+
+  it('calls onToggleHardMode from the hard mode row, with a label reflecting current state', () => {
+    const props = renderScreen({ hardMode: false })
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on hard mode' }))
+    expect(props.onToggleHardMode).toHaveBeenCalledOnce()
+  })
+
+  it('reflects hard mode being on in the toggle label', () => {
+    renderScreen({ hardMode: true })
+    expect(screen.getByRole('button', { name: 'Turn off hard mode' })).toBeInTheDocument()
   })
 
   it('shows the current version and opens the changelog when tapped', () => {

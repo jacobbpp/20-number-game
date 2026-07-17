@@ -20,6 +20,7 @@ import { useCurrentDailyGame } from './hooks/useCurrentDailyGame'
 import { useCurrentGame } from './hooks/useCurrentGame'
 import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useGameStats } from './hooks/useGameStats'
+import { useHardMode } from './hooks/useHardMode'
 import { useOnboarding } from './hooks/useOnboarding'
 import { useSoundSetting } from './hooks/useSoundSetting'
 import { useTheme } from './hooks/useTheme'
@@ -42,6 +43,7 @@ function App() {
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
+  const { hardMode, toggleHardMode } = useHardMode()
   const { isOpen: isWhatsNewOpen, unseenEntries, close: closeWhatsNew } = useWhatsNew(hasSeenOnboarding)
 
   // Frozen once per session — every daily-mode concept ("today's" rng,
@@ -209,6 +211,7 @@ function App() {
           streak={streak}
           history={history}
           today={dailyDate}
+          hardMode={hardMode}
           onSelect={handleDailySelect}
           onClose={() => setIsDailyOpen(false)}
         />
@@ -227,6 +230,8 @@ function App() {
           onToggleMuted={toggleMuted}
           theme={theme}
           onToggleTheme={toggleTheme}
+          hardMode={hardMode}
+          onToggleHardMode={toggleHardMode}
           version={APP_VERSION}
           onOpenChangelog={() => setIsChangelogOpen(true)}
           onClose={() => setIsSettingsOpen(false)}
@@ -249,6 +254,7 @@ function App() {
             key={gameId}
             positions={state.positions}
             validPositions={state.validPositions}
+            hardMode={hardMode}
             onSelect={handleSelect}
           />
         </>
