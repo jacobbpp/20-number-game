@@ -1,8 +1,13 @@
+import { ResultGrid } from './ResultGrid'
+import { ShareButton } from './ShareButton'
+import { BOARD_SIZE } from '../game/types'
+
 interface WinScreenProps {
+  positions: (number | null)[]
   onNewGame: () => void
 }
 
-export function WinScreen({ onNewGame }: WinScreenProps) {
+export function WinScreen({ positions, onNewGame }: WinScreenProps) {
   return (
     <div className="overlay" role="alertdialog" aria-labelledby="win-title">
       <div className="overlay__card overlay__card--win">
@@ -10,9 +15,13 @@ export function WinScreen({ onNewGame }: WinScreenProps) {
           Perfect order!
         </h2>
         <p className="overlay__reason">All 20 positions filled in ascending order.</p>
-        <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
-          New game
-        </button>
+        <ResultGrid positions={positions} />
+        <div className="overlay__actions">
+          <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
+            New game
+          </button>
+          <ShareButton positions={positions} placedCount={BOARD_SIZE} won />
+        </div>
       </div>
     </div>
   )

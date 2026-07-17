@@ -85,10 +85,11 @@ function App() {
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
           resultBadge={resultBadge}
+          positions={state.positions}
           onNewGame={handleRestart}
         />
       )}
-      {!isStatsOpen && state.status === 'won' && <WinScreen onNewGame={handleRestart} />}
+      {!isStatsOpen && state.status === 'won' && <WinScreen positions={state.positions} onNewGame={handleRestart} />}
     </div>
   )
 }

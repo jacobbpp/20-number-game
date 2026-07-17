@@ -338,8 +338,40 @@ button:focus-visible {
   margin: 0;
 }
 
-.overlay .btn--primary {
+.overlay__actions {
+  display: flex;
+  gap: 8px;
   margin-top: 6px;
+}
+
+.overlay__actions .btn--primary {
+  flex: 2;
+}
+
+.overlay__actions .btn--secondary {
+  flex: 1;
+}
+
+.btn--secondary {
+  background: rgba(241, 237, 249, 0.08);
+  color: var(--text);
+  border: 1px solid rgba(241, 237, 249, 0.2);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+
+.result-grid__cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: rgba(241, 237, 249, 0.08);
+}
+
+.result-grid__cell--filled {
+  background: var(--amber);
 }
 
 .stats-screen {

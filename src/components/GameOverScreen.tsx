@@ -1,13 +1,16 @@
+import { ResultGrid } from './ResultGrid'
+import { ShareButton } from './ShareButton'
 import type { ResultBadge } from '../game/types'
 
 interface GameOverScreenProps {
   reason: string
   placedCount: number
   resultBadge: ResultBadge
+  positions: (number | null)[]
   onNewGame: () => void
 }
 
-export function GameOverScreen({ reason, placedCount, resultBadge, onNewGame }: GameOverScreenProps) {
+export function GameOverScreen({ reason, placedCount, resultBadge, positions, onNewGame }: GameOverScreenProps) {
   return (
     <div className="overlay" role="alertdialog" aria-labelledby="gameover-title">
       <div className="overlay__card overlay__card--lose">
@@ -15,14 +18,18 @@ export function GameOverScreen({ reason, placedCount, resultBadge, onNewGame }: 
           Game over
         </h2>
         <p className="overlay__reason">{reason}</p>
+        <ResultGrid positions={positions} />
         <p className="overlay__score">
           {placedCount} of 20 placed
           {resultBadge === 'new-best' && ' · new best!'}
           {resultBadge === 'tied-best' && ' · matched your best!'}
         </p>
-        <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
-          New game
-        </button>
+        <div className="overlay__actions">
+          <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
+            New game
+          </button>
+          <ShareButton positions={positions} placedCount={placedCount} won={false} />
+        </div>
       </div>
     </div>
   )
