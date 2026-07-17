@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
 import { createEmptyStats, recordGame, type Placement, type StatsData } from '../game/stats'
 
-const STORAGE_KEY = 'order20-stats'
+export const STATS_STORAGE_KEY = 'order20-stats'
+const STORAGE_KEY = STATS_STORAGE_KEY
 
 function isStatsData(value: unknown): value is StatsData {
   if (!value || typeof value !== 'object') return false

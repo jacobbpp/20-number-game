@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 
-const STORAGE_KEY = 'order20-best-score'
+export const BEST_SCORE_STORAGE_KEY = 'order20-best-score'
+const STORAGE_KEY = BEST_SCORE_STORAGE_KEY
 
 function readStoredBest(): number {
   if (typeof window === 'undefined') return 0

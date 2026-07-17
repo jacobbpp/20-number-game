@@ -448,3 +448,27 @@ button:focus-visible {
   line-height: 1.5;
   margin: 0 0 4px;
 }
+
+.crash {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 24px;
+}
+
+.crash__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.crash__body {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0;
+  max-width: 280px;
+}
