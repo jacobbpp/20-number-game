@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDailyShareText, buildShareText, formatDailyDateLabel } from './share'
+import { buildDailyShareText, buildShareText, buildStreakShareText, formatDailyDateLabel } from './share'
 import { BOARD_SIZE } from './types'
 
 describe('buildShareText', () => {
@@ -65,5 +65,15 @@ describe('buildDailyShareText', () => {
     const lines = text.split('\n')
     expect(lines[0]).toBe('Order 20 Daily (Jul 17) — 1/10')
     expect(lines[1]).toBe(`🟧${'⬜'.repeat(9)}`)
+  })
+})
+
+describe('buildStreakShareText', () => {
+  it('includes the streak count and the url', () => {
+    const text = buildStreakShareText({ count: 7, lastPlayedDate: '2026-07-17' }, 'https://example.com/')
+
+    const lines = text.split('\n')
+    expect(lines[0]).toBe('🔥 7 day streak on Order 20 Daily!')
+    expect(lines[1]).toBe('https://example.com/')
   })
 })

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
 import { buildDailyShareText, buildShareText } from '../game/share'
+import { useCopyFeedback } from '../hooks/useCopyFeedback'
 import { vibrate } from '../utils/haptics'
 import { playSound } from '../utils/sound'
 
@@ -11,15 +11,7 @@ interface ShareButtonProps {
 }
 
 export function ShareButton({ positions, placedCount, won, dailyDate }: ShareButtonProps) {
-  const [copied, setCopied] = useState(false)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(
-    () => () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    },
-    [],
-  )
+  const { copied, copy } = useCopyFeedback()
 
   const handleShare = async () => {
     const url = `${window.location.origin}${window.location.pathname}`
@@ -27,17 +19,11 @@ export function ShareButton({ positions, placedCount, won, dailyDate }: ShareBut
       ? buildDailyShareText(positions, placedCount, won, dailyDate, url)
       : buildShareText(positions, placedCount, won, url)
 
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      return
-    }
+    const didCopy = await copy(text)
+    if (!didCopy) return
 
     vibrate('copy')
     playSound('copy')
-    setCopied(true)
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(() => setCopied(false), 1600)
   }
 
   return (

@@ -1,3 +1,5 @@
+import type { StreakData } from './daily'
+
 function buildGrid(positions: (number | null)[]): string {
   return positions.map(value => (value !== null ? '🟧' : '⬜')).join('')
 }
@@ -27,4 +29,8 @@ export function buildDailyShareText(
     ? `Order 20 Daily (${dateLabel}) — perfect! ${size}/${size}`
     : `Order 20 Daily (${dateLabel}) — ${placedCount}/${size}`
   return `${headline}\n${buildGrid(positions)}\n${url}`
+}
+
+export function buildStreakShareText(streak: StreakData, url: string): string {
+  return `🔥 ${streak.count} day streak on Order 20 Daily!\n${url}`
 }

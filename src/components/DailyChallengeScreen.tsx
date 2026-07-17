@@ -4,9 +4,12 @@ import { ResultGrid } from './ResultGrid'
 import { RollDisplay } from './RollDisplay'
 import { ShareButton } from './ShareButton'
 import { isStreakActive, type StreakData } from '../game/daily'
-import { formatDailyDateLabel } from '../game/share'
+import { buildStreakShareText, formatDailyDateLabel } from '../game/share'
+import { useCopyFeedback } from '../hooks/useCopyFeedback'
 import type { GameState } from '../game/types'
 import type { DailyResult } from '../hooks/useDailyChallenge'
+import { vibrate } from '../utils/haptics'
+import { playSound } from '../utils/sound'
 
 interface DailyChallengeScreenProps {
   dailyState: GameState
@@ -28,10 +31,20 @@ export function DailyChallengeScreen({
   onClose,
 }: DailyChallengeScreenProps) {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const { copied: streakCopied, copy: copyStreak } = useCopyFeedback()
   const active = isStreakActive(streak, today)
   // Today's own entry is already shown in the recap above, so the list
   // below only needs the days before it.
   const pastHistory = history.filter(entry => entry.date !== today)
+
+  const handleShareStreak = async () => {
+    const url = `${window.location.origin}${window.location.pathname}`
+    const didCopy = await copyStreak(buildStreakShareText(streak, url))
+    if (!didCopy) return
+
+    vibrate('copy')
+    playSound('copy')
+  }
 
   return (
     <div className="daily-screen">
@@ -54,7 +67,11 @@ export function DailyChallengeScreen({
                   : `${todayResult.placedCount} of ${todayResult.positions.length} today`}
               </p>
               <ResultGrid positions={todayResult.positions} />
-              {active && streak.count >= 2 && <p className="daily-screen__streak">🔥 {streak.count} day streak</p>}
+              {active && streak.count >= 2 && (
+                <button type="button" className="daily-screen__streak" onClick={handleShareStreak}>
+                  {streakCopied ? 'Copied!' : `🔥 ${streak.count} day streak`}
+                </button>
+              )}
               <p className="daily-screen__tomorrow">Come back tomorrow for the next one.</p>
               <ShareButton
                 positions={todayResult.positions}
