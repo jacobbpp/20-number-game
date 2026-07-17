@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { BestRunScreen } from './components/BestRunScreen'
 import { Board } from './components/Board'
 import { DailyChallengeScreen } from './components/DailyChallengeScreen'
 import { GameOverScreen } from './components/GameOverScreen'
@@ -28,8 +29,9 @@ function App() {
   const [gameId, setGameId] = useState(0)
   const [isStatsOpen, setIsStatsOpen] = useState(false)
   const [isDailyOpen, setIsDailyOpen] = useState(false)
+  const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
-  const { bestScore, reportScore } = useBestScore()
+  const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
@@ -85,7 +87,7 @@ function App() {
 
     vibrate(state.status === 'won' ? 'win' : 'lose')
     playSound(state.status === 'won' ? 'win' : 'lose')
-    reportScore(state.placedCount)
+    reportScore(state.placedCount, state.positions)
     recordCompletedGame(extractPlacements(state.positions), state.status)
     setHasRecorded(true)
   }, [state.status, state.placedCount, state.positions, hasRecorded, reportScore, recordCompletedGame, setHasRecorded])
@@ -201,6 +203,7 @@ function App() {
             onOpenDaily={openDaily}
             muted={muted}
             onToggleMuted={toggleMuted}
+            onOpenBestRun={() => setIsBestRunOpen(true)}
           />
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={state.positions.length} />
           <Board
@@ -226,6 +229,7 @@ function App() {
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}
       {isWhatsNewOpen && <WhatsNewScreen entries={unseenEntries} onClose={closeWhatsNew} />}
+      {isBestRunOpen && <BestRunScreen bestScore={bestScore} bestRun={bestRun} onClose={() => setIsBestRunOpen(false)} />}
     </div>
   )
 }

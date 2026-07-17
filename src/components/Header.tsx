@@ -15,6 +15,7 @@ interface HeaderProps {
   onOpenDaily: () => void
   muted: boolean
   onToggleMuted: () => void
+  onOpenBestRun: () => void
 }
 
 export function Header({
@@ -29,6 +30,7 @@ export function Header({
   onOpenDaily,
   muted,
   onToggleMuted,
+  onOpenBestRun,
 }: HeaderProps) {
   return (
     <header className="header">
@@ -72,7 +74,9 @@ export function Header({
             </svg>
           )}
         </button>
-        <span className="pill header__best">Best {bestScore}</span>
+        <button type="button" className="pill header__best" onClick={onOpenBestRun}>
+          Best {bestScore}
+        </button>
       </div>
     </header>
   )
