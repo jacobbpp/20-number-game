@@ -2,10 +2,11 @@ interface PositionSlotProps {
   index: number
   value: number | null
   isValid: boolean
+  accentColor: string
   onSelect: (index: number) => void
 }
 
-export function PositionSlot({ index, value, isValid, onSelect }: PositionSlotProps) {
+export function PositionSlot({ index, value, isValid, accentColor, onSelect }: PositionSlotProps) {
   const filled = value !== null
   const displayPosition = index + 1
 
@@ -23,7 +24,11 @@ export function PositionSlot({ index, value, isValid, onSelect }: PositionSlotPr
       disabled={filled || !isValid}
       aria-label={label}
     >
-      <span className="slot__index" aria-hidden="true">
+      <span
+        className="slot__index"
+        aria-hidden="true"
+        style={filled || isValid ? undefined : { background: accentColor }}
+      >
         {displayPosition}
       </span>
       <span className="slot__value" aria-hidden="true">

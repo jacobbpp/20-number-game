@@ -218,7 +218,6 @@ button:focus-visible {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  position: relative;
   display: grid;
   grid-auto-flow: column;
   gap: 6px 8px;
@@ -227,22 +226,13 @@ button:focus-visible {
   padding: 8px;
 }
 
-.board__rail {
-  position: absolute;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 2px;
-  pointer-events: none;
-}
-
 .slot {
   position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 0;
-  padding: 0 10px;
+  padding: 0 10px 0 34px;
   border-radius: 10px;
   border: none;
   background: rgba(241, 237, 249, 0.05);
@@ -256,11 +246,20 @@ button:focus-visible {
 }
 
 .slot__index {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 11px;
-  width: 16px;
-  flex-shrink: 0;
-  color: inherit;
   font-weight: 600;
+  color: var(--text);
+  background: rgba(241, 237, 249, 0.08);
+  border-radius: 10px 0 0 10px;
+  flex-shrink: 0;
 }
 
 .slot__value {
@@ -277,7 +276,8 @@ button:focus-visible {
 }
 
 .slot--filled .slot__index {
-  color: #7f77dd;
+  background: #3c3489;
+  color: #cecbf6;
 }
 
 .slot--valid {
@@ -287,7 +287,11 @@ button:focus-visible {
   animation: pulse-valid 1.4s ease-in-out infinite;
 }
 
-.slot--valid .slot__index,
+.slot--valid .slot__index {
+  background: var(--coral-strong);
+  color: #faece7;
+}
+
 .slot--valid .slot__value {
   color: var(--coral-text);
 }
