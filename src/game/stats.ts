@@ -4,6 +4,7 @@ export const VALUE_BUCKETS = 10
 export const BUCKET_SIZE = 1000 / VALUE_BUCKETS
 const MIN_SIGNAL = 2
 const MIN_GAMES_FOR_INSIGHT = 3
+const MIN_LOSSES_FOR_LOSS_INSIGHT = 3
 
 export interface Placement {
   position: number
@@ -18,7 +19,10 @@ export interface LastGameRecord {
 
 export interface StatsData {
   totalGames: number
+  totalWins: number
+  totalTurns: number
   matrix: number[][] // matrix[position][bucket]
+  lossBucketCounts: number[] // value bucket of the roll that ended each lost game
   lastGame: LastGameRecord | null
 }
 
@@ -26,8 +30,19 @@ export function createEmptyMatrix(): number[][] {
   return Array.from({ length: BOARD_SIZE }, () => Array(VALUE_BUCKETS).fill(0))
 }
 
+export function createEmptyLossBucketCounts(): number[] {
+  return Array(VALUE_BUCKETS).fill(0)
+}
+
 export function createEmptyStats(): StatsData {
-  return { totalGames: 0, matrix: createEmptyMatrix(), lastGame: null }
+  return {
+    totalGames: 0,
+    totalWins: 0,
+    totalTurns: 0,
+    matrix: createEmptyMatrix(),
+    lossBucketCounts: createEmptyLossBucketCounts(),
+    lastGame: null,
+  }
 }
 
 export function bucketForValue(value: number): number {
@@ -48,16 +63,51 @@ export function extractPlacements(positions: (number | null)[]): Placement[] {
   return placements
 }
 
-export function recordGame(stats: StatsData, placements: Placement[], result: 'won' | 'lost'): StatsData {
+export function recordGame(
+  stats: StatsData,
+  placements: Placement[],
+  result: 'won' | 'lost',
+  losingValue: number | null = null,
+): StatsData {
   const matrix = stats.matrix.map(row => [...row])
   for (const { position, value } of placements) {
     matrix[position][bucketForValue(value)] += 1
   }
+  const lossBucketCounts = [...stats.lossBucketCounts]
+  if (result === 'lost' && losingValue !== null) {
+    lossBucketCounts[bucketForValue(losingValue)] += 1
+  }
   return {
     totalGames: stats.totalGames + 1,
+    totalWins: stats.totalWins + (result === 'won' ? 1 : 0),
+    totalTurns: stats.totalTurns + placements.length,
     matrix,
+    lossBucketCounts,
     lastGame: { placements, result, timestamp: Date.now() },
   }
+}
+
+export function winRate(stats: StatsData): number | null {
+  if (stats.totalGames === 0) return null
+  return Math.round((stats.totalWins / stats.totalGames) * 100)
+}
+
+export function averageTurns(stats: StatsData): number | null {
+  if (stats.totalGames === 0) return null
+  return stats.totalTurns / stats.totalGames
+}
+
+// Requires a handful of losses before naming a "most common" one — one or
+// two losses in the same range is noise, not a pattern.
+export function mostCommonLossBucket(stats: StatsData): number | null {
+  const totalLosses = stats.totalGames - stats.totalWins
+  if (totalLosses < MIN_LOSSES_FOR_LOSS_INSIGHT) return null
+
+  let best = 0
+  for (let i = 1; i < stats.lossBucketCounts.length; i++) {
+    if (stats.lossBucketCounts[i] > stats.lossBucketCounts[best]) best = i
+  }
+  return stats.lossBucketCounts[best] > 0 ? best : null
 }
 
 export function maxCount(matrix: number[][]): number {

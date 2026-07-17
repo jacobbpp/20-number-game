@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.13.0',
+    date: '2026-07-17',
+    title: 'More stats, clearer heatmap key',
+    description: 'Win rate and average turns now show at a glance, plus a note on which value range trips you up most often. The heatmap legend explains itself properly now too.',
+  },
+  {
     version: '1.12.0',
     date: '2026-07-17',
     title: 'Settings screen',

@@ -1,5 +1,17 @@
 import { Fragment } from 'react'
-import { BUCKET_SIZE, VALUE_BUCKETS, bucketForValue, computeInsight, describeInsight, maxCount, type StatsData } from '../game/stats'
+import {
+  BUCKET_SIZE,
+  VALUE_BUCKETS,
+  averageTurns,
+  bucketForValue,
+  bucketLabel,
+  computeInsight,
+  describeInsight,
+  maxCount,
+  mostCommonLossBucket,
+  winRate,
+  type StatsData,
+} from '../game/stats'
 import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
 
@@ -23,6 +35,9 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
   const { matrix, totalGames, lastGame } = stats
   const peak = maxCount(matrix)
   const insight = computeInsight(stats)
+  const rate = winRate(stats)
+  const avgTurns = averageTurns(stats)
+  const lossBucket = mostCommonLossBucket(stats)
 
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
@@ -51,7 +66,24 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
         <p className="stats-screen__empty">Play a full game to start building your stats.</p>
       ) : (
         <div className="stats-screen__body">
-          {insight && <p className="stats-screen__insight">{describeInsight(insight)}</p>}
+          <p className="stats-screen__section-label">Overview</p>
+          <div className="stats-overview">
+            <div className="stats-overview__card">
+              <span className="stats-overview__label">Win rate</span>
+              <span className="stats-overview__value">{rate}%</span>
+            </div>
+            <div className="stats-overview__card">
+              <span className="stats-overview__label">Avg. turns</span>
+              <span className="stats-overview__value">{avgTurns?.toFixed(1)}</span>
+            </div>
+          </div>
+
+          {(lossBucket !== null || insight) && (
+            <div className="stats-screen__insight">
+              {lossBucket !== null && <p>Most losses happen when rolling in the {bucketLabel(lossBucket)} range.</p>}
+              {insight && <p>{describeInsight(insight)}</p>}
+            </div>
+          )}
 
           <p className="stats-screen__caption">Where each value range has landed, by position</p>
 
@@ -80,15 +112,17 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
           </div>
 
           <div className="heatmap__legend">
-            <div className="heatmap__legend-row">
-              <span className="heatmap__legend-swatch" style={{ backgroundColor: cellColor(0, peak, theme) }} />
-              <span className="heatmap__legend-swatch" style={{ backgroundColor: cellColor(peak / 2, peak, theme) }} />
-              <span className="heatmap__legend-swatch" style={{ backgroundColor: cellColor(peak, peak, theme) }} />
-              <span>rarer → more often</span>
+            <div
+              className="heatmap__legend-gradient"
+              style={{ background: `linear-gradient(to right, ${cellColor(0, peak, theme)}, ${cellColor(peak, peak, theme)})` }}
+            />
+            <div className="heatmap__legend-row heatmap__legend-row--ends">
+              <span>Rarely lands here</span>
+              <span>Often lands here</span>
             </div>
             <div className="heatmap__legend-row">
-              <span className="heatmap__legend-swatch heatmap__legend-swatch--last" />
-              <span>outlined = last game&apos;s placement</span>
+              <span className="heatmap__legend-swatch heatmap__legend-swatch--last" style={{ backgroundColor: cellColor(0, peak, theme) }} />
+              <span>Outlined = where you placed a number last game</span>
             </div>
           </div>
         </div>

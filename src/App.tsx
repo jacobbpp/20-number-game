@@ -92,9 +92,18 @@ function App() {
     vibrate(state.status === 'won' ? 'win' : 'lose')
     playSound(state.status === 'won' ? 'win' : 'lose')
     reportScore(state.placedCount, state.positions)
-    recordCompletedGame(extractPlacements(state.positions), state.status)
+    recordCompletedGame(extractPlacements(state.positions), state.status, state.status === 'lost' ? state.currentRoll : null)
     setHasRecorded(true)
-  }, [state.status, state.placedCount, state.positions, hasRecorded, reportScore, recordCompletedGame, setHasRecorded])
+  }, [
+    state.status,
+    state.placedCount,
+    state.positions,
+    state.currentRoll,
+    hasRecorded,
+    reportScore,
+    recordCompletedGame,
+    setHasRecorded,
+  ])
 
   useEffect(() => {
     if (state.placedCount > prevPlacedRef.current) {

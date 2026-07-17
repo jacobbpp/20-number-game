@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  averageTurns,
   bucketForValue,
   computeInsight,
   createEmptyStats,
   extractPlacements,
+  mostCommonLossBucket,
   recordGame,
+  winRate,
   type StatsData,
 } from './stats'
 
@@ -55,6 +58,69 @@ describe('recordGame', () => {
     stats = recordGame(stats, [{ position: 9, value: 560 }], 'won')
     expect(stats.matrix[9][5]).toBe(2)
     expect(stats.totalGames).toBe(2)
+  })
+
+  it('tracks wins, turns, and the losing roll bucket', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }, { position: 1, value: 20 }], 'won')
+    stats = recordGame(stats, [{ position: 2, value: 30 }], 'lost', 250)
+
+    expect(stats.totalGames).toBe(2)
+    expect(stats.totalWins).toBe(1)
+    expect(stats.totalTurns).toBe(3)
+    expect(stats.lossBucketCounts[2]).toBe(1) // bucket for 250 is index 2
+    expect(stats.lossBucketCounts.filter(c => c > 0)).toHaveLength(1)
+  })
+
+  it('does not touch lossBucketCounts for a win, even if a losingValue is passed', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'won', 250)
+    expect(stats.lossBucketCounts.every(c => c === 0)).toBe(true)
+  })
+})
+
+describe('winRate', () => {
+  it('returns null with no games played', () => {
+    expect(winRate(createEmptyStats())).toBeNull()
+  })
+
+  it('rounds to the nearest whole percent', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'won')
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'lost', 10)
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'lost', 10)
+    expect(winRate(stats)).toBe(33)
+  })
+})
+
+describe('averageTurns', () => {
+  it('returns null with no games played', () => {
+    expect(averageTurns(createEmptyStats())).toBeNull()
+  })
+
+  it('averages placements per game across all recorded games', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }, { position: 1, value: 20 }], 'won')
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'lost', 10)
+    expect(averageTurns(stats)).toBe(1.5)
+  })
+})
+
+describe('mostCommonLossBucket', () => {
+  it('returns null with fewer than three losses', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [], 'lost', 10)
+    stats = recordGame(stats, [], 'lost', 10)
+    expect(mostCommonLossBucket(stats)).toBeNull()
+  })
+
+  it('returns the bucket with the most losses once there is enough signal', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [], 'lost', 250) // bucket 2
+    stats = recordGame(stats, [], 'lost', 260) // bucket 2
+    stats = recordGame(stats, [], 'lost', 850) // bucket 8
+    stats = recordGame(stats, [], 'lost', 270) // bucket 2 — now the clear majority
+    expect(mostCommonLossBucket(stats)).toBe(2)
   })
 })
 
