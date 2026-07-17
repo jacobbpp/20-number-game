@@ -115,6 +115,23 @@ button:focus-visible {
   height: 32px;
 }
 
+.icon-btn--confirm {
+  background: rgba(226, 75, 74, 0.18);
+  border-color: var(--danger);
+  color: var(--danger);
+  animation: pulse-confirm 1s ease-in-out infinite;
+}
+
+@keyframes pulse-confirm {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(226, 75, 74, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(226, 75, 74, 0);
+  }
+}
+
 .roll-display {
   display: flex;
   flex-direction: column;
@@ -247,7 +264,8 @@ button:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .slot--valid,
-  .roll-display__tile {
+  .roll-display__tile,
+  .icon-btn--confirm {
     animation: none;
   }
 }
