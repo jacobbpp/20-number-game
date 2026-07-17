@@ -14,7 +14,7 @@ export function DailyBadge({ todayResult, streak, today, boardSize, onOpen }: Da
   const streakPrefix = active && streak.count >= 2 ? `🔥 ${streak.count} · ` : ''
 
   if (todayResult) {
-    const resultLabel = todayResult.status === 'won' ? 'Perfect today!' : `${todayResult.placedCount}/${todayResult.positions.length} today`
+    const resultLabel = todayResult.status === 'won' ? `Perfect ${todayResult.positions.length}/${todayResult.positions.length} today!` : `${todayResult.placedCount}/${todayResult.positions.length} today`
     return (
       <button type="button" className="daily-badge daily-badge--done" onClick={onOpen}>
         {streakPrefix}

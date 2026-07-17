@@ -41,7 +41,7 @@ export function DailyChallengeScreen({
           <div className="daily-screen__card">
             <p className="daily-screen__headline">
               {todayResult.status === 'won'
-                ? 'Perfect today!'
+                ? `Perfect ${todayResult.positions.length}/${todayResult.positions.length} today!`
                 : `${todayResult.placedCount} of ${todayResult.positions.length} today`}
             </p>
             <ResultGrid positions={todayResult.positions} />
