@@ -13,6 +13,8 @@ import { place, roll } from './game/engine'
 import { extractPlacements } from './game/stats'
 import { createInitialState, type ResultBadge } from './game/types'
 import { useBestScore } from './hooks/useBestScore'
+import { useCurrentDailyGame } from './hooks/useCurrentDailyGame'
+import { useCurrentGame } from './hooks/useCurrentGame'
 import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useGameStats } from './hooks/useGameStats'
 import { useOnboarding } from './hooks/useOnboarding'
@@ -21,12 +23,8 @@ import { useWhatsNew } from './hooks/useWhatsNew'
 import { vibrate } from './utils/haptics'
 import { playSound } from './utils/sound'
 
-function startGame() {
-  return roll(createInitialState())
-}
-
 function App() {
-  const [state, setState] = useState(startGame)
+  const { state, setState, hasRecorded, setHasRecorded, restart } = useCurrentGame()
   const [gameId, setGameId] = useState(0)
   const [isStatsOpen, setIsStatsOpen] = useState(false)
   const [isDailyOpen, setIsDailyOpen] = useState(false)
@@ -55,7 +53,9 @@ function App() {
   // roll in today's attempt, so the sequence is identical for every player.
   const dailyRngRef = useRef(createDailyRng(dailyDate))
   const dailyBoardSize = getDailyBoardSize(dailyDate)
-  const [dailyState, setDailyState] = useState(() => roll(createInitialState(dailyBoardSize), dailyRngRef.current))
+  const [dailyState, setDailyState] = useCurrentDailyGame(dailyDate, () =>
+    roll(createInitialState(dailyBoardSize), dailyRngRef.current),
+  )
   const dailyPrevPlacedRef = useRef(dailyState.placedCount)
 
   useEffect(() => {
@@ -66,6 +66,11 @@ function App() {
 
   useEffect(() => {
     if (state.status !== 'won' && state.status !== 'lost') return
+    // hasRecorded guards against a refresh right after finishing: the
+    // persisted game state restores as already won/lost, which would
+    // otherwise re-fire this effect and double-record the same game into
+    // stats and best score.
+    if (hasRecorded) return
 
     // bestScore is deliberately excluded from this effect's dependency array
     // (oxlint's exhaustive-deps warning on the next line is expected and
@@ -82,7 +87,8 @@ function App() {
     playSound(state.status === 'won' ? 'win' : 'lose')
     reportScore(state.placedCount)
     recordCompletedGame(extractPlacements(state.positions), state.status)
-  }, [state.status, state.placedCount, state.positions, reportScore, recordCompletedGame])
+    setHasRecorded(true)
+  }, [state.status, state.placedCount, state.positions, hasRecorded, reportScore, recordCompletedGame, setHasRecorded])
 
   useEffect(() => {
     if (state.placedCount > prevPlacedRef.current) {
@@ -139,7 +145,7 @@ function App() {
   }
 
   const handleRestart = () => {
-    setState(startGame())
+    restart()
     setGameId(id => id + 1)
     setResultBadge(null)
   }

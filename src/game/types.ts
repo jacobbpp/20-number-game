@@ -29,3 +29,15 @@ export function createInitialState(size: number = BOARD_SIZE): GameState {
     lossReason: null,
   }
 }
+
+export function isGameState(value: unknown): value is GameState {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<GameState>
+  return (
+    typeof candidate.status === 'string' &&
+    Array.isArray(candidate.positions) &&
+    Array.isArray(candidate.usedNumbers) &&
+    Array.isArray(candidate.validPositions) &&
+    typeof candidate.placedCount === 'number'
+  )
+}
