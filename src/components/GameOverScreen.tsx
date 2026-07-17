@@ -1,11 +1,13 @@
+import type { ResultBadge } from '../game/types'
+
 interface GameOverScreenProps {
   reason: string
   placedCount: number
-  bestScore: number
+  resultBadge: ResultBadge
   onNewGame: () => void
 }
 
-export function GameOverScreen({ reason, placedCount, bestScore, onNewGame }: GameOverScreenProps) {
+export function GameOverScreen({ reason, placedCount, resultBadge, onNewGame }: GameOverScreenProps) {
   return (
     <div className="overlay" role="alertdialog" aria-labelledby="gameover-title">
       <div className="overlay__card overlay__card--lose">
@@ -15,7 +17,8 @@ export function GameOverScreen({ reason, placedCount, bestScore, onNewGame }: Ga
         <p className="overlay__reason">{reason}</p>
         <p className="overlay__score">
           {placedCount} of 20 placed
-          {placedCount >= bestScore && placedCount > 0 && ' · new best!'}
+          {resultBadge === 'new-best' && ' · new best!'}
+          {resultBadge === 'tied-best' && ' · matched your best!'}
         </p>
         <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
           New game

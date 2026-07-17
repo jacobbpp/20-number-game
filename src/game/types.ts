@@ -6,6 +6,8 @@ export type Position = number | null
 
 export type GameStatus = 'idle' | 'rolled' | 'won' | 'lost'
 
+export type ResultBadge = 'new-best' | 'tied-best' | null
+
 export interface GameState {
   status: GameStatus
   positions: Position[]
