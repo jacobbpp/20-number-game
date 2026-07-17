@@ -100,4 +100,21 @@ describe('place', () => {
     expect(state.placedCount).toBe(BOARD_SIZE)
     expect(state.positions.every(p => p !== null)).toBe(true)
   })
+
+  it('wins at the size of a smaller board, not the fixed BOARD_SIZE constant', () => {
+    let state = createInitialState(5)
+    expect(state.positions).toHaveLength(5)
+
+    // Ascending values placed left-to-right at the lowest open valid
+    // position each time always stays legal, filling the board in order.
+    const values = [100, 200, 300, 400, 500]
+    for (const value of values) {
+      state = roll(state, () => (value - 1) / 1000)
+      state = place(state, state.validPositions[0])
+    }
+
+    expect(state.status).toBe('won')
+    expect(state.placedCount).toBe(5)
+    expect(state.positions).toEqual(values)
+  })
 })

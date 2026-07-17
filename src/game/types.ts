@@ -18,10 +18,10 @@ export interface GameState {
   lossReason: string | null
 }
 
-export function createInitialState(): GameState {
+export function createInitialState(size: number = BOARD_SIZE): GameState {
   return {
     status: 'idle',
-    positions: Array(BOARD_SIZE).fill(null),
+    positions: Array(size).fill(null),
     usedNumbers: [],
     currentRoll: null,
     validPositions: [],

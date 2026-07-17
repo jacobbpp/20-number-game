@@ -7,7 +7,7 @@ import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { RollDisplay } from './components/RollDisplay'
 import { StatsScreen } from './components/StatsScreen'
 import { WinScreen } from './components/WinScreen'
-import { createDailyRng, getLocalDateString } from './game/daily'
+import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
 import { extractPlacements } from './game/stats'
 import { BOARD_SIZE, createInitialState, type ResultBadge } from './game/types'
@@ -39,7 +39,8 @@ function App() {
   // Stable for the whole day: created once per date and reused for every
   // roll in today's attempt, so the sequence is identical for every player.
   const dailyRngRef = useRef(createDailyRng(getLocalDateString()))
-  const [dailyState, setDailyState] = useState(() => roll(createInitialState(), dailyRngRef.current))
+  const dailyBoardSize = getDailyBoardSize(getLocalDateString())
+  const [dailyState, setDailyState] = useState(() => roll(createInitialState(dailyBoardSize), dailyRngRef.current))
   const dailyPrevPlacedRef = useRef(dailyState.placedCount)
 
   useEffect(() => {
@@ -75,27 +76,23 @@ function App() {
   // todayResult is checked so a completed attempt never gets recorded twice
   // — dailyState itself never resets mid-session once it reaches won/lost,
   // so in practice this only fires once, but it's cheap insurance.
+  //
+  // Deliberately does NOT call recordCompletedGame: daily board sizes vary
+  // (10-30), so "landed at position 5" doesn't mean the same thing across
+  // different days — folding it into the fixed-20-position free-play
+  // heatmap would make that data misleading rather than useful.
   useEffect(() => {
     if (dailyState.status !== 'won' && dailyState.status !== 'lost') return
     if (todayResult) return
 
     vibrate(dailyState.status === 'won' ? 'win' : 'lose')
-    recordCompletedGame(extractPlacements(dailyState.positions), dailyState.status)
     recordDailyResult({
       positions: dailyState.positions,
       placedCount: dailyState.placedCount,
       status: dailyState.status,
       lossReason: dailyState.lossReason,
     })
-  }, [
-    dailyState.status,
-    dailyState.positions,
-    dailyState.placedCount,
-    dailyState.lossReason,
-    todayResult,
-    recordCompletedGame,
-    recordDailyResult,
-  ])
+  }, [dailyState.status, dailyState.positions, dailyState.placedCount, dailyState.lossReason, todayResult, recordDailyResult])
 
   useEffect(() => {
     if (dailyState.placedCount > dailyPrevPlacedRef.current) vibrate('place')
@@ -168,6 +165,7 @@ function App() {
             showCoachMark={showCoachMark}
             todayResult={todayResult}
             streak={streak}
+            dailyBoardSize={dailyBoardSize}
             onOpenDaily={openDaily}
           />
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={BOARD_SIZE} />

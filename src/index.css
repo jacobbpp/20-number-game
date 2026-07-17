@@ -219,8 +219,6 @@ button:focus-visible {
   overflow: hidden;
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(10, minmax(0, 1fr));
   grid-auto-flow: column;
   gap: 6px 8px;
   background: var(--panel);
@@ -235,16 +233,6 @@ button:focus-visible {
   width: 3px;
   border-radius: 2px;
   pointer-events: none;
-}
-
-.board__rail--left {
-  left: 8px;
-  background: linear-gradient(180deg, var(--coral) 0%, #6b5a9e 100%);
-}
-
-.board__rail--right {
-  left: calc(50% + 4px);
-  background: linear-gradient(180deg, #6b5a9e 0%, var(--amber) 100%);
 }
 
 .slot {
@@ -439,8 +427,6 @@ button:focus-visible {
 
 .result-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(10, 1fr);
   grid-auto-flow: column;
   gap: 3px;
 }

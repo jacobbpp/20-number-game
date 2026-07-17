@@ -24,13 +24,16 @@ outlined, plus a one-line callout on whether the last game followed or broke the
 
 The badge under the title gives one shot per day at a puzzle with the same sequence of rolls for
 every player — the rolls are drawn from a deterministic generator seeded by the date, not
-`Math.random`, so a given calendar day always produces the same sequence for everyone. Once
-played, that badge locks into a recap of the day's result for the rest of the day; the Share
-button on it produces a date-labeled result separate from the free-play share text. Playing on
-consecutive days (win or lose — an honest attempt is what counts) builds a streak, shown once it
-reaches 2 days; missing a day resets it quietly on the next play, with no "streak lost" moment.
-Free play and the daily challenge track separate best scores and streak data, but both feed the
-same position/value heatmap on the stats screen.
+`Math.random`, so a given calendar day always produces the same sequence for everyone. The board
+size also varies by day (10, 15, 20, 25, or 30 positions, picked the same deterministic way), so
+different days are genuinely different challenges rather than the same 20-slot game with
+synchronized numbers. Once played, the badge locks into a recap of the day's result for the rest
+of the day; the Share button on it produces a date-labeled result separate from the free-play
+share text. Playing on consecutive days (win or lose — an honest attempt is what counts) builds a
+streak, shown once it reaches 2 days; missing a day resets it quietly on the next play, with no
+"streak lost" moment. Free play and the daily challenge track separate best scores, streak data,
+and stats — a completed daily doesn't feed the free-play heatmap, since "landed at position 5"
+means something different on a 10-slot board than a 30-slot one.
 
 ## Tech stack
 

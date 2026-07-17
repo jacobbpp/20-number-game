@@ -55,4 +55,15 @@ describe('buildDailyShareText', () => {
 
     expect(text.split('\n')[0]).toBe('Order 20 Daily (Jul 17) — perfect! 20/20')
   })
+
+  it('denominates by the actual board size, not a fixed 20 — daily sizes vary', () => {
+    const positions: (number | null)[] = Array(10).fill(null)
+    positions[0] = 55
+
+    const text = buildDailyShareText(positions, 1, false, '2026-07-17', 'https://example.com/')
+
+    const lines = text.split('\n')
+    expect(lines[0]).toBe('Order 20 Daily (Jul 17) — 1/10')
+    expect(lines[1]).toBe(`🟧${'⬜'.repeat(9)}`)
+  })
 })

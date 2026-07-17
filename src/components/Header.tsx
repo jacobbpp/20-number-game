@@ -10,6 +10,7 @@ interface HeaderProps {
   showCoachMark: boolean
   todayResult: DailyResult | null
   streak: StreakData
+  dailyBoardSize: number
   onOpenDaily: () => void
 }
 
@@ -20,13 +21,14 @@ export function Header({
   showCoachMark,
   todayResult,
   streak,
+  dailyBoardSize,
   onOpenDaily,
 }: HeaderProps) {
   return (
     <header className="header">
       <div className="header__title-block">
         <span className="header__title">Order 20</span>
-        <DailyBadge todayResult={todayResult} streak={streak} onOpen={onOpenDaily} />
+        <DailyBadge todayResult={todayResult} streak={streak} boardSize={dailyBoardSize} onOpen={onOpenDaily} />
       </div>
       <div className="header__actions">
         <div className="coach-anchor">

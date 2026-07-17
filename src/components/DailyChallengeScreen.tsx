@@ -3,7 +3,7 @@ import { ResultGrid } from './ResultGrid'
 import { RollDisplay } from './RollDisplay'
 import { ShareButton } from './ShareButton'
 import { getLocalDateString, isStreakActive, type StreakData } from '../game/daily'
-import { BOARD_SIZE, type GameState } from '../game/types'
+import type { GameState } from '../game/types'
 import type { DailyResult } from '../hooks/useDailyChallenge'
 
 interface DailyChallengeScreenProps {
@@ -32,7 +32,9 @@ export function DailyChallengeScreen({ dailyState, todayResult, streak, onSelect
         <div className="daily-screen__recap">
           <div className="daily-screen__card">
             <p className="daily-screen__headline">
-              {todayResult.status === 'won' ? 'Perfect today!' : `${todayResult.placedCount} of ${BOARD_SIZE} today`}
+              {todayResult.status === 'won'
+                ? 'Perfect today!'
+                : `${todayResult.placedCount} of ${todayResult.positions.length} today`}
             </p>
             <ResultGrid positions={todayResult.positions} />
             {active && streak.count >= 2 && <p className="daily-screen__streak">🔥 {streak.count} day streak</p>}
@@ -47,7 +49,11 @@ export function DailyChallengeScreen({ dailyState, todayResult, streak, onSelect
         </div>
       ) : (
         <>
-          <RollDisplay currentRoll={dailyState.currentRoll} placedCount={dailyState.placedCount} total={BOARD_SIZE} />
+          <RollDisplay
+            currentRoll={dailyState.currentRoll}
+            placedCount={dailyState.placedCount}
+            total={dailyState.positions.length}
+          />
           <Board positions={dailyState.positions} validPositions={dailyState.validPositions} onSelect={onSelect} />
         </>
       )}

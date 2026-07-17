@@ -1,4 +1,4 @@
-import { BOARD_SIZE, MAX_VALUE, MIN_VALUE, type GameState } from './types'
+import { MAX_VALUE, MIN_VALUE, type GameState } from './types'
 
 export function computeValidPositions(positions: (number | null)[], value: number): number[] {
   const valid: number[] = []
@@ -77,7 +77,7 @@ export function place(state: GameState, position: number): GameState {
   positions[position] = state.currentRoll
   const placedCount = state.placedCount + 1
 
-  if (placedCount === BOARD_SIZE) {
+  if (placedCount === state.positions.length) {
     return {
       ...state,
       status: 'won',

@@ -38,6 +38,18 @@ export function createDailyRng(dateString: string): () => number {
   return mulberry32(hashStringToSeed(dateString))
 }
 
+// Cycles through a spread of difficulties rather than always being the same
+// size as free play — 20 sits in the middle as the "average" day.
+export const DAILY_BOARD_SIZES = [10, 15, 20, 25, 30]
+
+export function getDailyBoardSize(dateString: string): number {
+  // Hashed with a distinct prefix from createDailyRng's seed so the board
+  // size and the roll sequence aren't derived from the exact same number.
+  const hash = hashStringToSeed(`size:${dateString}`)
+  const index = Math.abs(hash) % DAILY_BOARD_SIZES.length
+  return DAILY_BOARD_SIZES[index]
+}
+
 export interface StreakData {
   count: number
   lastPlayedDate: string | null

@@ -4,15 +4,16 @@ import type { DailyResult } from '../hooks/useDailyChallenge'
 interface DailyBadgeProps {
   todayResult: DailyResult | null
   streak: StreakData
+  boardSize: number
   onOpen: () => void
 }
 
-export function DailyBadge({ todayResult, streak, onOpen }: DailyBadgeProps) {
+export function DailyBadge({ todayResult, streak, boardSize, onOpen }: DailyBadgeProps) {
   const active = isStreakActive(streak, getLocalDateString())
   const streakPrefix = active && streak.count >= 2 ? `🔥 ${streak.count} · ` : ''
 
   if (todayResult) {
-    const resultLabel = todayResult.status === 'won' ? 'Perfect today!' : `${todayResult.placedCount}/20 today`
+    const resultLabel = todayResult.status === 'won' ? 'Perfect today!' : `${todayResult.placedCount}/${todayResult.positions.length} today`
     return (
       <button type="button" className="daily-badge daily-badge--done" onClick={onOpen}>
         {streakPrefix}
@@ -27,7 +28,8 @@ export function DailyBadge({ todayResult, streak, onOpen }: DailyBadgeProps) {
         <rect x="3" y="5" width="18" height="16" rx="3" />
         <path d="M3 10h18M8 3v4M16 3v4" />
       </svg>
-      {streakPrefix}Today's challenge
+      {streakPrefix}
+      {boardSize}-slot challenge
     </button>
   )
 }

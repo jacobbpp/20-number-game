@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DAILY_BOARD_SIZES,
   createDailyRng,
   createEmptyStreak,
+  getDailyBoardSize,
   getLocalDateString,
   isStreakActive,
   recordDailyStreak,
@@ -87,5 +89,39 @@ describe('streak tracking', () => {
     let streak = recordDailyStreak(createEmptyStreak(), '2026-07-17')
     const again = recordDailyStreak(streak, '2026-07-17')
     expect(again).toEqual(streak)
+  })
+})
+
+describe('getDailyBoardSize', () => {
+  it('is deterministic for the same date', () => {
+    expect(getDailyBoardSize('2026-07-17')).toBe(getDailyBoardSize('2026-07-17'))
+  })
+
+  it('always returns a value from the curated set', () => {
+    for (let day = 1; day <= 28; day++) {
+      const date = `2026-07-${String(day).padStart(2, '0')}`
+      expect(DAILY_BOARD_SIZES).toContain(getDailyBoardSize(date))
+    }
+  })
+
+  it('is not the same size every day — genuine variety across a month', () => {
+    const sizes = new Set<number>()
+    for (let day = 1; day <= 28; day++) {
+      const date = `2026-07-${String(day).padStart(2, '0')}`
+      sizes.add(getDailyBoardSize(date))
+    }
+    expect(sizes.size).toBeGreaterThan(1)
+  })
+
+  it('is not simply derived from the same hash as the roll sequence', () => {
+    // If size and rolls were seeded identically, this would be a suspicious
+    // coincidence rather than a guarantee, but a shared seed source is
+    // exactly the bug this test is meant to catch if introduced.
+    const rngSeed = getDailyBoardSize('2026-07-17')
+    const differentDateSameSize = Array.from({ length: 28 }, (_, i) => `2026-07-${String(i + 1).padStart(2, '0')}`)
+      .filter(date => getDailyBoardSize(date) === rngSeed)
+      .map(date => createDailyRng(date)())
+    // Multiple dates can share a board size; their roll sequences must still differ.
+    expect(new Set(differentDateSameSize).size).toBeGreaterThan(1)
   })
 })

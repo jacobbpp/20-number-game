@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import { BUCKET_SIZE, VALUE_BUCKETS, bucketForValue, computeInsight, describeInsight, maxCount, type StatsData } from '../game/stats'
+import { lerpColor, type RGB } from '../utils/color'
 
 interface StatsScreenProps {
   stats: StatsData
@@ -7,16 +8,12 @@ interface StatsScreenProps {
   onOpenHowToPlay: () => void
 }
 
-const PANEL_RGB: [number, number, number] = [42, 33, 81] // #2A2151
-const AMBER_RGB: [number, number, number] = [239, 159, 39] // #EF9F27
+const PANEL_RGB: RGB = [42, 33, 81] // #2A2151
+const AMBER_RGB: RGB = [239, 159, 39] // #EF9F27
 
 function cellColor(count: number, peak: number): string {
   if (count === 0 || peak === 0) return 'rgb(42 33 81)'
-  const t = count / peak
-  const r = Math.round(PANEL_RGB[0] + (AMBER_RGB[0] - PANEL_RGB[0]) * t)
-  const g = Math.round(PANEL_RGB[1] + (AMBER_RGB[1] - PANEL_RGB[1]) * t)
-  const b = Math.round(PANEL_RGB[2] + (AMBER_RGB[2] - PANEL_RGB[2]) * t)
-  return `rgb(${r} ${g} ${b})`
+  return lerpColor(PANEL_RGB, AMBER_RGB, count / peak)
 }
 
 export function StatsScreen({ stats, onClose, onOpenHowToPlay }: StatsScreenProps) {
