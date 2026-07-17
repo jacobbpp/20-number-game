@@ -183,6 +183,7 @@ button:focus-visible {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(10, minmax(0, 1fr));
@@ -193,7 +194,27 @@ button:focus-visible {
   padding: 8px;
 }
 
+.board__rail {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.board__rail--left {
+  left: 8px;
+  background: linear-gradient(180deg, var(--coral) 0%, #6b5a9e 100%);
+}
+
+.board__rail--right {
+  left: calc(50% + 4px);
+  background: linear-gradient(180deg, #6b5a9e 0%, var(--amber) 100%);
+}
+
 .slot {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;

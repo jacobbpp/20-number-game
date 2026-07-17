@@ -9,6 +9,8 @@ interface BoardProps {
 export function Board({ positions, validPositions, onSelect }: BoardProps) {
   return (
     <div className="board" role="group" aria-label="20 numbered positions, low to high">
+      <span className="board__rail board__rail--left" aria-hidden="true" />
+      <span className="board__rail board__rail--right" aria-hidden="true" />
       {positions.map((value, index) => (
         <PositionSlot
           key={index}
