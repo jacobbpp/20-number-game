@@ -2,9 +2,13 @@ import { BOARD_SIZE } from './types'
 
 export const VALUE_BUCKETS = 10
 export const BUCKET_SIZE = 1000 / VALUE_BUCKETS
+export const SCORE_BUCKETS = 4
 const MIN_SIGNAL = 2
 const MIN_GAMES_FOR_INSIGHT = 3
 const MIN_LOSSES_FOR_LOSS_INSIGHT = 3
+// A loss this close to the end feels different from a routine early loss —
+// worth calling out on its own rather than folding into the score distribution.
+export const CLOSE_CALL_MARGIN = 2
 
 export interface Placement {
   position: number
@@ -21,7 +25,13 @@ export interface StatsData {
   totalGames: number
   totalWins: number
   totalTurns: number
-  matrix: number[][] // matrix[position][bucket]
+  winTurns: number // sum of placements across won games only, for average-turns-in-wins
+  currentWinStreak: number // consecutive wins, resets to 0 on any loss
+  closeCallCount: number // losses within CLOSE_CALL_MARGIN of a full board
+  scoreDistribution: number[] // placedCount bucketed into SCORE_BUCKETS ranges, across all games
+  matrix: number[][] // matrix[position][bucket], across all games
+  winMatrix: number[][] // same shape, won games only
+  lossMatrix: number[][] // same shape, lost games only
   lossBucketCounts: number[] // value bucket of the roll that ended each lost game
   lastGame: LastGameRecord | null
 }
@@ -34,12 +44,22 @@ export function createEmptyLossBucketCounts(): number[] {
   return Array(VALUE_BUCKETS).fill(0)
 }
 
+export function createEmptyScoreDistribution(): number[] {
+  return Array(SCORE_BUCKETS).fill(0)
+}
+
 export function createEmptyStats(): StatsData {
   return {
     totalGames: 0,
     totalWins: 0,
     totalTurns: 0,
+    winTurns: 0,
+    currentWinStreak: 0,
+    closeCallCount: 0,
+    scoreDistribution: createEmptyScoreDistribution(),
     matrix: createEmptyMatrix(),
+    winMatrix: createEmptyMatrix(),
+    lossMatrix: createEmptyMatrix(),
     lossBucketCounts: createEmptyLossBucketCounts(),
     lastGame: null,
   }
@@ -52,6 +72,20 @@ export function bucketForValue(value: number): number {
 export function bucketLabel(bucket: number): string {
   const start = bucket * BUCKET_SIZE + 1
   const end = (bucket + 1) * BUCKET_SIZE
+  return `${start}–${end}`
+}
+
+// total is the board size the game was actually played on (free play is
+// always BOARD_SIZE today, but this stays correct if that ever changes).
+export function scoreBucketForCount(placedCount: number, total: number): number {
+  const bucketSize = total / SCORE_BUCKETS
+  return Math.min(SCORE_BUCKETS - 1, Math.floor(placedCount / bucketSize))
+}
+
+export function scoreBucketLabel(bucket: number, total: number): string {
+  const bucketSize = total / SCORE_BUCKETS
+  const start = Math.round(bucket * bucketSize) + (bucket === 0 ? 0 : 1)
+  const end = Math.round((bucket + 1) * bucketSize)
   return `${start}–${end}`
 }
 
@@ -68,20 +102,40 @@ export function recordGame(
   placements: Placement[],
   result: 'won' | 'lost',
   losingValue: number | null = null,
+  total: number = BOARD_SIZE,
 ): StatsData {
   const matrix = stats.matrix.map(row => [...row])
+  const winMatrix = stats.winMatrix.map(row => [...row])
+  const lossMatrix = stats.lossMatrix.map(row => [...row])
+  const resultMatrix = result === 'won' ? winMatrix : lossMatrix
   for (const { position, value } of placements) {
-    matrix[position][bucketForValue(value)] += 1
+    const bucket = bucketForValue(value)
+    matrix[position][bucket] += 1
+    resultMatrix[position][bucket] += 1
   }
+
   const lossBucketCounts = [...stats.lossBucketCounts]
   if (result === 'lost' && losingValue !== null) {
     lossBucketCounts[bucketForValue(losingValue)] += 1
   }
+
+  const scoreDistribution = [...stats.scoreDistribution]
+  scoreDistribution[scoreBucketForCount(placements.length, total)] += 1
+
+  const isWin = result === 'won'
+  const isCloseCall = !isWin && placements.length >= total - CLOSE_CALL_MARGIN
+
   return {
     totalGames: stats.totalGames + 1,
-    totalWins: stats.totalWins + (result === 'won' ? 1 : 0),
+    totalWins: stats.totalWins + (isWin ? 1 : 0),
     totalTurns: stats.totalTurns + placements.length,
+    winTurns: stats.winTurns + (isWin ? placements.length : 0),
+    currentWinStreak: isWin ? stats.currentWinStreak + 1 : 0,
+    closeCallCount: stats.closeCallCount + (isCloseCall ? 1 : 0),
+    scoreDistribution,
     matrix,
+    winMatrix,
+    lossMatrix,
     lossBucketCounts,
     lastGame: { placements, result, timestamp: Date.now() },
   }
@@ -95,6 +149,11 @@ export function winRate(stats: StatsData): number | null {
 export function averageTurns(stats: StatsData): number | null {
   if (stats.totalGames === 0) return null
   return stats.totalTurns / stats.totalGames
+}
+
+export function averageTurnsInWins(stats: StatsData): number | null {
+  if (stats.totalWins === 0) return null
+  return stats.winTurns / stats.totalWins
 }
 
 // Requires a handful of losses before naming a "most common" one — one or

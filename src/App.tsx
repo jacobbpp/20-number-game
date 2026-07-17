@@ -92,7 +92,12 @@ function App() {
     vibrate(state.status === 'won' ? 'win' : 'lose')
     playSound(state.status === 'won' ? 'win' : 'lose')
     reportScore(state.placedCount, state.positions)
-    recordCompletedGame(extractPlacements(state.positions), state.status, state.status === 'lost' ? state.currentRoll : null)
+    recordCompletedGame(
+      extractPlacements(state.positions),
+      state.status,
+      state.status === 'lost' ? state.currentRoll : null,
+      state.positions.length,
+    )
     setHasRecorded(true)
   }, [
     state.status,

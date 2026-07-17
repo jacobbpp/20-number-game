@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
   averageTurns,
+  averageTurnsInWins,
   bucketForValue,
   computeInsight,
   createEmptyStats,
   extractPlacements,
   mostCommonLossBucket,
   recordGame,
+  scoreBucketForCount,
+  scoreBucketLabel,
   winRate,
   type StatsData,
 } from './stats'
@@ -76,6 +79,89 @@ describe('recordGame', () => {
     let stats = createEmptyStats()
     stats = recordGame(stats, [{ position: 0, value: 10 }], 'won', 250)
     expect(stats.lossBucketCounts.every(c => c === 0)).toBe(true)
+  })
+
+  it('tracks winTurns and resets currentWinStreak on a loss', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }, { position: 1, value: 20 }], 'won', null, 20)
+    stats = recordGame(stats, [{ position: 2, value: 30 }], 'won', null, 20)
+    expect(stats.winTurns).toBe(3)
+    expect(stats.currentWinStreak).toBe(2)
+
+    stats = recordGame(stats, [{ position: 3, value: 40 }], 'lost', 40, 20)
+    expect(stats.winTurns).toBe(3) // unchanged by the loss
+    expect(stats.currentWinStreak).toBe(0)
+  })
+
+  it('counts a loss as a close call only within the margin of a full board', () => {
+    let stats = createEmptyStats()
+    // 18 of 20 placed then lost — within the close-call margin.
+    stats = recordGame(stats, Array.from({ length: 18 }, (_, i) => ({ position: i, value: i + 1 })), 'lost', 999, 20)
+    expect(stats.closeCallCount).toBe(1)
+
+    // 5 of 20 placed then lost — not close.
+    stats = recordGame(stats, Array.from({ length: 5 }, (_, i) => ({ position: i, value: i + 1 })), 'lost', 999, 20)
+    expect(stats.closeCallCount).toBe(1)
+
+    // A win at the full board isn't a "close call" — it's a win.
+    stats = recordGame(stats, Array.from({ length: 20 }, (_, i) => ({ position: i, value: i + 1 })), 'won', null, 20)
+    expect(stats.closeCallCount).toBe(1)
+  })
+
+  it('buckets placedCount into scoreDistribution relative to the board size', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, Array.from({ length: 3 }, (_, i) => ({ position: i, value: i + 1 })), 'lost', 999, 20) // bucket 0 (0-5)
+    stats = recordGame(stats, Array.from({ length: 18 }, (_, i) => ({ position: i, value: i + 1 })), 'lost', 999, 20) // bucket 3 (16-20)
+    expect(stats.scoreDistribution).toEqual([1, 0, 0, 1])
+  })
+
+  it('splits the matrix into winMatrix/lossMatrix while still updating the combined matrix', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 9, value: 550 }], 'won')
+    stats = recordGame(stats, [{ position: 9, value: 560 }], 'lost', 560)
+
+    expect(stats.matrix[9][5]).toBe(2)
+    expect(stats.winMatrix[9][5]).toBe(1)
+    expect(stats.lossMatrix[9][5]).toBe(1)
+  })
+})
+
+describe('averageTurnsInWins', () => {
+  it('returns null with no wins', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'lost', 10)
+    expect(averageTurnsInWins(stats)).toBeNull()
+  })
+
+  it('averages placements per game across wins only, ignoring losses', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'lost', 10) // shouldn't count
+    stats = recordGame(stats, [
+      { position: 0, value: 10 },
+      { position: 1, value: 20 },
+    ], 'won')
+    stats = recordGame(stats, [
+      { position: 0, value: 10 },
+      { position: 1, value: 20 },
+      { position: 2, value: 30 },
+      { position: 3, value: 40 },
+    ], 'won')
+    expect(averageTurnsInWins(stats)).toBe(3)
+  })
+})
+
+describe('scoreBucketForCount / scoreBucketLabel', () => {
+  it('splits a 20-slot board into four even ranges', () => {
+    expect(scoreBucketForCount(0, 20)).toBe(0)
+    expect(scoreBucketForCount(5, 20)).toBe(1)
+    expect(scoreBucketForCount(10, 20)).toBe(2)
+    expect(scoreBucketForCount(15, 20)).toBe(3)
+    expect(scoreBucketForCount(20, 20)).toBe(3)
+
+    expect(scoreBucketLabel(0, 20)).toBe('0–5')
+    expect(scoreBucketLabel(1, 20)).toBe('6–10')
+    expect(scoreBucketLabel(2, 20)).toBe('11–15')
+    expect(scoreBucketLabel(3, 20)).toBe('16–20')
   })
 })
 

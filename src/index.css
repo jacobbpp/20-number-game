@@ -567,7 +567,7 @@ button:focus-visible {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   scrollbar-width: thin;
 }
 
@@ -609,6 +609,81 @@ button:focus-visible {
 .stats-overview__value {
   font-size: 19px;
   font-weight: 700;
+}
+
+.stats-overview__card--wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-overview__card--wide .stats-overview__value {
+  font-size: 15px;
+}
+
+.score-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.score-distribution__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 56px;
+}
+
+.score-distribution__col {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.score-distribution__bar {
+  width: 100%;
+  min-height: 3px;
+  border-radius: 4px 4px 0 0;
+}
+
+.score-distribution__label {
+  font-size: 9px;
+  color: var(--text-disabled);
+}
+
+.heatmap-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heatmap-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(var(--surface-tint-rgb), 0.05);
+  border-radius: 999px;
+  padding: 2px;
+  align-self: flex-start;
+}
+
+.heatmap-toggle__option {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.heatmap-toggle__option--active {
+  background: var(--purple-pill-bg);
+  color: var(--purple-pill-text);
 }
 
 .heatmap {

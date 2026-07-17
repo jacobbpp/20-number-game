@@ -1,5 +1,16 @@
 import { useCallback, useState } from 'react'
-import { createEmptyLossBucketCounts, createEmptyStats, recordGame, VALUE_BUCKETS, type Placement, type StatsData } from '../game/stats'
+import {
+  createEmptyLossBucketCounts,
+  createEmptyMatrix,
+  createEmptyScoreDistribution,
+  createEmptyStats,
+  recordGame,
+  SCORE_BUCKETS,
+  VALUE_BUCKETS,
+  type Placement,
+  type StatsData,
+} from '../game/stats'
+import { BOARD_SIZE } from '../game/types'
 
 export const STATS_STORAGE_KEY = 'order20-stats'
 const STORAGE_KEY = STATS_STORAGE_KEY
@@ -10,15 +21,28 @@ function isStatsData(value: unknown): value is StatsData {
   return typeof candidate.totalGames === 'number' && Array.isArray(candidate.matrix)
 }
 
-// Stats saved before totalWins/totalTurns/lossBucketCounts existed are
-// missing those fields entirely — fill them in rather than reject the whole
-// record, so existing totalGames/matrix history survives the upgrade.
+function isMatrix(value: unknown): value is number[][] {
+  return Array.isArray(value) && value.length === BOARD_SIZE && value.every(row => Array.isArray(row) && row.length === VALUE_BUCKETS)
+}
+
+// Stats saved before a field existed are missing it entirely — fill in
+// defaults rather than reject the whole record, so existing totalGames/matrix
+// history survives every upgrade.
 function normalizeStats(data: StatsData): StatsData {
   return {
     totalGames: data.totalGames,
     totalWins: typeof data.totalWins === 'number' ? data.totalWins : 0,
     totalTurns: typeof data.totalTurns === 'number' ? data.totalTurns : 0,
+    winTurns: typeof data.winTurns === 'number' ? data.winTurns : 0,
+    currentWinStreak: typeof data.currentWinStreak === 'number' ? data.currentWinStreak : 0,
+    closeCallCount: typeof data.closeCallCount === 'number' ? data.closeCallCount : 0,
+    scoreDistribution:
+      Array.isArray(data.scoreDistribution) && data.scoreDistribution.length === SCORE_BUCKETS
+        ? data.scoreDistribution
+        : createEmptyScoreDistribution(),
     matrix: data.matrix,
+    winMatrix: isMatrix(data.winMatrix) ? data.winMatrix : createEmptyMatrix(),
+    lossMatrix: isMatrix(data.lossMatrix) ? data.lossMatrix : createEmptyMatrix(),
     lossBucketCounts:
       Array.isArray(data.lossBucketCounts) && data.lossBucketCounts.length === VALUE_BUCKETS
         ? data.lossBucketCounts
@@ -42,17 +66,20 @@ function readStored(): StatsData {
 export function useGameStats() {
   const [stats, setStats] = useState<StatsData>(readStored)
 
-  const recordCompletedGame = useCallback((placements: Placement[], result: 'won' | 'lost', losingValue: number | null = null) => {
-    setStats(prev => {
-      const next = recordGame(prev, placements, result, losingValue)
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      } catch {
-        // Storage unavailable (private browsing, quota, etc.) — stats just won't persist across reloads.
-      }
-      return next
-    })
-  }, [])
+  const recordCompletedGame = useCallback(
+    (placements: Placement[], result: 'won' | 'lost', losingValue: number | null = null, total: number = BOARD_SIZE) => {
+      setStats(prev => {
+        const next = recordGame(prev, placements, result, losingValue, total)
+        try {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+        } catch {
+          // Storage unavailable (private browsing, quota, etc.) — stats just won't persist across reloads.
+        }
+        return next
+      })
+    },
+    [],
+  )
 
   return { stats, recordCompletedGame }
 }
