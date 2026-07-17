@@ -20,11 +20,13 @@ the board from that specific run — tap the Best pill in the header to see it. 
 new" summary appears after an update if anything shipped since you last played, with older
 entries available further down.
 
-The stats screen (bar-chart icon in the header) tracks win rate and average turns per game, plus
-which value range tends to land at which position across every completed game — shown as a
-heatmap with the most recent game's placements outlined. Once there's enough history, it also
-calls out whether the last game followed or broke the usual pattern, and which value range causes
-the most losses.
+The stats screen (bar-chart icon in the header) tracks win rate, win streak (plus your best-ever
+streak, once you've broken one), and average turns per game — both overall and for wins only. A
+"so close" count highlights losses within two placements of a full board, and a chart shows how
+far your runs usually get. It also tracks which value range tends to land at which position across
+every completed game — shown as a heatmap with the most recent game's placements outlined,
+filterable to wins-only or losses-only. Once there's enough history, it calls out whether the last
+game followed or broke the usual pattern, and which value range causes the most losses.
 
 ## Daily challenge
 
