@@ -55,7 +55,7 @@ describe('App daily challenge', () => {
 
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`${boardSize}-slot challenge`) }))
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`Today's ${boardSize}-slot challenge`) }))
 
     for (const position of clicks) {
       fireEvent.click(await screen.findByRole('button', { name: `Position ${position + 1}, empty, valid placement` }))
@@ -82,7 +82,7 @@ describe('App daily challenge', () => {
     })
 
     const storedStreak: unknown = JSON.parse(localStorage.getItem('order20-daily-streak') ?? 'null')
-    expect(storedStreak).toEqual({ count: 1, lastPlayedDate: today })
+    expect(storedStreak).toEqual({ count: 1, lastPlayedDate: today, bestStreak: 1 })
   })
 
   it('streak pill copies a share message and shows "Copied!" when tapped', async () => {
@@ -91,12 +91,12 @@ describe('App daily challenge', () => {
       'order20-daily-result',
       JSON.stringify({ date: today, positions: [64, 75], placedCount: 2, status: 'lost', lossReason: null }),
     )
-    localStorage.setItem('order20-daily-streak', JSON.stringify({ count: 5, lastPlayedDate: today }))
+    localStorage.setItem('order20-daily-streak', JSON.stringify({ count: 5, lastPlayedDate: today, bestStreak: 5 }))
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.assign(navigator, { clipboard: { writeText } })
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: /today/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Today's challenge/ }))
 
     const streakButton = await screen.findByRole('button', { name: /5 day streak/ })
     fireEvent.click(streakButton)
@@ -113,7 +113,7 @@ describe('App daily challenge', () => {
 
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`${boardSize}-slot challenge`) }))
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`Today's ${boardSize}-slot challenge`) }))
     for (const position of clicks) {
       fireEvent.click(await screen.findByRole('button', { name: `Position ${position + 1}, empty, valid placement` }))
     }
@@ -124,7 +124,7 @@ describe('App daily challenge', () => {
     // Close and reopen the now-locked daily screen — a pure navigation
     // re-render, nothing that should touch storage again.
     fireEvent.click(screen.getByRole('button', { name: 'Back to game' }))
-    fireEvent.click(await screen.findByRole('button', { name: /today/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Today's challenge/ }))
     await screen.findByText('Come back tomorrow for the next one.')
 
     const resultWrites = setItemSpy.mock.calls.filter(([key]) => key === 'order20-daily-result')

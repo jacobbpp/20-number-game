@@ -70,7 +70,7 @@ describe('buildDailyShareText', () => {
 
 describe('buildStreakShareText', () => {
   it('includes the streak count and the url', () => {
-    const text = buildStreakShareText({ count: 7, lastPlayedDate: '2026-07-17' }, 'https://example.com/')
+    const text = buildStreakShareText({ count: 7, lastPlayedDate: '2026-07-17', bestStreak: 7 }, 'https://example.com/')
 
     const lines = text.split('\n')
     expect(lines[0]).toBe('🔥 7 day streak on Order 20 Daily!')

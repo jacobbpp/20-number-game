@@ -215,6 +215,8 @@ function App() {
       ) : isStatsOpen ? (
         <StatsScreen
           stats={stats}
+          streak={streak}
+          today={dailyDate}
           theme={theme}
           onClose={() => setIsStatsOpen(false)}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
@@ -237,8 +239,6 @@ function App() {
             onOpenStats={openStats}
             showCoachMark={showCoachMark}
             todayResult={todayResult}
-            streak={streak}
-            today={dailyDate}
             dailyBoardSize={dailyBoardSize}
             onOpenDaily={openDaily}
             onOpenSettings={openSettings}

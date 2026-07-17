@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { getLocalDateString } from './game/daily'
 import { APP_VERSION } from './version'
 import { STATS_STORAGE_KEY } from './hooks/useGameStats'
 
@@ -163,6 +164,33 @@ describe('stats screen', () => {
 
     await screen.findByText('Win streak')
     expect(screen.queryByText(/Best:/)).not.toBeInTheDocument()
+  })
+
+  it('shows the current and best daily streak, sourced from the daily challenge streak', async () => {
+    vi.setSystemTime(new Date(2026, 0, 15, 12, 0, 0))
+    const today = getLocalDateString()
+    localStorage.setItem('order20-daily-streak', JSON.stringify({ count: 3, lastPlayedDate: today, bestStreak: 6 }))
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 1,
+        totalWins: 0,
+        totalTurns: 3,
+        matrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+
+    expect(await screen.findByText('Daily streak')).toBeInTheDocument()
+    const dailyStreakCard = (await screen.findByText('Daily streak')).closest('.stats-overview__card') as HTMLElement
+    expect(within(dailyStreakCard).getByText('3')).toBeInTheDocument()
+    expect(within(dailyStreakCard).getByText('Best: 6')).toBeInTheDocument()
+
+    vi.useRealTimers()
   })
 
   it('describes the score distribution accessibly with actual counts', async () => {

@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.16.0',
+    date: '2026-07-18',
+    title: 'Cleaner header, streak moved to stats',
+    description: 'Restart, Stats, Challenges, and Settings now sit together as icons, with a ring on Challenges when today\'s is unplayed. Your daily streak now lives on the Stats screen, current and best, alongside win streak.',
+  },
+  {
     version: '1.15.0',
     date: '2026-07-17',
     title: 'See the full release history',

@@ -16,6 +16,7 @@ import {
   type StatsData,
 } from '../game/stats'
 import { BOARD_SIZE } from '../game/types'
+import { isStreakActive, type StreakData } from '../game/daily'
 import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
 
@@ -23,6 +24,8 @@ type HeatmapView = 'all' | 'wins' | 'losses'
 
 interface StatsScreenProps {
   stats: StatsData
+  streak: StreakData
+  today: string
   theme: Theme
   onClose: () => void
   onOpenHowToPlay: () => void
@@ -37,7 +40,7 @@ function cellColor(count: number, peak: number, theme: Theme): string {
   return lerpColor(zeroRgb, AMBER_RGB, peak === 0 ? 0 : count / peak)
 }
 
-export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScreenProps) {
+export function StatsScreen({ stats, streak, today, theme, onClose, onOpenHowToPlay }: StatsScreenProps) {
   const { totalGames, lastGame } = stats
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
@@ -49,6 +52,7 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
   const lossBucket = mostCommonLossBucket(stats)
   const scoreMax = Math.max(...stats.scoreDistribution, 1)
   const scoreCaption = `How far your runs usually get — avg ${avgTurns?.toFixed(1)} turns${avgTurnsWins !== null ? `, ${avgTurnsWins.toFixed(1)} in wins` : ''}`
+  const currentDailyStreak = isStreakActive(streak, today) ? streak.count : 0
 
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
@@ -87,6 +91,11 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
               <span className="stats-overview__label">Win streak</span>
               <span className="stats-overview__value">{stats.currentWinStreak}</span>
               {stats.bestWinStreak > 0 && <span className="stats-overview__sublabel">Best: {stats.bestWinStreak}</span>}
+            </div>
+            <div className="stats-overview__card">
+              <span className="stats-overview__label">Daily streak</span>
+              <span className="stats-overview__value">{currentDailyStreak}</span>
+              {streak.bestStreak > 0 && <span className="stats-overview__sublabel">Best: {streak.bestStreak}</span>}
             </div>
           </div>
 

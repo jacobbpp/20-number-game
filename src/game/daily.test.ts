@@ -54,7 +54,7 @@ describe('streak tracking', () => {
 
   it('first play ever sets the streak to 1', () => {
     const streak = recordDailyStreak(createEmptyStreak(), '2026-07-17')
-    expect(streak).toEqual({ count: 1, lastPlayedDate: '2026-07-17' })
+    expect(streak).toEqual({ count: 1, lastPlayedDate: '2026-07-17', bestStreak: 1 })
   })
 
   it('playing on consecutive days increments the streak', () => {
@@ -70,7 +70,19 @@ describe('streak tracking', () => {
     streak = recordDailyStreak(streak, '2026-07-18')
     // Skip 2026-07-19 entirely, play again on the 20th.
     streak = recordDailyStreak(streak, '2026-07-20')
-    expect(streak).toEqual({ count: 1, lastPlayedDate: '2026-07-20' })
+    expect(streak).toEqual({ count: 1, lastPlayedDate: '2026-07-20', bestStreak: 2 })
+  })
+
+  it('tracks bestStreak as the running max, surviving a broken streak', () => {
+    let streak = recordDailyStreak(createEmptyStreak(), '2026-07-17')
+    streak = recordDailyStreak(streak, '2026-07-18')
+    streak = recordDailyStreak(streak, '2026-07-19')
+    expect(streak.bestStreak).toBe(3)
+
+    // Break the streak — count resets, but the record stands.
+    streak = recordDailyStreak(streak, '2026-07-25')
+    expect(streak.count).toBe(1)
+    expect(streak.bestStreak).toBe(3)
   })
 
   it('is still considered active the day after playing, before today is recorded', () => {

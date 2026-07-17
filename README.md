@@ -21,30 +21,31 @@ new" summary appears after an update if anything shipped since you last played, 
 entries available further down. The full release history is always available too — the version
 number in Settings opens the same view with every past update, not just what's unseen.
 
-The stats screen (bar-chart icon in the header) tracks win rate and win streak (plus your
-best-ever streak, once you've broken one), and shows a chart of how far your runs usually get,
-including your average turns per game overall and for wins only. It also tracks which value range
-tends to land at which position across every completed game — shown as a heatmap with the most
-recent game's placements outlined, filterable to wins-only or losses-only. Once there's enough
-history, it calls out whether the last game followed or broke the usual pattern, and which value
-range causes the most losses.
+The stats screen (bar-chart icon in the header) tracks win rate, win streak (plus your best-ever
+streak, once you've broken one), and daily challenge streak (current and best, same treatment as
+win streak), and shows a chart of how far your runs usually get, including your average turns per
+game overall and for wins only. It also tracks which value range tends to land at which position
+across every completed game — shown as a heatmap with the most recent game's placements outlined,
+filterable to wins-only or losses-only. Once there's enough history, it calls out whether the last
+game followed or broke the usual pattern, and which value range causes the most losses.
 
 ## Daily challenge
 
-The badge under the title gives one shot per day at a puzzle with the same sequence of rolls for
-every player — the rolls are drawn from a deterministic generator seeded by the date, not
-`Math.random`, so a given calendar day always produces the same sequence for everyone. The board
-size also varies by day (10, 15, 20, 25, or 30 positions, picked the same deterministic way), so
-different days are genuinely different challenges rather than the same 20-slot game with
-synchronized numbers. Once played, the badge locks into a recap of the day's result for the rest
-of the day; the Share button on it produces a date-labeled result separate from the free-play
-share text. Playing on consecutive days (win or lose — an honest attempt is what counts) builds a
-streak, shown once it reaches 2 days, with its own share button separate from the day's result;
-missing a day resets it quietly on the next play, with no "streak lost" moment. The last 30 days
-of attempts are available from a "View history" toggle in the recap. Free play and the daily
-challenge track separate best scores, streak data, and stats — a completed daily doesn't feed the
-free-play heatmap, since "landed at position 5" means something different on a 10-slot board than
-a 30-slot one.
+The calendar icon in the header gives one shot per day at a puzzle with the same sequence of rolls
+for every player — the rolls are drawn from a deterministic generator seeded by the date, not
+`Math.random`, so a given calendar day always produces the same sequence for everyone. A ring
+around the icon means today's hasn't been played yet. The board size also varies by day (10, 15,
+20, 25, or 30 positions, picked the same deterministic way), so different days are genuinely
+different challenges rather than the same 20-slot game with synchronized numbers. Once played, the
+icon's ring clears and opening it shows a recap of the day's result for the rest of the day; the
+Share button on it produces a date-labeled result separate from the free-play share text. Playing
+on consecutive days (win or lose — an honest attempt is what counts) builds a streak, shown in the
+recap once it reaches 2 days with its own share button, and tracked (current and best) on the
+Stats screen; missing a day resets it quietly on the next play, with no "streak lost" moment. The
+last 30 days of attempts are available from a "View history" toggle in the recap. Free play and
+the daily challenge track separate best scores, streak data, and stats — a completed daily doesn't
+feed the free-play heatmap, since "landed at position 5" means something different on a 10-slot
+board than a 30-slot one.
 
 ## Settings
 

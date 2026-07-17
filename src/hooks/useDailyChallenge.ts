@@ -39,13 +39,22 @@ function readTodayResult(today: string): DailyResult | null {
   }
 }
 
+// Older saved streaks predate bestStreak — backfill it from count, since a
+// streak that's currently N has necessarily reached at least N before.
+function normalizeStreak(value: Partial<StreakData>): StreakData {
+  const count = typeof value.count === 'number' ? value.count : 0
+  const lastPlayedDate = typeof value.lastPlayedDate === 'string' ? value.lastPlayedDate : null
+  const bestStreak = typeof value.bestStreak === 'number' ? value.bestStreak : count
+  return { count, lastPlayedDate, bestStreak }
+}
+
 function readStreak(): StreakData {
   if (typeof window === 'undefined') return createEmptyStreak()
   try {
     const raw = window.localStorage.getItem(STREAK_STORAGE_KEY)
     if (!raw) return createEmptyStreak()
     const parsed: unknown = JSON.parse(raw)
-    return isStreakData(parsed) ? parsed : createEmptyStreak()
+    return isStreakData(parsed) ? normalizeStreak(parsed) : createEmptyStreak()
   } catch {
     return createEmptyStreak()
   }

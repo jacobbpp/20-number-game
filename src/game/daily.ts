@@ -53,10 +53,11 @@ export function getDailyBoardSize(dateString: string): number {
 export interface StreakData {
   count: number
   lastPlayedDate: string | null
+  bestStreak: number
 }
 
 export function createEmptyStreak(): StreakData {
-  return { count: 0, lastPlayedDate: null }
+  return { count: 0, lastPlayedDate: null, bestStreak: 0 }
 }
 
 export function isStreakActive(streak: StreakData, today: string): boolean {
@@ -67,5 +68,6 @@ export function isStreakActive(streak: StreakData, today: string): boolean {
 export function recordDailyStreak(streak: StreakData, today: string): StreakData {
   if (streak.lastPlayedDate === today) return streak
   const wasYesterday = streak.lastPlayedDate === addDays(today, -1)
-  return { count: wasYesterday ? streak.count + 1 : 1, lastPlayedDate: today }
+  const count = wasYesterday ? streak.count + 1 : 1
+  return { count, lastPlayedDate: today, bestStreak: Math.max(streak.bestStreak, count) }
 }

@@ -114,52 +114,7 @@ button:focus-visible {
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-}
-
-.header__title-block {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  min-height: 40px;
-  min-width: 0;
-  justify-content: center;
-}
-
-.header__title {
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  line-height: 1.1;
-}
-
-.daily-badge {
-  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  min-height: 40px;
-  max-width: 100%;
-  border-radius: 999px;
-  padding: 0 10px 0 8px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border: 1px solid transparent;
-}
-
-.daily-badge--cta {
-  background: rgba(240, 153, 123, 0.16);
-  border-color: var(--coral-strong);
-  color: var(--coral);
-}
-
-.daily-badge--done {
-  background: var(--purple-pill-bg);
-  color: var(--purple-pill-text);
-  padding-left: 10px;
 }
 
 .header__actions {
@@ -202,6 +157,10 @@ button:focus-visible {
 .icon-btn--small {
   width: 32px;
   height: 32px;
+}
+
+.icon-btn--ring {
+  border: 1.5px solid var(--amber);
 }
 
 .icon-btn--confirm {
@@ -588,7 +547,7 @@ button:focus-visible {
 
 .stats-overview {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 6px;
 }
 
