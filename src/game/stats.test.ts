@@ -102,4 +102,29 @@ describe('computeInsight', () => {
 
     expect(computeInsight(stats)).toBeNull()
   })
+
+  it('does not count the last game itself as one of its own two required precedents', () => {
+    let stats = createEmptyStats()
+    // Unrelated filler game, purely to satisfy the "at least 3 total games"
+    // gate without adding any real signal to bucket 5 / position 9.
+    stats = recordGame(stats, [{ position: 15, value: 850 }], 'won')
+    // Exactly one genuine PRIOR game placed bucket 5 at position 9.
+    stats = recordGame(stats, [{ position: 9, value: 550 }], 'won')
+    // This game repeats it — raw matrix count is now 2, but only 1 of those
+    // is a real precedent; the fix must not treat that as an established pattern.
+    stats = recordGame(stats, [{ position: 9, value: 560 }], 'won')
+
+    expect(computeInsight(stats)).toBeNull()
+  })
+
+  it('still reports a match once there are two genuine prior precedents', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 9, value: 550 }], 'won')
+    stats = recordGame(stats, [{ position: 9, value: 560 }], 'won')
+    // Third game at the same spot: 2 real precedents plus this one.
+    stats = recordGame(stats, [{ position: 9, value: 570 }], 'won')
+
+    const insight = computeInsight(stats)
+    expect(insight).toEqual({ kind: 'match', position: 9, value: 570, bucket: 5, usualPosition: 9 })
+  })
 })

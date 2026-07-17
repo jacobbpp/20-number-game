@@ -85,7 +85,13 @@ export function computeInsight(stats: StatsData): Insight | null {
   const candidates = lastGame.placements
     .map(({ position, value }) => {
       const bucket = bucketForValue(value)
+      // matrix already includes this exact placement (recordGame updates the
+      // matrix and sets lastGame together), so exclude its own +1 here —
+      // otherwise a single prior occurrence plus this game reads as "usually
+      // lands here" when there's really only one real precedent.
       const column = matrix.map(row => row[bucket])
+      column[position] = Math.max(0, column[position] - 1)
+
       let usualPosition = 0
       for (let i = 1; i < column.length; i++) {
         if (column[i] > column[usualPosition]) usualPosition = i
