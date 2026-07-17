@@ -35,6 +35,14 @@ function normalizeStats(data: StatsData): StatsData {
     totalTurns: typeof data.totalTurns === 'number' ? data.totalTurns : 0,
     winTurns: typeof data.winTurns === 'number' ? data.winTurns : 0,
     currentWinStreak: typeof data.currentWinStreak === 'number' ? data.currentWinStreak : 0,
+    // A missing bestWinStreak can't be less than whatever the current streak
+    // already is — the player hasn't lost since reaching it.
+    bestWinStreak:
+      typeof data.bestWinStreak === 'number'
+        ? data.bestWinStreak
+        : typeof data.currentWinStreak === 'number'
+          ? data.currentWinStreak
+          : 0,
     closeCallCount: typeof data.closeCallCount === 'number' ? data.closeCallCount : 0,
     scoreDistribution:
       Array.isArray(data.scoreDistribution) && data.scoreDistribution.length === SCORE_BUCKETS

@@ -92,6 +92,88 @@ describe('stats screen', () => {
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
+  it('shows a best-win-streak record only once one has been set', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 4,
+        totalWins: 1,
+        totalTurns: 20,
+        winTurns: 5,
+        currentWinStreak: 1,
+        bestWinStreak: 4,
+        closeCallCount: 0,
+        scoreDistribution: [0, 1, 0, 3],
+        matrix: emptyMatrix(),
+        winMatrix: emptyMatrix(),
+        lossMatrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+
+    expect(await screen.findByText('Best: 4')).toBeInTheDocument()
+  })
+
+  it('hides the best-streak record when none has been set yet', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 2,
+        totalWins: 0,
+        totalTurns: 6,
+        winTurns: 0,
+        currentWinStreak: 0,
+        bestWinStreak: 0,
+        closeCallCount: 0,
+        scoreDistribution: [2, 0, 0, 0],
+        matrix: emptyMatrix(),
+        winMatrix: emptyMatrix(),
+        lossMatrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+
+    await screen.findByText('Win streak')
+    expect(screen.queryByText(/Best:/)).not.toBeInTheDocument()
+  })
+
+  it('describes the score distribution accessibly with actual counts', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 4,
+        totalWins: 1,
+        totalTurns: 20,
+        winTurns: 5,
+        currentWinStreak: 1,
+        bestWinStreak: 1,
+        closeCallCount: 0,
+        scoreDistribution: [1, 2, 0, 1],
+        matrix: emptyMatrix(),
+        winMatrix: emptyMatrix(),
+        lossMatrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+
+    const chart = await screen.findByRole('img', { name: /How far your runs usually get/ })
+    expect(chart).toHaveAccessibleName(
+      'How far your runs usually get: 1 game placed 0–5, 2 games placed 6–10, 0 games placed 11–15, 1 game placed 16–20',
+    )
+  })
+
   it('shows the "so close" row only once there is a close-call loss', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,

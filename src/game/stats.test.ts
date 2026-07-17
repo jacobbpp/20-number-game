@@ -5,6 +5,7 @@ import {
   bucketForValue,
   computeInsight,
   createEmptyStats,
+  describeScoreDistribution,
   extractPlacements,
   mostCommonLossBucket,
   recordGame,
@@ -93,6 +94,24 @@ describe('recordGame', () => {
     expect(stats.currentWinStreak).toBe(0)
   })
 
+  it('remembers bestWinStreak across a loss instead of resetting it with currentWinStreak', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'won')
+    stats = recordGame(stats, [{ position: 1, value: 20 }], 'won')
+    stats = recordGame(stats, [{ position: 2, value: 30 }], 'won')
+    expect(stats.currentWinStreak).toBe(3)
+    expect(stats.bestWinStreak).toBe(3)
+
+    stats = recordGame(stats, [{ position: 3, value: 40 }], 'lost', 40)
+    expect(stats.currentWinStreak).toBe(0)
+    expect(stats.bestWinStreak).toBe(3) // the record survives the loss
+
+    // A new streak that doesn't beat the old record shouldn't lower it.
+    stats = recordGame(stats, [{ position: 4, value: 50 }], 'won')
+    expect(stats.currentWinStreak).toBe(1)
+    expect(stats.bestWinStreak).toBe(3)
+  })
+
   it('counts a loss as a close call only within the margin of a full board', () => {
     let stats = createEmptyStats()
     // 18 of 20 placed then lost — within the close-call margin.
@@ -162,6 +181,14 @@ describe('scoreBucketForCount / scoreBucketLabel', () => {
     expect(scoreBucketLabel(1, 20)).toBe('6–10')
     expect(scoreBucketLabel(2, 20)).toBe('11–15')
     expect(scoreBucketLabel(3, 20)).toBe('16–20')
+  })
+})
+
+describe('describeScoreDistribution', () => {
+  it('renders every bucket as a spoken sentence fragment, singular/plural aware', () => {
+    expect(describeScoreDistribution([1, 0, 3, 5], 20)).toBe(
+      '1 game placed 0–5, 0 games placed 6–10, 3 games placed 11–15, 5 games placed 16–20',
+    )
   })
 })
 

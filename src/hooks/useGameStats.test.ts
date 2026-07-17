@@ -43,6 +43,7 @@ describe('useGameStats', () => {
 
     expect(result.current.stats.winTurns).toBe(0)
     expect(result.current.stats.currentWinStreak).toBe(0)
+    expect(result.current.stats.bestWinStreak).toBe(0)
     expect(result.current.stats.closeCallCount).toBe(0)
     expect(result.current.stats.scoreDistribution).toEqual([0, 0, 0, 0])
     expect(result.current.stats.winMatrix).toEqual(Array.from({ length: 20 }, () => Array(10).fill(0)))
@@ -50,6 +51,25 @@ describe('useGameStats', () => {
     // Pre-existing fields still survive the upgrade.
     expect(result.current.stats.totalGames).toBe(5)
     expect(result.current.stats.totalWins).toBe(2)
+  })
+
+  it('infers a missing bestWinStreak from the existing currentWinStreak rather than defaulting to 0', () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 5,
+        totalWins: 3,
+        currentWinStreak: 3, // no bestWinStreak field saved yet
+        matrix: Array.from({ length: 20 }, () => Array(10).fill(0)),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    const { result } = renderHook(() => useGameStats())
+
+    // Their current streak of 3 can't possibly be less than their best.
+    expect(result.current.stats.bestWinStreak).toBe(3)
   })
 
   it('records the losing roll into lossBucketCounts', () => {

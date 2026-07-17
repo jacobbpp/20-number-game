@@ -9,6 +9,7 @@ import {
   bucketLabel,
   computeInsight,
   describeInsight,
+  describeScoreDistribution,
   maxCount,
   mostCommonLossBucket,
   scoreBucketLabel,
@@ -85,6 +86,7 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
             <div className="stats-overview__card">
               <span className="stats-overview__label">Win streak</span>
               <span className="stats-overview__value">{stats.currentWinStreak}</span>
+              {stats.bestWinStreak > 0 && <span className="stats-overview__sublabel">Best: {stats.bestWinStreak}</span>}
             </div>
             <div className="stats-overview__card">
               <span className="stats-overview__label">Avg. turns</span>
@@ -114,9 +116,13 @@ export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScr
 
           <div className="score-distribution">
             <p className="stats-screen__caption">How far your runs usually get</p>
-            <div className="score-distribution__bars">
+            <div
+              className="score-distribution__bars"
+              role="img"
+              aria-label={`How far your runs usually get: ${describeScoreDistribution(stats.scoreDistribution, BOARD_SIZE)}`}
+            >
               {stats.scoreDistribution.map((count, bucket) => (
-                <div key={bucket} className="score-distribution__col">
+                <div key={bucket} className="score-distribution__col" aria-hidden="true">
                   <div
                     className="score-distribution__bar"
                     style={{ height: `${(count / scoreMax) * 100}%`, backgroundColor: count === scoreMax && count > 0 ? 'var(--amber)' : 'var(--purple-pill-bg)' }}

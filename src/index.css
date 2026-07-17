@@ -611,6 +611,11 @@ button:focus-visible {
   font-weight: 700;
 }
 
+.stats-overview__sublabel {
+  font-size: 10px;
+  color: var(--text-disabled);
+}
+
 .stats-overview__card--wide {
   grid-column: 1 / -1;
   flex-direction: row;

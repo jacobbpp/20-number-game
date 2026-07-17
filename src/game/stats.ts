@@ -27,6 +27,7 @@ export interface StatsData {
   totalTurns: number
   winTurns: number // sum of placements across won games only, for average-turns-in-wins
   currentWinStreak: number // consecutive wins, resets to 0 on any loss
+  bestWinStreak: number // longest currentWinStreak has ever reached
   closeCallCount: number // losses within CLOSE_CALL_MARGIN of a full board
   scoreDistribution: number[] // placedCount bucketed into SCORE_BUCKETS ranges, across all games
   matrix: number[][] // matrix[position][bucket], across all games
@@ -55,6 +56,7 @@ export function createEmptyStats(): StatsData {
     totalTurns: 0,
     winTurns: 0,
     currentWinStreak: 0,
+    bestWinStreak: 0,
     closeCallCount: 0,
     scoreDistribution: createEmptyScoreDistribution(),
     matrix: createEmptyMatrix(),
@@ -87,6 +89,14 @@ export function scoreBucketLabel(bucket: number, total: number): string {
   const start = Math.round(bucket * bucketSize) + (bucket === 0 ? 0 : 1)
   const end = Math.round((bucket + 1) * bucketSize)
   return `${start}–${end}`
+}
+
+// A spoken/screen-reader equivalent of the score-distribution bar chart,
+// which otherwise conveys its values purely through bar height.
+export function describeScoreDistribution(distribution: number[], total: number): string {
+  return distribution
+    .map((count, bucket) => `${count} game${count === 1 ? '' : 's'} placed ${scoreBucketLabel(bucket, total)}`)
+    .join(', ')
 }
 
 export function extractPlacements(positions: (number | null)[]): Placement[] {
@@ -124,13 +134,15 @@ export function recordGame(
 
   const isWin = result === 'won'
   const isCloseCall = !isWin && placements.length >= total - CLOSE_CALL_MARGIN
+  const currentWinStreak = isWin ? stats.currentWinStreak + 1 : 0
 
   return {
     totalGames: stats.totalGames + 1,
     totalWins: stats.totalWins + (isWin ? 1 : 0),
     totalTurns: stats.totalTurns + placements.length,
     winTurns: stats.winTurns + (isWin ? placements.length : 0),
-    currentWinStreak: isWin ? stats.currentWinStreak + 1 : 0,
+    currentWinStreak,
+    bestWinStreak: Math.max(stats.bestWinStreak, currentWinStreak),
     closeCallCount: stats.closeCallCount + (isCloseCall ? 1 : 0),
     scoreDistribution,
     matrix,
