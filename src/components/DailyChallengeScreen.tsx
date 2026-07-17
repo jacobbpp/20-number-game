@@ -69,7 +69,18 @@ export function DailyChallengeScreen({
               <ResultGrid positions={todayResult.positions} />
               {active && streak.count >= 2 && (
                 <button type="button" className="daily-screen__streak" onClick={handleShareStreak}>
-                  {streakCopied ? 'Copied!' : `🔥 ${streak.count} day streak`}
+                  {streakCopied ? (
+                    'Copied!'
+                  ) : (
+                    <>
+                      {`🔥 ${streak.count} day streak`}
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
+                        <path d="M16 6l-4-4-4 4" />
+                        <path d="M12 2v13" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               )}
               <p className="daily-screen__tomorrow">Come back tomorrow for the next one.</p>

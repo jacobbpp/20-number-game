@@ -85,6 +85,26 @@ describe('App daily challenge', () => {
     expect(storedStreak).toEqual({ count: 1, lastPlayedDate: today })
   })
 
+  it('streak pill copies a share message and shows "Copied!" when tapped', async () => {
+    const today = getLocalDateString()
+    localStorage.setItem(
+      'order20-daily-result',
+      JSON.stringify({ date: today, positions: [64, 75], placedCount: 2, status: 'lost', lossReason: null }),
+    )
+    localStorage.setItem('order20-daily-streak', JSON.stringify({ count: 5, lastPlayedDate: today }))
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.assign(navigator, { clipboard: { writeText } })
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: /today/ }))
+
+    const streakButton = await screen.findByRole('button', { name: /5 day streak/ })
+    fireEvent.click(streakButton)
+
+    expect(writeText).toHaveBeenCalledOnce()
+    expect(await screen.findByRole('button', { name: 'Copied!' })).toBeInTheDocument()
+  })
+
   it('does not re-record when re-opening the daily screen after a completed attempt', async () => {
     const today = getLocalDateString()
     const boardSize = getDailyBoardSize(today)

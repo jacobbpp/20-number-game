@@ -1027,15 +1027,21 @@ button:focus-visible {
 .daily-screen__streak {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   min-height: 40px;
   font-size: 13px;
   font-weight: 600;
   color: var(--purple-pill-text);
   background: var(--purple-tint-bg);
-  padding: 0 14px;
+  padding: 0 12px 0 14px;
   border-radius: 999px;
-  border: none;
+  border: 1px solid rgba(var(--surface-tint-rgb), 0.2);
   margin: 0;
+  transition: transform 0.1s ease;
+}
+
+.daily-screen__streak:active {
+  transform: scale(0.96);
 }
 
 .daily-screen__tomorrow {
