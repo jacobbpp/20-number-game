@@ -1,10 +1,5 @@
 import { useCallback, useState } from 'react'
-import {
-  createEmptyStreak,
-  getLocalDateString,
-  recordDailyStreak,
-  type StreakData,
-} from '../game/daily'
+import { createEmptyStreak, recordDailyStreak, type StreakData } from '../game/daily'
 
 const RESULT_STORAGE_KEY = 'order20-daily-result'
 const STREAK_STORAGE_KEY = 'order20-daily-streak'
@@ -29,14 +24,14 @@ function isStreakData(value: unknown): value is StreakData {
   return typeof candidate.count === 'number'
 }
 
-function readTodayResult(): DailyResult | null {
+function readTodayResult(today: string): DailyResult | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = window.localStorage.getItem(RESULT_STORAGE_KEY)
     if (!raw) return null
     const parsed: unknown = JSON.parse(raw)
     if (!isDailyResult(parsed)) return null
-    return parsed.date === getLocalDateString() ? parsed : null
+    return parsed.date === today ? parsed : null
   } catch {
     return null
   }
@@ -54,31 +49,37 @@ function readStreak(): StreakData {
   }
 }
 
-export function useDailyChallenge() {
-  const [todayResult, setTodayResult] = useState<DailyResult | null>(readTodayResult)
+// `today` must be a single date frozen once per session by the caller (see
+// App.tsx's dailyDateRef) rather than re-derived from `new Date()` on every
+// call — otherwise a session left open across a real midnight would silently
+// disagree with itself about what day it is.
+export function useDailyChallenge(today: string) {
+  const [todayResult, setTodayResult] = useState<DailyResult | null>(() => readTodayResult(today))
   const [streak, setStreak] = useState<StreakData>(readStreak)
 
-  const recordDailyResult = useCallback((result: Omit<DailyResult, 'date'>) => {
-    const date = getLocalDateString()
-    const fullResult: DailyResult = { ...result, date }
+  const recordDailyResult = useCallback(
+    (result: Omit<DailyResult, 'date'>) => {
+      const fullResult: DailyResult = { ...result, date: today }
 
-    setTodayResult(fullResult)
-    try {
-      window.localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(fullResult))
-    } catch {
-      // Storage unavailable — the result just won't persist across reloads.
-    }
-
-    setStreak(prev => {
-      const next = recordDailyStreak(prev, date)
+      setTodayResult(fullResult)
       try {
-        window.localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(next))
+        window.localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(fullResult))
       } catch {
-        // Storage unavailable — streak just won't persist across reloads.
+        // Storage unavailable — the result just won't persist across reloads.
       }
-      return next
-    })
-  }, [])
+
+      setStreak(prev => {
+        const next = recordDailyStreak(prev, today)
+        try {
+          window.localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(next))
+        } catch {
+          // Storage unavailable — streak just won't persist across reloads.
+        }
+        return next
+      })
+    },
+    [today],
+  )
 
   return { todayResult, streak, recordDailyResult }
 }

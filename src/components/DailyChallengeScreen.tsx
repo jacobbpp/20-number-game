@@ -2,7 +2,7 @@ import { Board } from './Board'
 import { ResultGrid } from './ResultGrid'
 import { RollDisplay } from './RollDisplay'
 import { ShareButton } from './ShareButton'
-import { getLocalDateString, isStreakActive, type StreakData } from '../game/daily'
+import { isStreakActive, type StreakData } from '../game/daily'
 import type { GameState } from '../game/types'
 import type { DailyResult } from '../hooks/useDailyChallenge'
 
@@ -10,12 +10,20 @@ interface DailyChallengeScreenProps {
   dailyState: GameState
   todayResult: DailyResult | null
   streak: StreakData
+  today: string
   onSelect: (index: number) => void
   onClose: () => void
 }
 
-export function DailyChallengeScreen({ dailyState, todayResult, streak, onSelect, onClose }: DailyChallengeScreenProps) {
-  const active = isStreakActive(streak, getLocalDateString())
+export function DailyChallengeScreen({
+  dailyState,
+  todayResult,
+  streak,
+  today,
+  onSelect,
+  onClose,
+}: DailyChallengeScreenProps) {
+  const active = isStreakActive(streak, today)
 
   return (
     <div className="daily-screen">

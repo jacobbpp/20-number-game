@@ -1,15 +1,16 @@
-import { getLocalDateString, isStreakActive, type StreakData } from '../game/daily'
+import { isStreakActive, type StreakData } from '../game/daily'
 import type { DailyResult } from '../hooks/useDailyChallenge'
 
 interface DailyBadgeProps {
   todayResult: DailyResult | null
   streak: StreakData
+  today: string
   boardSize: number
   onOpen: () => void
 }
 
-export function DailyBadge({ todayResult, streak, boardSize, onOpen }: DailyBadgeProps) {
-  const active = isStreakActive(streak, getLocalDateString())
+export function DailyBadge({ todayResult, streak, today, boardSize, onOpen }: DailyBadgeProps) {
+  const active = isStreakActive(streak, today)
   const streakPrefix = active && streak.count >= 2 ? `🔥 ${streak.count} · ` : ''
 
   if (todayResult) {

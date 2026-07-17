@@ -30,7 +30,16 @@ function App() {
   const { bestScore, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
-  const { todayResult, streak, recordDailyResult } = useDailyChallenge()
+
+  // Frozen once per session — every daily-mode concept ("today's" rng,
+  // board size, stored result, streak) derives from this single value
+  // rather than each independently calling getLocalDateString(). Without
+  // that, a session left open across a real midnight would have different
+  // parts of the UI silently disagreeing about what day it is.
+  const dailyDateRef = useRef(getLocalDateString())
+  const dailyDate = dailyDateRef.current
+
+  const { todayResult, streak, recordDailyResult } = useDailyChallenge(dailyDate)
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
   const [showCoachMark, setShowCoachMark] = useState(false)
   const isFirstLaunchRef = useRef(!hasSeenOnboarding)
@@ -38,8 +47,8 @@ function App() {
 
   // Stable for the whole day: created once per date and reused for every
   // roll in today's attempt, so the sequence is identical for every player.
-  const dailyRngRef = useRef(createDailyRng(getLocalDateString()))
-  const dailyBoardSize = getDailyBoardSize(getLocalDateString())
+  const dailyRngRef = useRef(createDailyRng(dailyDate))
+  const dailyBoardSize = getDailyBoardSize(dailyDate)
   const [dailyState, setDailyState] = useState(() => roll(createInitialState(dailyBoardSize), dailyRngRef.current))
   const dailyPrevPlacedRef = useRef(dailyState.placedCount)
 
@@ -147,6 +156,7 @@ function App() {
           dailyState={dailyState}
           todayResult={todayResult}
           streak={streak}
+          today={dailyDate}
           onSelect={handleDailySelect}
           onClose={() => setIsDailyOpen(false)}
         />
@@ -165,6 +175,7 @@ function App() {
             showCoachMark={showCoachMark}
             todayResult={todayResult}
             streak={streak}
+            today={dailyDate}
             dailyBoardSize={dailyBoardSize}
             onOpenDaily={openDaily}
           />
