@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Board } from './Board'
 import { ResultGrid } from './ResultGrid'
 import { RollDisplay } from './RollDisplay'
 import { ShareButton } from './ShareButton'
 import { isStreakActive, type StreakData } from '../game/daily'
+import { formatDailyDateLabel } from '../game/share'
 import type { GameState } from '../game/types'
 import type { DailyResult } from '../hooks/useDailyChallenge'
 
@@ -10,6 +12,7 @@ interface DailyChallengeScreenProps {
   dailyState: GameState
   todayResult: DailyResult | null
   streak: StreakData
+  history: DailyResult[]
   today: string
   onSelect: (index: number) => void
   onClose: () => void
@@ -19,11 +22,16 @@ export function DailyChallengeScreen({
   dailyState,
   todayResult,
   streak,
+  history,
   today,
   onSelect,
   onClose,
 }: DailyChallengeScreenProps) {
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const active = isStreakActive(streak, today)
+  // Today's own entry is already shown in the recap above, so the list
+  // below only needs the days before it.
+  const pastHistory = history.filter(entry => entry.date !== today)
 
   return (
     <div className="daily-screen">
@@ -38,21 +46,68 @@ export function DailyChallengeScreen({
 
       {todayResult ? (
         <div className="daily-screen__recap">
-          <div className="daily-screen__card">
-            <p className="daily-screen__headline">
-              {todayResult.status === 'won'
-                ? `Perfect ${todayResult.positions.length}/${todayResult.positions.length} today!`
-                : `${todayResult.placedCount} of ${todayResult.positions.length} today`}
-            </p>
-            <ResultGrid positions={todayResult.positions} />
-            {active && streak.count >= 2 && <p className="daily-screen__streak">🔥 {streak.count} day streak</p>}
-            <p className="daily-screen__tomorrow">Come back tomorrow for the next one.</p>
-            <ShareButton
-              positions={todayResult.positions}
-              placedCount={todayResult.placedCount}
-              won={todayResult.status === 'won'}
-              dailyDate={todayResult.date}
-            />
+          <div className="daily-screen__recap-content">
+            <div className="daily-screen__card">
+              <p className="daily-screen__headline">
+                {todayResult.status === 'won'
+                  ? `Perfect ${todayResult.positions.length}/${todayResult.positions.length} today!`
+                  : `${todayResult.placedCount} of ${todayResult.positions.length} today`}
+              </p>
+              <ResultGrid positions={todayResult.positions} />
+              {active && streak.count >= 2 && <p className="daily-screen__streak">🔥 {streak.count} day streak</p>}
+              <p className="daily-screen__tomorrow">Come back tomorrow for the next one.</p>
+              <ShareButton
+                positions={todayResult.positions}
+                placedCount={todayResult.placedCount}
+                won={todayResult.status === 'won'}
+                dailyDate={todayResult.date}
+              />
+            </div>
+
+            {pastHistory.length > 0 && (
+              <div className="daily-history">
+                <button
+                  type="button"
+                  className="daily-history__toggle"
+                  aria-expanded={isHistoryOpen}
+                  onClick={() => setIsHistoryOpen(open => !open)}
+                >
+                  {isHistoryOpen ? 'Hide history' : 'View history'}
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className={isHistoryOpen ? 'daily-history__chevron daily-history__chevron--open' : 'daily-history__chevron'}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+
+                {isHistoryOpen && (
+                  <ul className="daily-history__list">
+                    {pastHistory.map(entry => {
+                      const size = entry.positions.length
+                      const won = entry.status === 'won'
+                      return (
+                        <li key={entry.date} className="daily-history__row">
+                          <span className="daily-history__date">{formatDailyDateLabel(entry.date)}</span>
+                          <span className="daily-history__size">{size}</span>
+                          <span className={won ? 'daily-history__score daily-history__score--won' : 'daily-history__score'}>
+                            {entry.placedCount}/{size} {won ? '✓' : '✕'}
+                          </span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </div>
       ) : (

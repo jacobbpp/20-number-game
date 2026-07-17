@@ -39,7 +39,7 @@ function App() {
   const dailyDateRef = useRef(getLocalDateString())
   const dailyDate = dailyDateRef.current
 
-  const { todayResult, streak, recordDailyResult } = useDailyChallenge(dailyDate)
+  const { todayResult, streak, history, recordDailyResult } = useDailyChallenge(dailyDate)
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
   const [showCoachMark, setShowCoachMark] = useState(false)
   const isFirstLaunchRef = useRef(!hasSeenOnboarding)
@@ -156,6 +156,7 @@ function App() {
           dailyState={dailyState}
           todayResult={todayResult}
           streak={streak}
+          history={history}
           today={dailyDate}
           onSelect={handleDailySelect}
           onClose={() => setIsDailyOpen(false)}

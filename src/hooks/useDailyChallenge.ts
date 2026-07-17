@@ -3,6 +3,8 @@ import { createEmptyStreak, recordDailyStreak, type StreakData } from '../game/d
 
 const RESULT_STORAGE_KEY = 'order20-daily-result'
 const STREAK_STORAGE_KEY = 'order20-daily-streak'
+const HISTORY_STORAGE_KEY = 'order20-daily-history'
+const HISTORY_LIMIT = 30
 
 export interface DailyResult {
   date: string
@@ -49,6 +51,19 @@ function readStreak(): StreakData {
   }
 }
 
+function readHistory(): DailyResult[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(HISTORY_STORAGE_KEY)
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(isDailyResult)
+  } catch {
+    return []
+  }
+}
+
 // `today` must be a single date frozen once per session by the caller (see
 // App.tsx's dailyDateRef) rather than re-derived from `new Date()` on every
 // call — otherwise a session left open across a real midnight would silently
@@ -56,6 +71,7 @@ function readStreak(): StreakData {
 export function useDailyChallenge(today: string) {
   const [todayResult, setTodayResult] = useState<DailyResult | null>(() => readTodayResult(today))
   const [streak, setStreak] = useState<StreakData>(readStreak)
+  const [history, setHistory] = useState<DailyResult[]>(readHistory)
 
   const recordDailyResult = useCallback(
     (result: Omit<DailyResult, 'date'>) => {
@@ -77,9 +93,21 @@ export function useDailyChallenge(today: string) {
         }
         return next
       })
+
+      setHistory(prev => {
+        // Dedupe by date as cheap insurance against a double-fire, same
+        // spirit as the todayResult guard in App.tsx's recording effect.
+        const next = [fullResult, ...prev.filter(entry => entry.date !== today)].slice(0, HISTORY_LIMIT)
+        try {
+          window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(next))
+        } catch {
+          // Storage unavailable — history just won't persist across reloads.
+        }
+        return next
+      })
     },
     [today],
   )
 
-  return { todayResult, streak, recordDailyResult }
+  return { todayResult, streak, history, recordDailyResult }
 }
