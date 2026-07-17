@@ -6,7 +6,7 @@ function buildGrid(positions: (number | null)[]): string {
 
 export function buildShareText(positions: (number | null)[], placedCount: number, won: boolean, url: string): string {
   const size = positions.length
-  const headline = won ? `Order 20 — perfect! ${size}/${size}` : `Order 20 — ${placedCount}/${size}`
+  const headline = won ? `Order 20: perfect! ${size}/${size}` : `Order 20: ${placedCount}/${size}`
   return `${headline}\n${buildGrid(positions)}\n${url}`
 }
 
@@ -26,8 +26,8 @@ export function buildDailyShareText(
   const size = positions.length
   const dateLabel = formatDailyDateLabel(dateString)
   const headline = won
-    ? `Order 20 Daily (${dateLabel}) — perfect! ${size}/${size}`
-    : `Order 20 Daily (${dateLabel}) — ${placedCount}/${size}`
+    ? `Order 20 Daily (${dateLabel}): perfect! ${size}/${size}`
+    : `Order 20 Daily (${dateLabel}): ${placedCount}/${size}`
   return `${headline}\n${buildGrid(positions)}\n${url}`
 }
 

@@ -12,7 +12,7 @@ describe('buildShareText', () => {
     const text = buildShareText(positions, 3, false, 'https://example.com/')
 
     const lines = text.split('\n')
-    expect(lines[0]).toBe('Order 20 — 3/20')
+    expect(lines[0]).toBe('Order 20: 3/20')
     expect(lines[1]).toBe('🟧⬜⬜🟧⬜⬜⬜⬜⬜🟧⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜')
     expect(lines[2]).toBe('https://example.com/')
   })
@@ -23,7 +23,7 @@ describe('buildShareText', () => {
     const text = buildShareText(positions, BOARD_SIZE, true, 'https://example.com/')
 
     const lines = text.split('\n')
-    expect(lines[0]).toBe('Order 20 — perfect! 20/20')
+    expect(lines[0]).toBe('Order 20: perfect! 20/20')
     expect(lines[1]).toBe('🟧'.repeat(BOARD_SIZE))
   })
 })
@@ -43,7 +43,7 @@ describe('buildDailyShareText', () => {
     const text = buildDailyShareText(positions, 1, false, '2026-07-17', 'https://example.com/')
 
     const lines = text.split('\n')
-    expect(lines[0]).toBe('Order 20 Daily (Jul 17) — 1/20')
+    expect(lines[0]).toBe('Order 20 Daily (Jul 17): 1/20')
     expect(lines[1]).toBe(`🟧${'⬜'.repeat(BOARD_SIZE - 1)}`)
     expect(lines[2]).toBe('https://example.com/')
   })
@@ -53,7 +53,7 @@ describe('buildDailyShareText', () => {
 
     const text = buildDailyShareText(positions, BOARD_SIZE, true, '2026-07-17', 'https://example.com/')
 
-    expect(text.split('\n')[0]).toBe('Order 20 Daily (Jul 17) — perfect! 20/20')
+    expect(text.split('\n')[0]).toBe('Order 20 Daily (Jul 17): perfect! 20/20')
   })
 
   it('denominates by the actual board size, not a fixed 20 — daily sizes vary', () => {
@@ -63,7 +63,7 @@ describe('buildDailyShareText', () => {
     const text = buildDailyShareText(positions, 1, false, '2026-07-17', 'https://example.com/')
 
     const lines = text.split('\n')
-    expect(lines[0]).toBe('Order 20 Daily (Jul 17) — 1/10')
+    expect(lines[0]).toBe('Order 20 Daily (Jul 17): 1/10')
     expect(lines[1]).toBe(`🟧${'⬜'.repeat(9)}`)
   })
 })

@@ -119,5 +119,5 @@ export function describeInsight(insight: Insight): string {
     return `${insight.value} landed at ${actualLabel}, right where numbers in the ${range} range usually go.`
   }
   const usualLabel = `position ${insight.usualPosition + 1}`
-  return `Numbers in the ${range} range usually land at ${usualLabel} — but this time ${insight.value} landed at ${actualLabel}.`
+  return `Numbers in the ${range} range usually land at ${usualLabel}, but this time ${insight.value} landed at ${actualLabel}.`
 }

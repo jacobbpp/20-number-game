@@ -1,7 +1,11 @@
 // Bumped by hand alongside package.json's version whenever a user-facing
 // change ships — this is the single source of truth the What's New popup
 // (useWhatsNew) compares against localStorage to decide what's unseen.
-export const APP_VERSION = '1.9.0'
+//
+// Semver discipline: PATCH for fixes and small polish (not changelog-worthy
+// on their own), MINOR for a genuinely new capability (gets a changelog
+// entry), MAJOR reserved for a real relaunch.
+export const APP_VERSION = '1.9.1'
 
 export function compareVersions(a: string, b: string): number {
   const partsA = a.split('.').map(Number)

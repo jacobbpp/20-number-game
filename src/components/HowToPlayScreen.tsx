@@ -11,7 +11,7 @@ export function HowToPlayScreen({ onClose }: HowToPlayScreenProps) {
         </h2>
         <p className="howto__body">
           Roll a number, then tap an empty position to place it. Every position has to stay in
-          order — low at the top, high at the bottom. A number can only go somewhere with nothing
+          order: low at the top, high at the bottom. A number can only go somewhere with nothing
           bigger above it and nothing smaller below it.
         </p>
 
@@ -26,7 +26,7 @@ export function HowToPlayScreen({ onClose }: HowToPlayScreenProps) {
           </div>
           <div className="howto__example-row">
             <span className="howto__example-cell howto__example-cell--invalid">63</span>
-            <span className="howto__example-label">rolled — no empty position before 64 can hold it</span>
+            <span className="howto__example-label">rolled, no empty position before 64 can hold it</span>
           </div>
         </div>
 
