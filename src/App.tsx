@@ -27,7 +27,15 @@ function App() {
   const { stats, recordCompletedGame } = useGameStats()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
+  const [showCoachMark, setShowCoachMark] = useState(false)
+  const isFirstLaunchRef = useRef(!hasSeenOnboarding)
   const prevPlacedRef = useRef(state.placedCount)
+
+  useEffect(() => {
+    if (!showCoachMark) return
+    const timeout = setTimeout(() => setShowCoachMark(false), 4000)
+    return () => clearTimeout(timeout)
+  }, [showCoachMark])
 
   useEffect(() => {
     if (state.status !== 'won' && state.status !== 'lost') return
@@ -70,6 +78,10 @@ function App() {
   const handleCloseHowToPlay = () => {
     setIsHowToPlayOpen(false)
     markSeen()
+    if (isFirstLaunchRef.current) {
+      setShowCoachMark(true)
+      isFirstLaunchRef.current = false
+    }
   }
 
   return (
@@ -82,7 +94,12 @@ function App() {
         />
       ) : (
         <>
-          <Header bestScore={bestScore} onRestart={handleRestart} onOpenStats={() => setIsStatsOpen(true)} />
+          <Header
+            bestScore={bestScore}
+            onRestart={handleRestart}
+            onOpenStats={() => setIsStatsOpen(true)}
+            showCoachMark={showCoachMark}
+          />
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={BOARD_SIZE} />
           <Board
             key={gameId}
