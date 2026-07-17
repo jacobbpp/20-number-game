@@ -39,8 +39,9 @@ export function createDailyRng(dateString: string): () => number {
 }
 
 // Cycles through a spread of difficulties rather than always being the same
-// size as free play — 20 sits in the middle as the "average" day.
-export const DAILY_BOARD_SIZES = [10, 15, 20, 25, 30]
+// size as free play — 20 is deliberately excluded since that's already
+// free play's fixed size, and a daily should always read as distinct.
+export const DAILY_BOARD_SIZES = [10, 15, 25, 30]
 
 export function getDailyBoardSize(dateString: string): number {
   // Hashed with a distinct prefix from createDailyRng's seed so the board

@@ -35,8 +35,9 @@ The calendar icon in the header gives one shot per day at a puzzle with the same
 for every player — the rolls are drawn from a deterministic generator seeded by the date, not
 `Math.random`, so a given calendar day always produces the same sequence for everyone. A ring
 around the icon means today's hasn't been played yet. The board size also varies by day (10, 15,
-20, 25, or 30 positions, picked the same deterministic way), so different days are genuinely
-different challenges rather than the same 20-slot game with synchronized numbers. Once played, the
+25, or 30 positions, picked the same deterministic way, and deliberately never 20 — that's free
+play's size), so different days are genuinely different challenges rather than the same game as
+free play with synchronized numbers. Once played, the
 icon's ring clears and opening it shows a recap of the day's result for the rest of the day; the
 Share button on it produces a date-labeled result separate from the free-play share text. Playing
 on consecutive days (win or lose — an honest attempt is what counts) builds a streak, shown in the
