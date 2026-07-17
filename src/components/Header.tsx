@@ -1,16 +1,33 @@
+import { DailyBadge } from './DailyBadge'
 import { RestartButton } from './RestartButton'
+import type { StreakData } from '../game/daily'
+import type { DailyResult } from '../hooks/useDailyChallenge'
 
 interface HeaderProps {
   bestScore: number
   onRestart: () => void
   onOpenStats: () => void
   showCoachMark: boolean
+  todayResult: DailyResult | null
+  streak: StreakData
+  onOpenDaily: () => void
 }
 
-export function Header({ bestScore, onRestart, onOpenStats, showCoachMark }: HeaderProps) {
+export function Header({
+  bestScore,
+  onRestart,
+  onOpenStats,
+  showCoachMark,
+  todayResult,
+  streak,
+  onOpenDaily,
+}: HeaderProps) {
   return (
     <header className="header">
-      <span className="header__title">Order 20</span>
+      <div className="header__title-block">
+        <span className="header__title">Order 20</span>
+        <DailyBadge todayResult={todayResult} streak={streak} onOpen={onOpenDaily} />
+      </div>
       <div className="header__actions">
         <div className="coach-anchor">
           <RestartButton onRestart={onRestart} />

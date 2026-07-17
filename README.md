@@ -20,6 +20,18 @@ screen (bar-chart icon in the header) also tracks, across every completed game, 
 tends to land at which position — shown as a heatmap with the most recent game's placements
 outlined, plus a one-line callout on whether the last game followed or broke the pattern.
 
+## Daily challenge
+
+The badge under the title gives one shot per day at a puzzle with the same sequence of rolls for
+every player — the rolls are drawn from a deterministic generator seeded by the date, not
+`Math.random`, so a given calendar day always produces the same sequence for everyone. Once
+played, that badge locks into a recap of the day's result for the rest of the day; the Share
+button on it produces a date-labeled result separate from the free-play share text. Playing on
+consecutive days (win or lose — an honest attempt is what counts) builds a streak, shown once it
+reaches 2 days; missing a day resets it quietly on the next play, with no "streak lost" moment.
+Free play and the daily challenge track separate best scores and streak data, but both feed the
+same position/value heatmap on the stats screen.
+
 ## Tech stack
 
 - React + TypeScript + Vite
@@ -27,8 +39,9 @@ outlined, plus a one-line callout on whether the last game followed or broke the
 - `vite-plugin-pwa` for installable, offline-capable PWA support
 
 Game logic lives entirely in [`src/game/`](src/game) as plain, framework-free TypeScript
-(`engine.ts`, `types.ts`, `stats.ts`). Presentation components in [`src/components/`](src/components)
-only render state and call back into the engine — no rules are duplicated in the UI layer.
+(`engine.ts`, `types.ts`, `stats.ts`, `daily.ts`, `share.ts`). Presentation components in
+[`src/components/`](src/components) only render state and call back into the engine — no rules
+are duplicated in the UI layer.
 
 ## Setup
 
@@ -53,8 +66,11 @@ npm run test:watch   # watch mode
 ```
 
 Tests cover: valid placement, invalid placement, duplicate-number prevention, winning, and losing
-(see [`src/game/engine.test.ts`](src/game/engine.test.ts)), plus the value-bucket heatmap and
-last-game insight logic (see [`src/game/stats.test.ts`](src/game/stats.test.ts)).
+(see [`src/game/engine.test.ts`](src/game/engine.test.ts)); the value-bucket heatmap and
+last-game insight logic ([`src/game/stats.test.ts`](src/game/stats.test.ts)); the daily seeded
+generator and streak math ([`src/game/daily.test.ts`](src/game/daily.test.ts)); and App-level
+integration behavior — auto-roll, single game-over trigger, single stats-recording per completed
+game ([`src/App.test.tsx`](src/App.test.tsx)).
 
 ## Type checking & build
 

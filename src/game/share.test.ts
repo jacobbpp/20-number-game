@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildShareText } from './share'
+import { buildDailyShareText, buildShareText, formatDailyDateLabel } from './share'
 import { BOARD_SIZE } from './types'
 
 describe('buildShareText', () => {
@@ -25,5 +25,34 @@ describe('buildShareText', () => {
     const lines = text.split('\n')
     expect(lines[0]).toBe('Order 20 — perfect! 20/20')
     expect(lines[1]).toBe('🟧'.repeat(BOARD_SIZE))
+  })
+})
+
+describe('formatDailyDateLabel', () => {
+  it('formats a YYYY-MM-DD string as a short month + day', () => {
+    expect(formatDailyDateLabel('2026-07-17')).toBe('Jul 17')
+    expect(formatDailyDateLabel('2026-01-05')).toBe('Jan 5')
+  })
+})
+
+describe('buildDailyShareText', () => {
+  it('includes the date label in the headline', () => {
+    const positions: (number | null)[] = Array(BOARD_SIZE).fill(null)
+    positions[0] = 42
+
+    const text = buildDailyShareText(positions, 1, false, '2026-07-17', 'https://example.com/')
+
+    const lines = text.split('\n')
+    expect(lines[0]).toBe('Order 20 Daily (Jul 17) — 1/20')
+    expect(lines[1]).toBe(`🟧${'⬜'.repeat(BOARD_SIZE - 1)}`)
+    expect(lines[2]).toBe('https://example.com/')
+  })
+
+  it('marks a win as perfect, same as the free-play share text', () => {
+    const positions = Array.from({ length: BOARD_SIZE }, (_, i) => (i + 1) * 40)
+
+    const text = buildDailyShareText(positions, BOARD_SIZE, true, '2026-07-17', 'https://example.com/')
+
+    expect(text.split('\n')[0]).toBe('Order 20 Daily (Jul 17) — perfect! 20/20')
   })
 })

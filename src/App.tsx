@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { Board } from './components/Board'
+import { DailyChallengeScreen } from './components/DailyChallengeScreen'
 import { GameOverScreen } from './components/GameOverScreen'
 import { Header } from './components/Header'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { RollDisplay } from './components/RollDisplay'
 import { StatsScreen } from './components/StatsScreen'
 import { WinScreen } from './components/WinScreen'
+import { createDailyRng, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
 import { extractPlacements } from './game/stats'
 import { BOARD_SIZE, createInitialState, type ResultBadge } from './game/types'
 import { useBestScore } from './hooks/useBestScore'
+import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useGameStats } from './hooks/useGameStats'
 import { useOnboarding } from './hooks/useOnboarding'
 import { vibrate } from './utils/haptics'
@@ -22,14 +25,22 @@ function App() {
   const [state, setState] = useState(startGame)
   const [gameId, setGameId] = useState(0)
   const [isStatsOpen, setIsStatsOpen] = useState(false)
+  const [isDailyOpen, setIsDailyOpen] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
   const { bestScore, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
+  const { todayResult, streak, recordDailyResult } = useDailyChallenge()
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
   const [showCoachMark, setShowCoachMark] = useState(false)
   const isFirstLaunchRef = useRef(!hasSeenOnboarding)
   const prevPlacedRef = useRef(state.placedCount)
+
+  // Stable for the whole day: created once per date and reused for every
+  // roll in today's attempt, so the sequence is identical for every player.
+  const dailyRngRef = useRef(createDailyRng(getLocalDateString()))
+  const [dailyState, setDailyState] = useState(() => roll(createInitialState(), dailyRngRef.current))
+  const dailyPrevPlacedRef = useRef(dailyState.placedCount)
 
   useEffect(() => {
     if (!showCoachMark) return
@@ -61,11 +72,49 @@ function App() {
     prevPlacedRef.current = state.placedCount
   }, [state.placedCount])
 
+  // todayResult is checked so a completed attempt never gets recorded twice
+  // — dailyState itself never resets mid-session once it reaches won/lost,
+  // so in practice this only fires once, but it's cheap insurance.
+  useEffect(() => {
+    if (dailyState.status !== 'won' && dailyState.status !== 'lost') return
+    if (todayResult) return
+
+    vibrate(dailyState.status === 'won' ? 'win' : 'lose')
+    recordCompletedGame(extractPlacements(dailyState.positions), dailyState.status)
+    recordDailyResult({
+      positions: dailyState.positions,
+      placedCount: dailyState.placedCount,
+      status: dailyState.status,
+      lossReason: dailyState.lossReason,
+    })
+  }, [
+    dailyState.status,
+    dailyState.positions,
+    dailyState.placedCount,
+    dailyState.lossReason,
+    todayResult,
+    recordCompletedGame,
+    recordDailyResult,
+  ])
+
+  useEffect(() => {
+    if (dailyState.placedCount > dailyPrevPlacedRef.current) vibrate('place')
+    dailyPrevPlacedRef.current = dailyState.placedCount
+  }, [dailyState.placedCount])
+
   const handleSelect = (index: number) => {
     setState(prev => {
       const placed = place(prev, index)
       if (placed === prev || placed.status !== 'idle') return placed
       return roll(placed)
+    })
+  }
+
+  const handleDailySelect = (index: number) => {
+    setDailyState(prev => {
+      const placed = place(prev, index)
+      if (placed === prev || placed.status !== 'idle') return placed
+      return roll(placed, dailyRngRef.current)
     })
   }
 
@@ -84,9 +133,27 @@ function App() {
     }
   }
 
+  const openStats = () => {
+    setIsDailyOpen(false)
+    setIsStatsOpen(true)
+  }
+
+  const openDaily = () => {
+    setIsStatsOpen(false)
+    setIsDailyOpen(true)
+  }
+
   return (
     <div className="app">
-      {isStatsOpen ? (
+      {isDailyOpen ? (
+        <DailyChallengeScreen
+          dailyState={dailyState}
+          todayResult={todayResult}
+          streak={streak}
+          onSelect={handleDailySelect}
+          onClose={() => setIsDailyOpen(false)}
+        />
+      ) : isStatsOpen ? (
         <StatsScreen
           stats={stats}
           onClose={() => setIsStatsOpen(false)}
@@ -97,8 +164,11 @@ function App() {
           <Header
             bestScore={bestScore}
             onRestart={handleRestart}
-            onOpenStats={() => setIsStatsOpen(true)}
+            onOpenStats={openStats}
             showCoachMark={showCoachMark}
+            todayResult={todayResult}
+            streak={streak}
+            onOpenDaily={openDaily}
           />
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={BOARD_SIZE} />
           <Board
@@ -110,7 +180,7 @@ function App() {
         </>
       )}
 
-      {!isStatsOpen && state.status === 'lost' && (
+      {!isStatsOpen && !isDailyOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
@@ -119,7 +189,9 @@ function App() {
           onNewGame={handleRestart}
         />
       )}
-      {!isStatsOpen && state.status === 'won' && <WinScreen positions={state.positions} onNewGame={handleRestart} />}
+      {!isStatsOpen && !isDailyOpen && state.status === 'won' && (
+        <WinScreen positions={state.positions} onNewGame={handleRestart} />
+      )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}
     </div>
   )

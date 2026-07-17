@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { buildShareText } from '../game/share'
+import { buildDailyShareText, buildShareText } from '../game/share'
 import { vibrate } from '../utils/haptics'
 
 interface ShareButtonProps {
   positions: (number | null)[]
   placedCount: number
   won: boolean
+  dailyDate?: string
 }
 
-export function ShareButton({ positions, placedCount, won }: ShareButtonProps) {
+export function ShareButton({ positions, placedCount, won, dailyDate }: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -21,7 +22,9 @@ export function ShareButton({ positions, placedCount, won }: ShareButtonProps) {
 
   const handleShare = async () => {
     const url = `${window.location.origin}${window.location.pathname}`
-    const text = buildShareText(positions, placedCount, won, url)
+    const text = dailyDate
+      ? buildDailyShareText(positions, placedCount, won, dailyDate, url)
+      : buildShareText(positions, placedCount, won, url)
 
     try {
       await navigator.clipboard.writeText(text)

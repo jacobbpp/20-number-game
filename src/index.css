@@ -66,13 +66,47 @@ button:focus-visible {
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+}
+
+.header__title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 40px;
+  justify-content: center;
 }
 
 .header__title {
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 0.2px;
+  line-height: 1.1;
+}
+
+.daily-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 4px 10px 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.daily-badge--cta {
+  background: rgba(240, 153, 123, 0.16);
+  border-color: var(--coral-strong);
+  color: var(--coral);
+}
+
+.daily-badge--done {
+  background: #3c3489;
+  color: #cecbf6;
+  padding-left: 10px;
 }
 
 .header__actions {
@@ -685,4 +719,74 @@ button:focus-visible {
   .coach-tip {
     animation: none;
   }
+}
+
+.daily-screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.daily-screen__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.daily-screen__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.daily-screen__recap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  scrollbar-width: thin;
+}
+
+.daily-screen__card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--panel);
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.daily-screen__headline {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.daily-screen__card .result-grid {
+  width: 100%;
+}
+
+.daily-screen__streak {
+  font-size: 13px;
+  font-weight: 600;
+  color: #cecbf6;
+  background: rgba(60, 52, 137, 0.35);
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin: 0;
+}
+
+.daily-screen__tomorrow {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0;
 }
