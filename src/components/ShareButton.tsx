@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { buildDailyShareText, buildShareText } from '../game/share'
 import { vibrate } from '../utils/haptics'
+import { playSound } from '../utils/sound'
 
 interface ShareButtonProps {
   positions: (number | null)[]
@@ -33,6 +34,7 @@ export function ShareButton({ positions, placedCount, won, dailyDate }: ShareBut
     }
 
     vibrate('copy')
+    playSound('copy')
     setCopied(true)
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(() => setCopied(false), 1600)

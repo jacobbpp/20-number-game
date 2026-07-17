@@ -15,7 +15,9 @@ import { useBestScore } from './hooks/useBestScore'
 import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useGameStats } from './hooks/useGameStats'
 import { useOnboarding } from './hooks/useOnboarding'
+import { useSoundSetting } from './hooks/useSoundSetting'
 import { vibrate } from './utils/haptics'
+import { playSound } from './utils/sound'
 
 function startGame() {
   return roll(createInitialState())
@@ -30,6 +32,7 @@ function App() {
   const { bestScore, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
+  const { muted, toggleMuted } = useSoundSetting()
 
   // Frozen once per session — every daily-mode concept ("today's" rng,
   // board size, stored result, streak) derives from this single value
@@ -73,12 +76,16 @@ function App() {
     setResultBadge(isNewBest ? 'new-best' : isTiedBest ? 'tied-best' : null)
 
     vibrate(state.status === 'won' ? 'win' : 'lose')
+    playSound(state.status === 'won' ? 'win' : 'lose')
     reportScore(state.placedCount)
     recordCompletedGame(extractPlacements(state.positions), state.status)
   }, [state.status, state.placedCount, state.positions, reportScore, recordCompletedGame])
 
   useEffect(() => {
-    if (state.placedCount > prevPlacedRef.current) vibrate('place')
+    if (state.placedCount > prevPlacedRef.current) {
+      vibrate('place')
+      playSound('place')
+    }
     prevPlacedRef.current = state.placedCount
   }, [state.placedCount])
 
@@ -95,6 +102,7 @@ function App() {
     if (todayResult) return
 
     vibrate(dailyState.status === 'won' ? 'win' : 'lose')
+    playSound(dailyState.status === 'won' ? 'win' : 'lose')
     recordDailyResult({
       positions: dailyState.positions,
       placedCount: dailyState.placedCount,
@@ -104,7 +112,10 @@ function App() {
   }, [dailyState.status, dailyState.positions, dailyState.placedCount, dailyState.lossReason, todayResult, recordDailyResult])
 
   useEffect(() => {
-    if (dailyState.placedCount > dailyPrevPlacedRef.current) vibrate('place')
+    if (dailyState.placedCount > dailyPrevPlacedRef.current) {
+      vibrate('place')
+      playSound('place')
+    }
     dailyPrevPlacedRef.current = dailyState.placedCount
   }, [dailyState.placedCount])
 
@@ -179,6 +190,8 @@ function App() {
             today={dailyDate}
             dailyBoardSize={dailyBoardSize}
             onOpenDaily={openDaily}
+            muted={muted}
+            onToggleMuted={toggleMuted}
           />
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={state.positions.length} />
           <Board
