@@ -51,6 +51,8 @@ export function StatsScreen({ stats, onClose, onOpenHowToPlay }: StatsScreenProp
         <p className="stats-screen__empty">Play a full game to start building your stats.</p>
       ) : (
         <div className="stats-screen__body">
+          {insight && <p className="stats-screen__insight">{describeInsight(insight)}</p>}
+
           <p className="stats-screen__caption">Where each value range has landed, by position</p>
 
           <div className="heatmap" role="img" aria-label="Heatmap of how often each value range has been placed at each position, with last game's placements outlined">
@@ -89,8 +91,6 @@ export function StatsScreen({ stats, onClose, onOpenHowToPlay }: StatsScreenProp
               <span>outlined = last game&apos;s placement</span>
             </div>
           </div>
-
-          {insight && <p className="stats-screen__insight">{describeInsight(insight)}</p>}
         </div>
       )}
     </div>

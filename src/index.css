@@ -524,10 +524,11 @@ button:focus-visible {
 }
 
 .stats-screen__insight {
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--coral);
   line-height: 1.5;
-  margin: 0 0 4px;
+  margin: 0;
 }
 
 .crash {
