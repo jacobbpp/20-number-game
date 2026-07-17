@@ -526,9 +526,12 @@ button:focus-visible {
 .stats-screen__insight {
   font-size: 14px;
   font-weight: 500;
-  color: var(--coral);
+  color: #cecbf6;
   line-height: 1.5;
   margin: 0;
+  padding: 12px 14px;
+  background: rgba(60, 52, 137, 0.35);
+  border-radius: 12px;
 }
 
 .crash {
