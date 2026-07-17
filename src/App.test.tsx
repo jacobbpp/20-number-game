@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { APP_VERSION } from './version'
 
 // engine.rollNumber computes floor(rng() * 1000) + 1, so (n - 1) / 1000
 // deterministically produces roll n — same convention as engine.test.ts.
@@ -19,8 +20,10 @@ function mockRollSequence(values: number[]) {
 
 beforeEach(() => {
   localStorage.clear()
-  // Skip the first-launch onboarding overlay — not what these tests cover.
+  // Skip the first-launch onboarding overlay and the What's New popup —
+  // not what these tests cover.
   localStorage.setItem('order20-onboarded', '1')
+  localStorage.setItem('order20-whatsnew-seen-version', APP_VERSION)
 })
 
 afterEach(() => {

@@ -6,6 +6,7 @@ import { Header } from './components/Header'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { RollDisplay } from './components/RollDisplay'
 import { StatsScreen } from './components/StatsScreen'
+import { WhatsNewScreen } from './components/WhatsNewScreen'
 import { WinScreen } from './components/WinScreen'
 import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
@@ -16,6 +17,7 @@ import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useGameStats } from './hooks/useGameStats'
 import { useOnboarding } from './hooks/useOnboarding'
 import { useSoundSetting } from './hooks/useSoundSetting'
+import { useWhatsNew } from './hooks/useWhatsNew'
 import { vibrate } from './utils/haptics'
 import { playSound } from './utils/sound'
 
@@ -33,6 +35,7 @@ function App() {
   const { stats, recordCompletedGame } = useGameStats()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
+  const { isOpen: isWhatsNewOpen, unseenEntries, close: closeWhatsNew } = useWhatsNew(hasSeenOnboarding)
 
   // Frozen once per session — every daily-mode concept ("today's" rng,
   // board size, stored result, streak) derives from this single value
@@ -216,6 +219,7 @@ function App() {
         <WinScreen positions={state.positions} onNewGame={handleRestart} />
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}
+      {isWhatsNewOpen && <WhatsNewScreen entries={unseenEntries} onClose={closeWhatsNew} />}
     </div>
   )
 }

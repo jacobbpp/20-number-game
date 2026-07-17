@@ -4,6 +4,7 @@ import App from './App'
 import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
 import { createInitialState, type GameState } from './game/types'
+import { APP_VERSION } from './version'
 
 // Mirrors App.tsx's handleDailySelect exactly (place at the rolled number's
 // first valid position, then roll again unless the game just ended) so the
@@ -29,8 +30,10 @@ function simulateDailyGame(boardSize: number, rng: () => number) {
 
 beforeEach(() => {
   localStorage.clear()
-  // Skip the first-launch onboarding overlay — not what these tests cover.
+  // Skip the first-launch onboarding overlay and the What's New popup —
+  // not what these tests cover.
   localStorage.setItem('order20-onboarded', '1')
+  localStorage.setItem('order20-whatsnew-seen-version', APP_VERSION)
   // Frozen "today" so getDailyBoardSize/createDailyRng/getLocalDateString
   // all agree with what App.tsx's dailyDateRef captures at mount.
   vi.setSystemTime(new Date(2026, 0, 15, 12, 0, 0))
