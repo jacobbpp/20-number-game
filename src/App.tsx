@@ -10,7 +10,7 @@ import { WinScreen } from './components/WinScreen'
 import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
 import { extractPlacements } from './game/stats'
-import { BOARD_SIZE, createInitialState, type ResultBadge } from './game/types'
+import { createInitialState, type ResultBadge } from './game/types'
 import { useBestScore } from './hooks/useBestScore'
 import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useGameStats } from './hooks/useGameStats'
@@ -179,7 +179,7 @@ function App() {
             dailyBoardSize={dailyBoardSize}
             onOpenDaily={openDaily}
           />
-          <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={BOARD_SIZE} />
+          <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={state.positions.length} />
           <Board
             key={gameId}
             positions={state.positions}
