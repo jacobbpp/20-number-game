@@ -15,10 +15,16 @@ correctly to win — one illegal roll ends the run.
 - If the rolled number has no legal position, the game ends immediately.
 - Fill all 20 positions to win.
 
-Your best score (most positions filled across all attempts) is saved on this device. The stats
-screen (bar-chart icon in the header) also tracks, across every completed game, which value range
-tends to land at which position — shown as a heatmap with the most recent game's placements
-outlined, plus a one-line callout on whether the last game followed or broke the pattern.
+Your best score (most positions filled across all attempts) is saved on this device, along with
+the board from that specific run — tap the Best pill in the header to see it. A short "What's
+new" summary appears after an update if anything shipped since you last played, with older
+entries available further down.
+
+The stats screen (bar-chart icon in the header) tracks win rate and average turns per game, plus
+which value range tends to land at which position across every completed game — shown as a
+heatmap with the most recent game's placements outlined. Once there's enough history, it also
+calls out whether the last game followed or broke the usual pattern, and which value range causes
+the most losses.
 
 ## Daily challenge
 
@@ -30,10 +36,22 @@ different days are genuinely different challenges rather than the same 20-slot g
 synchronized numbers. Once played, the badge locks into a recap of the day's result for the rest
 of the day; the Share button on it produces a date-labeled result separate from the free-play
 share text. Playing on consecutive days (win or lose — an honest attempt is what counts) builds a
-streak, shown once it reaches 2 days; missing a day resets it quietly on the next play, with no
-"streak lost" moment. Free play and the daily challenge track separate best scores, streak data,
-and stats — a completed daily doesn't feed the free-play heatmap, since "landed at position 5"
-means something different on a 10-slot board than a 30-slot one.
+streak, shown once it reaches 2 days, with its own share button separate from the day's result;
+missing a day resets it quietly on the next play, with no "streak lost" moment. The last 30 days
+of attempts are available from a "View history" toggle in the recap. Free play and the daily
+challenge track separate best scores, streak data, and stats — a completed daily doesn't feed the
+free-play heatmap, since "landed at position 5" means something different on a 10-slot board than
+a 30-slot one.
+
+## Settings
+
+The gear icon in the header opens sound, theme, and data controls:
+
+- **Sound** — mutes or unmutes the placement, win, loss, and share effects.
+- **Theme** — switches between dark and light. Defaults to the device's own light/dark setting
+  until changed here, then remembers the explicit choice.
+- **Reset all data** — clears every saved score, stat, streak, and preference on this device.
+  Requires a second tap to confirm.
 
 ## Tech stack
 
