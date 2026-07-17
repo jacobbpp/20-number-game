@@ -1,4 +1,5 @@
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { BOARD_SIZE } from '../game/types'
 
 interface HowToPlayScreenProps {
   onClose: () => void
@@ -34,7 +35,7 @@ export function HowToPlayScreen({ onClose }: HowToPlayScreenProps) {
           </div>
         </div>
 
-        <p className="howto__body">One illegal roll ends the run. Fill all 20 to win.</p>
+        <p className="howto__body">One illegal roll ends the run. Fill all {BOARD_SIZE} to win.</p>
 
         <button type="button" className="btn btn--primary" onClick={onClose} autoFocus>
           Got it

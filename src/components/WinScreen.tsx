@@ -1,6 +1,5 @@
 import { ResultGrid } from './ResultGrid'
 import { ShareButton } from './ShareButton'
-import { BOARD_SIZE } from '../game/types'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface WinScreenProps {
@@ -17,13 +16,13 @@ export function WinScreen({ positions, onNewGame }: WinScreenProps) {
         <h2 id="win-title" className="overlay__title">
           Perfect order!
         </h2>
-        <p className="overlay__reason">All 20 positions filled in ascending order.</p>
+        <p className="overlay__reason">All {positions.length} positions filled in ascending order.</p>
         <ResultGrid positions={positions} />
         <div className="overlay__actions">
           <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
             New game
           </button>
-          <ShareButton positions={positions} placedCount={BOARD_SIZE} won />
+          <ShareButton positions={positions} placedCount={positions.length} won />
         </div>
       </div>
     </div>

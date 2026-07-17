@@ -23,7 +23,7 @@ export function GameOverScreen({ reason, placedCount, resultBadge, positions, on
         <p className="overlay__reason">{reason}</p>
         <ResultGrid positions={positions} />
         <p className="overlay__score">
-          {placedCount} of 20 placed
+          {placedCount} of {positions.length} placed
           {resultBadge === 'new-best' && ' · new best!'}
           {resultBadge === 'tied-best' && ' · matched your best!'}
         </p>
