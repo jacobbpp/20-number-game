@@ -472,6 +472,17 @@ button:focus-visible {
   border: 1px solid rgba(var(--surface-tint-rgb), 0.2);
 }
 
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn--danger-outline {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
 .result-grid {
   display: grid;
   grid-auto-flow: column;
@@ -621,6 +632,85 @@ button:focus-visible {
   padding: 10px 14px;
   background: var(--purple-tint-bg);
   border-radius: 12px;
+}
+
+.settings-screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-screen__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-screen__title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.settings-screen__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(var(--surface-tint-rgb), 0.05);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.settings-divider {
+  height: 1px;
+  background: rgba(var(--surface-tint-rgb), 0.12);
+  margin: 4px 0;
+}
+
+.settings-reset {
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--danger-bg);
+  border: 1px solid rgba(226, 75, 74, 0.3);
+}
+
+.settings-reset__title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.settings-reset__body {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.settings-reset--confirm .settings-reset__body {
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.settings-reset__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-reset__actions .btn {
+  flex: 1;
 }
 
 .crash {

@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.12.0',
+    date: '2026-07-17',
+    title: 'Settings screen',
+    description: 'Sound and theme now live together on a proper settings screen, reachable from the gear icon in the header. Added a reset-all-data option there too.',
+  },
+  {
     version: '1.11.0',
     date: '2026-07-17',
     title: 'Light theme',

@@ -6,6 +6,7 @@ import { GameOverScreen } from './components/GameOverScreen'
 import { Header } from './components/Header'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { RollDisplay } from './components/RollDisplay'
+import { SettingsScreen } from './components/SettingsScreen'
 import { StatsScreen } from './components/StatsScreen'
 import { WhatsNewScreen } from './components/WhatsNewScreen'
 import { WinScreen } from './components/WinScreen'
@@ -30,6 +31,7 @@ function App() {
   const [gameId, setGameId] = useState(0)
   const [isStatsOpen, setIsStatsOpen] = useState(false)
   const [isDailyOpen, setIsDailyOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
@@ -165,12 +167,20 @@ function App() {
 
   const openStats = () => {
     setIsDailyOpen(false)
+    setIsSettingsOpen(false)
     setIsStatsOpen(true)
   }
 
   const openDaily = () => {
     setIsStatsOpen(false)
+    setIsSettingsOpen(false)
     setIsDailyOpen(true)
+  }
+
+  const openSettings = () => {
+    setIsStatsOpen(false)
+    setIsDailyOpen(false)
+    setIsSettingsOpen(true)
   }
 
   return (
@@ -189,9 +199,16 @@ function App() {
         <StatsScreen
           stats={stats}
           theme={theme}
-          onToggleTheme={toggleTheme}
           onClose={() => setIsStatsOpen(false)}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
+        />
+      ) : isSettingsOpen ? (
+        <SettingsScreen
+          muted={muted}
+          onToggleMuted={toggleMuted}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onClose={() => setIsSettingsOpen(false)}
         />
       ) : (
         <>
@@ -205,8 +222,7 @@ function App() {
             today={dailyDate}
             dailyBoardSize={dailyBoardSize}
             onOpenDaily={openDaily}
-            muted={muted}
-            onToggleMuted={toggleMuted}
+            onOpenSettings={openSettings}
             onOpenBestRun={() => setIsBestRunOpen(true)}
           />
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={state.positions.length} />
@@ -219,7 +235,7 @@ function App() {
         </>
       )}
 
-      {!isStatsOpen && !isDailyOpen && state.status === 'lost' && (
+      {!isStatsOpen && !isDailyOpen && !isSettingsOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
@@ -228,7 +244,7 @@ function App() {
           onNewGame={handleRestart}
         />
       )}
-      {!isStatsOpen && !isDailyOpen && state.status === 'won' && (
+      {!isStatsOpen && !isDailyOpen && !isSettingsOpen && state.status === 'won' && (
         <WinScreen positions={state.positions} onNewGame={handleRestart} />
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}

@@ -16,13 +16,13 @@ afterEach(() => {
 describe('theme', () => {
   it('defaults to dark when there is no stored preference', async () => {
     render(<App />)
-    await screen.findByRole('button', { name: 'View stats' })
+    await screen.findByRole('button', { name: 'Settings' })
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
-  it('toggling from the stats screen switches to light and back', async () => {
+  it('toggling from the settings screen switches to light and back', async () => {
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Settings' }))
 
     fireEvent.click(await screen.findByRole('button', { name: 'Switch to light theme' }))
     expect(document.documentElement.dataset.theme).toBe('light')
@@ -35,12 +35,12 @@ describe('theme', () => {
 
   it('remembers the choice across a refresh', async () => {
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Settings' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Switch to light theme' }))
 
     cleanup()
     render(<App />)
-    await screen.findByRole('button', { name: 'View stats' })
+    await screen.findByRole('button', { name: 'Settings' })
     expect(document.documentElement.dataset.theme).toBe('light')
   })
 })

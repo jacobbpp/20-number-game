@@ -6,7 +6,6 @@ import { lerpColor, type RGB } from '../utils/color'
 interface StatsScreenProps {
   stats: StatsData
   theme: Theme
-  onToggleTheme: () => void
   onClose: () => void
   onOpenHowToPlay: () => void
 }
@@ -20,7 +19,7 @@ function cellColor(count: number, peak: number, theme: Theme): string {
   return lerpColor(zeroRgb, AMBER_RGB, peak === 0 ? 0 : count / peak)
 }
 
-export function StatsScreen({ stats, theme, onToggleTheme, onClose, onOpenHowToPlay }: StatsScreenProps) {
+export function StatsScreen({ stats, theme, onClose, onOpenHowToPlay }: StatsScreenProps) {
   const { matrix, totalGames, lastGame } = stats
   const peak = maxCount(matrix)
   const insight = computeInsight(stats)
@@ -42,23 +41,6 @@ export function StatsScreen({ stats, theme, onToggleTheme, onClose, onOpenHowToP
             <path d="M9.5 9a2.5 2.5 0 0 1 4.9.75c0 1.5-2.15 2-2.4 3.25" />
             <path d="M12 17.5v.01" />
           </svg>
-        </button>
-        <button
-          type="button"
-          className="icon-btn icon-btn--small"
-          onClick={onToggleTheme}
-          aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
-        >
-          {theme === 'light' ? (
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 3v2M12 19v2M5 5l1.4 1.4M17.6 17.6 19 19M3 12h2M19 12h2M5 19l1.4-1.4M17.6 6.4 19 5" />
-            </svg>
-          )}
         </button>
         <span className="pill header__best">
           {totalGames} game{totalGames === 1 ? '' : 's'}
