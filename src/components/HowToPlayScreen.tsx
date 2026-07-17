@@ -1,10 +1,14 @@
+import { useFocusTrap } from '../hooks/useFocusTrap'
+
 interface HowToPlayScreenProps {
   onClose: () => void
 }
 
 export function HowToPlayScreen({ onClose }: HowToPlayScreenProps) {
+  const containerRef = useFocusTrap<HTMLDivElement>()
+
   return (
-    <div className="overlay" role="alertdialog" aria-labelledby="howto-title">
+    <div className="overlay" role="alertdialog" aria-labelledby="howto-title" ref={containerRef}>
       <div className="overlay__card howto">
         <h2 id="howto-title" className="overlay__title howto__title">
           How to play

@@ -1,4 +1,5 @@
 import type { ChangelogEntry } from '../changelog'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface WhatsNewScreenProps {
   entries: ChangelogEntry[]
@@ -7,9 +8,10 @@ interface WhatsNewScreenProps {
 
 export function WhatsNewScreen({ entries, onClose }: WhatsNewScreenProps) {
   const [latest, ...older] = entries
+  const containerRef = useFocusTrap<HTMLDivElement>()
 
   return (
-    <div className="overlay" role="alertdialog" aria-labelledby="whatsnew-title">
+    <div className="overlay" role="alertdialog" aria-labelledby="whatsnew-title" ref={containerRef}>
       <div className="overlay__card whatsnew">
         <h2 id="whatsnew-title" className="overlay__title whatsnew__title">
           What's new

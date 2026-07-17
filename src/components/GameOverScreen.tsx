@@ -1,6 +1,7 @@
 import { ResultGrid } from './ResultGrid'
 import { ShareButton } from './ShareButton'
 import type { ResultBadge } from '../game/types'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface GameOverScreenProps {
   reason: string
@@ -11,8 +12,10 @@ interface GameOverScreenProps {
 }
 
 export function GameOverScreen({ reason, placedCount, resultBadge, positions, onNewGame }: GameOverScreenProps) {
+  const containerRef = useFocusTrap<HTMLDivElement>()
+
   return (
-    <div className="overlay" role="alertdialog" aria-labelledby="gameover-title">
+    <div className="overlay" role="alertdialog" aria-labelledby="gameover-title" ref={containerRef}>
       <div className="overlay__card overlay__card--lose">
         <h2 id="gameover-title" className="overlay__title">
           Game over

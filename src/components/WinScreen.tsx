@@ -1,6 +1,7 @@
 import { ResultGrid } from './ResultGrid'
 import { ShareButton } from './ShareButton'
 import { BOARD_SIZE } from '../game/types'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface WinScreenProps {
   positions: (number | null)[]
@@ -8,8 +9,10 @@ interface WinScreenProps {
 }
 
 export function WinScreen({ positions, onNewGame }: WinScreenProps) {
+  const containerRef = useFocusTrap<HTMLDivElement>()
+
   return (
-    <div className="overlay" role="alertdialog" aria-labelledby="win-title">
+    <div className="overlay" role="alertdialog" aria-labelledby="win-title" ref={containerRef}>
       <div className="overlay__card overlay__card--win">
         <h2 id="win-title" className="overlay__title">
           Perfect order!

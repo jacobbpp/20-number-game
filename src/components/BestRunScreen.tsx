@@ -1,5 +1,6 @@
 import { ResultGrid } from './ResultGrid'
 import type { BestRun } from '../hooks/useBestScore'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface BestRunScreenProps {
   bestScore: number
@@ -12,8 +13,10 @@ function formatAchievedDate(iso: string): string {
 }
 
 export function BestRunScreen({ bestScore, bestRun, onClose }: BestRunScreenProps) {
+  const containerRef = useFocusTrap<HTMLDivElement>()
+
   return (
-    <div className="overlay" role="alertdialog" aria-labelledby="bestrun-title">
+    <div className="overlay" role="alertdialog" aria-labelledby="bestrun-title" ref={containerRef}>
       <div className="overlay__card">
         <h2 id="bestrun-title" className="overlay__title">
           Your best
