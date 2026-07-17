@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Board } from './components/Board'
 import { GameOverScreen } from './components/GameOverScreen'
 import { Header } from './components/Header'
+import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { RollDisplay } from './components/RollDisplay'
 import { StatsScreen } from './components/StatsScreen'
 import { WinScreen } from './components/WinScreen'
@@ -10,6 +11,7 @@ import { extractPlacements } from './game/stats'
 import { BOARD_SIZE, createInitialState, type ResultBadge } from './game/types'
 import { useBestScore } from './hooks/useBestScore'
 import { useGameStats } from './hooks/useGameStats'
+import { useOnboarding } from './hooks/useOnboarding'
 import { vibrate } from './utils/haptics'
 
 function startGame() {
@@ -23,6 +25,8 @@ function App() {
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
   const { bestScore, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
+  const { hasSeenOnboarding, markSeen } = useOnboarding()
+  const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
   const prevPlacedRef = useRef(state.placedCount)
 
   useEffect(() => {
@@ -63,10 +67,19 @@ function App() {
     setResultBadge(null)
   }
 
+  const handleCloseHowToPlay = () => {
+    setIsHowToPlayOpen(false)
+    markSeen()
+  }
+
   return (
     <div className="app">
       {isStatsOpen ? (
-        <StatsScreen stats={stats} onClose={() => setIsStatsOpen(false)} />
+        <StatsScreen
+          stats={stats}
+          onClose={() => setIsStatsOpen(false)}
+          onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
+        />
       ) : (
         <>
           <Header bestScore={bestScore} onRestart={handleRestart} onOpenStats={() => setIsStatsOpen(true)} />
@@ -90,6 +103,7 @@ function App() {
         />
       )}
       {!isStatsOpen && state.status === 'won' && <WinScreen positions={state.positions} onNewGame={handleRestart} />}
+      {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}
     </div>
   )
 }

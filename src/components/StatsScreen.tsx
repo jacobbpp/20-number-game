@@ -4,6 +4,7 @@ import { BUCKET_SIZE, VALUE_BUCKETS, bucketForValue, computeInsight, describeIns
 interface StatsScreenProps {
   stats: StatsData
   onClose: () => void
+  onOpenHowToPlay: () => void
 }
 
 const PANEL_RGB: [number, number, number] = [42, 33, 81] // #2A2151
@@ -18,7 +19,7 @@ function cellColor(count: number, peak: number): string {
   return `rgb(${r} ${g} ${b})`
 }
 
-export function StatsScreen({ stats, onClose }: StatsScreenProps) {
+export function StatsScreen({ stats, onClose, onOpenHowToPlay }: StatsScreenProps) {
   const { matrix, totalGames, lastGame } = stats
   const peak = maxCount(matrix)
   const insight = computeInsight(stats)
@@ -35,6 +36,12 @@ export function StatsScreen({ stats, onClose }: StatsScreenProps) {
           </svg>
         </button>
         <span className="stats-screen__title">Stats</span>
+        <button type="button" className="icon-btn icon-btn--small" onClick={onOpenHowToPlay} aria-label="How to play">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9.5 9a2.5 2.5 0 0 1 4.9.75c0 1.5-2.15 2-2.4 3.25" />
+            <path d="M12 17.5v.01" />
+          </svg>
+        </button>
         <span className="pill header__best">
           {totalGames} game{totalGames === 1 ? '' : 's'}
         </span>
