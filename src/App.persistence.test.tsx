@@ -119,4 +119,30 @@ describe('daily challenge persistence', () => {
     expect(await screen.findByText(/0 of .+ placed/)).toBeInTheDocument()
     expect(screen.queryByText(/1 of .+ placed/)).not.toBeInTheDocument()
   })
+
+  it('discards a same-day in-progress attempt whose size no longer matches today\'s rotation', async () => {
+    const today = getLocalDateString()
+    const actualSize = getDailyBoardSize(today)
+
+    localStorage.setItem(
+      'order20-current-daily-game',
+      JSON.stringify({
+        date: today,
+        state: {
+          status: 'idle',
+          positions: Array(20).fill(null),
+          usedNumbers: [],
+          currentRoll: null,
+          validPositions: [],
+          placedCount: 0,
+          lossReason: null,
+        },
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`${actualSize}-slot challenge`) }))
+
+    expect(await screen.findByText(`0 of ${actualSize} placed · tap a lit position`)).toBeInTheDocument()
+  })
 })

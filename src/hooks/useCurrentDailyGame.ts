@@ -14,7 +14,7 @@ function isStoredDailyGame(value: unknown): value is StoredDailyGame {
   return typeof candidate.date === 'string' && isGameState(candidate.state)
 }
 
-function readGame(today: string): GameState | null {
+function readGame(today: string, expectedSize: number): GameState | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
@@ -24,7 +24,13 @@ function readGame(today: string): GameState | null {
     // A persisted attempt from a previous day is a different puzzle
     // entirely (different board size, different roll sequence) — never
     // resume it as if it were today's.
-    return parsed.date === today ? parsed.state : null
+    if (parsed.date !== today) return null
+    // If today's own board size rotation ever changes (e.g. a size gets
+    // added or removed from the curated set), a same-day in-progress game
+    // created under the old mapping would otherwise keep resuming forever
+    // — discard it and regenerate rather than resume a stale size.
+    if (parsed.state.positions.length !== expectedSize) return null
+    return parsed.state
   } catch {
     return null
   }
@@ -44,8 +50,8 @@ function writeGame(today: string, state: GameState) {
 // flag is needed here (unlike useCurrentGame) — todayResult from
 // useDailyChallenge already serves that purpose once the attempt
 // finishes, since it's read back from its own persisted key on mount.
-export function useCurrentDailyGame(today: string, createInitial: () => GameState) {
-  const [state, setState] = useState<GameState>(() => readGame(today) ?? createInitial())
+export function useCurrentDailyGame(today: string, expectedSize: number, createInitial: () => GameState) {
+  const [state, setState] = useState<GameState>(() => readGame(today, expectedSize) ?? createInitial())
 
   useEffect(() => {
     writeGame(today, state)

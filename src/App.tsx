@@ -64,7 +64,7 @@ function App() {
   // roll in today's attempt, so the sequence is identical for every player.
   const dailyRngRef = useRef(createDailyRng(dailyDate))
   const dailyBoardSize = getDailyBoardSize(dailyDate)
-  const [dailyState, setDailyState] = useCurrentDailyGame(dailyDate, () =>
+  const [dailyState, setDailyState] = useCurrentDailyGame(dailyDate, dailyBoardSize, () =>
     roll(createInitialState(dailyBoardSize), dailyRngRef.current),
   )
   const dailyPrevPlacedRef = useRef(dailyState.placedCount)
