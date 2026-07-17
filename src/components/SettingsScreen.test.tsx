@@ -8,6 +8,8 @@ function renderScreen(overrides: Partial<Parameters<typeof SettingsScreen>[0]> =
     onToggleMuted: vi.fn(),
     theme: 'dark' as const,
     onToggleTheme: vi.fn(),
+    version: '1.0.0',
+    onOpenChangelog: vi.fn(),
     onClose: vi.fn(),
     ...overrides,
   }
@@ -33,6 +35,15 @@ describe('SettingsScreen', () => {
     const props = renderScreen()
     fireEvent.click(screen.getByRole('button', { name: 'Switch to light theme' }))
     expect(props.onToggleTheme).toHaveBeenCalledOnce()
+  })
+
+  it('shows the current version and opens the changelog when tapped', () => {
+    const props = renderScreen({ version: '2.3.4' })
+    const versionButton = screen.getByRole('button', { name: 'Version 2.3.4. View release notes' })
+    expect(versionButton).toHaveTextContent('v2.3.4')
+
+    fireEvent.click(versionButton)
+    expect(props.onOpenChangelog).toHaveBeenCalledOnce()
   })
 
   it('requires a second tap before resetting data', () => {

@@ -10,6 +10,7 @@ import { SettingsScreen } from './components/SettingsScreen'
 import { StatsScreen } from './components/StatsScreen'
 import { WhatsNewScreen } from './components/WhatsNewScreen'
 import { WinScreen } from './components/WinScreen'
+import { CHANGELOG } from './changelog'
 import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
 import { extractPlacements } from './game/stats'
@@ -25,6 +26,7 @@ import { useTheme } from './hooks/useTheme'
 import { useWhatsNew } from './hooks/useWhatsNew'
 import { vibrate } from './utils/haptics'
 import { playSound } from './utils/sound'
+import { APP_VERSION } from './version'
 
 function App() {
   const { state, setState, hasRecorded, setHasRecorded, restart } = useCurrentGame()
@@ -33,6 +35,7 @@ function App() {
   const [isDailyOpen, setIsDailyOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
+  const [isChangelogOpen, setIsChangelogOpen] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
@@ -222,6 +225,8 @@ function App() {
           onToggleMuted={toggleMuted}
           theme={theme}
           onToggleTheme={toggleTheme}
+          version={APP_VERSION}
+          onOpenChangelog={() => setIsChangelogOpen(true)}
           onClose={() => setIsSettingsOpen(false)}
         />
       ) : (
@@ -263,6 +268,7 @@ function App() {
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}
       {isWhatsNewOpen && <WhatsNewScreen entries={unseenEntries} onClose={closeWhatsNew} />}
+      {isChangelogOpen && <WhatsNewScreen entries={CHANGELOG} onClose={() => setIsChangelogOpen(false)} />}
       {isBestRunOpen && <BestRunScreen bestScore={bestScore} bestRun={bestRun} onClose={() => setIsBestRunOpen(false)} />}
     </div>
   )

@@ -18,7 +18,8 @@ correctly to win — one illegal roll ends the run.
 Your best score (most positions filled across all attempts) is saved on this device, along with
 the board from that specific run — tap the Best pill in the header to see it. A short "What's
 new" summary appears after an update if anything shipped since you last played, with older
-entries available further down.
+entries available further down. The full release history is always available too — the version
+number in Settings opens the same view with every past update, not just what's unseen.
 
 The stats screen (bar-chart icon in the header) tracks win rate and win streak (plus your
 best-ever streak, once you've broken one), and shows a chart of how far your runs usually get,
@@ -52,6 +53,7 @@ The gear icon in the header opens sound, theme, and data controls:
 - **Sound** — mutes or unmutes the placement, win, loss, and share effects.
 - **Theme** — switches between dark and light. Defaults to the device's own light/dark setting
   until changed here, then remembers the explicit choice.
+- **Version** — shows the installed version; tap it to browse the full release history.
 - **Reset all data** — clears every saved score, stat, streak, and preference on this device.
   Requires a second tap to confirm.
 

@@ -7,10 +7,20 @@ interface SettingsScreenProps {
   onToggleMuted: () => void
   theme: Theme
   onToggleTheme: () => void
+  version: string
+  onOpenChangelog: () => void
   onClose: () => void
 }
 
-export function SettingsScreen({ muted, onToggleMuted, theme, onToggleTheme, onClose }: SettingsScreenProps) {
+export function SettingsScreen({
+  muted,
+  onToggleMuted,
+  theme,
+  onToggleTheme,
+  version,
+  onOpenChangelog,
+  onClose,
+}: SettingsScreenProps) {
   const [isConfirmingReset, setIsConfirmingReset] = useState(false)
 
   const handleConfirmReset = () => {
@@ -73,6 +83,13 @@ export function SettingsScreen({ muted, onToggleMuted, theme, onToggleTheme, onC
                 <path d="M12 3v2M12 19v2M5 5l1.4 1.4M17.6 17.6 19 19M3 12h2M19 12h2M5 19l1.4-1.4M17.6 6.4 19 5" />
               </svg>
             )}
+          </button>
+        </div>
+
+        <div className="settings-row">
+          <span>Version</span>
+          <button type="button" className="pill header__best" onClick={onOpenChangelog} aria-label={`Version ${version}. View release notes`}>
+            v{version}
           </button>
         </div>
 

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+import { CHANGELOG } from './changelog'
 import { APP_VERSION } from './version'
 
 beforeEach(() => {
@@ -46,5 +47,24 @@ describe('settings screen', () => {
 
     expect(await screen.findByRole('button', { name: 'Settings' })).toBeInTheDocument()
     expect(screen.queryByText(/Reset all data/)).not.toBeInTheDocument()
+  })
+
+  it('shows the current version, and opens the full changelog — not just unseen entries — when tapped', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Settings' }))
+
+    const versionButton = await screen.findByRole('button', { name: `Version ${APP_VERSION}. View release notes` })
+    expect(versionButton).toHaveTextContent(`v${APP_VERSION}`)
+
+    fireEvent.click(versionButton)
+
+    // Every version already "seen" per beforeEach — a real What's New popup
+    // would show nothing. This one shows the full history regardless.
+    const latest = CHANGELOG[0]
+    const older = CHANGELOG[CHANGELOG.length - 1]
+    expect(await screen.findByText("What's new")).toBeInTheDocument()
+    expect(screen.getByText(latest.title)).toBeInTheDocument()
+    expect(screen.getByText(`v${older.version}`)).toBeInTheDocument()
+    expect(screen.getByText(older.title)).toBeInTheDocument()
   })
 })
