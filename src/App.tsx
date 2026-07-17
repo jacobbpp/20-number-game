@@ -28,14 +28,17 @@ function App() {
   useEffect(() => {
     if (state.status !== 'won' && state.status !== 'lost') return
 
-    // bestScore is deliberately read from the closure here, not the dependency
-    // array: it's the value from BEFORE reportScore updates it below, which is
-    // exactly what "did this run beat the old best" needs. Adding bestScore to
-    // the deps would re-fire this effect the moment reportScore changes it,
-    // double-recording the same game into stats.
-    setResultBadge(
-      state.placedCount > bestScore ? 'new-best' : state.placedCount > 0 && state.placedCount === bestScore && bestScore > 0 ? 'tied-best' : null,
-    )
+    // bestScore is deliberately excluded from this effect's dependency array
+    // (oxlint's exhaustive-deps warning on the next line is expected and
+    // safe to ignore): it's read from the closure below at the value from
+    // BEFORE reportScore updates it, which is exactly what "did this run
+    // beat the old best" needs. Adding bestScore to the deps would re-fire
+    // this effect the moment reportScore changes it, double-recording the
+    // same game into stats.
+    const isNewBest = state.placedCount > bestScore
+    const isTiedBest = !isNewBest && state.placedCount > 0 && state.placedCount === bestScore
+    setResultBadge(isNewBest ? 'new-best' : isTiedBest ? 'tied-best' : null)
+
     vibrate(state.status === 'won' ? 'win' : 'lose')
     reportScore(state.placedCount)
     recordCompletedGame(extractPlacements(state.positions), state.status)
