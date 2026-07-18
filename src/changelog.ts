@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.20.0',
+    date: '2026-07-19',
+    title: 'Deeper insights, and the share image is back',
+    description: 'Insights is now a feed of real patterns — your best value range, toughest range, most-used position, and hard mode win rate vs overall — each shown once there\'s enough data behind it. The share image returns too, redesigned to match the board\'s own look instead of the oversized version from before.',
+  },
+  {
     version: '1.19.1',
     date: '2026-07-19',
     title: 'Back to plain text sharing',

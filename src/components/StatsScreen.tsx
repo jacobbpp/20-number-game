@@ -4,14 +4,17 @@ import {
   VALUE_BUCKETS,
   averageTurns,
   averageTurnsInWins,
+  bestValueRange,
   bucketForValue,
   bucketLabel,
   computeInsight,
   describeInsight,
   describeScoreDistribution,
+  hardModeWinRate,
   maxCount,
   mostCommonLossBucket,
   scoreBucketLabel,
+  signaturePosition,
   winRate,
   type StatsData,
 } from '../game/stats'
@@ -84,8 +87,12 @@ export function StatsScreen({
   const avgTurns = averageTurns(stats)
   const avgTurnsWins = averageTurnsInWins(stats)
   const lossBucket = mostCommonLossBucket(stats)
+  const bestRange = bestValueRange(stats)
+  const signature = signaturePosition(stats)
+  const hardRate = hardModeWinRate(stats)
   const scoreMax = Math.max(...stats.scoreDistribution, 1)
   const currentDailyStreak = isStreakActive(streak, today) ? streak.count : 0
+  const insightCount = [bestRange !== null, lossBucket !== null, signature !== null, hardRate !== null, insight !== null].filter(Boolean).length
 
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
@@ -98,8 +105,7 @@ export function StatsScreen({
         ? `Best: ${streak.bestStreak} days`
         : 'No streak yet'
   const averagePreview = `${avgTurns?.toFixed(1)} avg. turns`
-  const insightsPreview =
-    lossBucket !== null ? `Most losses in ${bucketLabel(lossBucket)}` : insight ? 'See how your last game compared' : 'Not enough data yet'
+  const insightsPreview = insightCount > 0 ? `${insightCount} pattern${insightCount === 1 ? '' : 's'} found` : 'Not enough data yet'
 
   const menuItems: { key: Exclude<StatsSection, 'menu'>; title: string; preview: string }[] = [
     { key: 'heatmap', title: 'Heatmap', preview: 'Where each value range lands' },
@@ -199,10 +205,74 @@ export function StatsScreen({
           )}
 
           {section === 'insights' && (
-            <div className="stats-screen__insight">
-              {lossBucket !== null && <p>Most losses happen when rolling in the {bucketLabel(lossBucket)} range.</p>}
-              {insight && <p>{describeInsight(insight)}</p>}
-              {lossBucket === null && !insight && <p className="stats-screen__caption">Not enough games yet to spot a pattern — keep playing.</p>}
+            <div className="insights-list">
+              {bestRange !== null && (
+                <div className="insight-card insight-card--best">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🎯
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Best range</p>
+                    <p className="insight-card__desc">
+                      {bucketLabel(bestRange.bucket)} is your strongest range — {bestRange.winRatePercent}% of placements there end in a win.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {lossBucket !== null && (
+                <div className="insight-card insight-card--worst">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    ⚠️
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Toughest range</p>
+                    <p className="insight-card__desc">Most losses happen when rolling in the {bucketLabel(lossBucket)} range.</p>
+                  </div>
+                </div>
+              )}
+
+              {signature !== null && (
+                <div className="insight-card insight-card--position">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    📍
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Signature position</p>
+                    <p className="insight-card__desc">
+                      Position {signature.position + 1} is your most-used slot — filled {signature.count} times.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {hardRate !== null && (
+                <div className="insight-card insight-card--hardmode">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🛡️
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Hard mode</p>
+                    <p className="insight-card__desc">
+                      {hardRate}% win rate with hard mode on, vs {rate}% overall.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {insight && (
+                <div className="insight-card insight-card--neutral">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🔄
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Last game</p>
+                    <p className="insight-card__desc">{describeInsight(insight)}</p>
+                  </div>
+                </div>
+              )}
+
+              {insightCount === 0 && <p className="stats-screen__caption">Not enough games yet to spot a pattern — keep playing.</p>}
             </div>
           )}
 

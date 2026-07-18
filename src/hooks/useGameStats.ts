@@ -44,6 +44,14 @@ function normalizeStats(data: StatsData): StatsData {
           ? data.currentWinStreak
           : 0,
     hardModeWins: typeof data.hardModeWins === 'number' ? data.hardModeWins : 0,
+    // A missing hardModeGames can't be less than whatever hardModeWins
+    // already is — every hard-mode win is necessarily a hard-mode game.
+    hardModeGames:
+      typeof data.hardModeGames === 'number'
+        ? data.hardModeGames
+        : typeof data.hardModeWins === 'number'
+          ? data.hardModeWins
+          : 0,
     scoreDistribution:
       Array.isArray(data.scoreDistribution) && data.scoreDistribution.length === SCORE_BUCKETS
         ? data.scoreDistribution

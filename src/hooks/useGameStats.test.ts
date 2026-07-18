@@ -88,7 +88,7 @@ describe('useGameStats', () => {
     expect(result.current.stats.hardModeWins).toBe(0)
   })
 
-  it('threads hardMode through to hardModeWins on a win', () => {
+  it('threads hardMode through to hardModeWins and hardModeGames on a win', () => {
     const { result } = renderHook(() => useGameStats())
 
     act(() => {
@@ -96,6 +96,26 @@ describe('useGameStats', () => {
     })
 
     expect(result.current.stats.hardModeWins).toBe(1)
+    expect(result.current.stats.hardModeGames).toBe(1)
+  })
+
+  it('infers a missing hardModeGames from hardModeWins rather than defaulting to 0', () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 5,
+        totalWins: 2,
+        hardModeWins: 2, // no hardModeGames field saved yet
+        matrix: Array.from({ length: 20 }, () => Array(10).fill(0)),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    const { result } = renderHook(() => useGameStats())
+
+    // Can't have fewer hard-mode games than hard-mode wins.
+    expect(result.current.stats.hardModeGames).toBe(2)
   })
 
   it('records the losing roll into lossBucketCounts', () => {

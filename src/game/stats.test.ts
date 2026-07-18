@@ -7,10 +7,13 @@ import {
   createEmptyStats,
   describeScoreDistribution,
   extractPlacements,
+  bestValueRange,
+  hardModeWinRate,
   mostCommonLossBucket,
   recordGame,
   scoreBucketForCount,
   scoreBucketLabel,
+  signaturePosition,
   suggestedPosition,
   winRate,
   type StatsData,
@@ -94,6 +97,15 @@ describe('recordGame', () => {
     let stats = createEmptyStats()
     stats = recordGame(stats, [{ position: 0, value: 10 }], 'lost', 900, 20, true)
     expect(stats.hardModeWins).toBe(0)
+  })
+
+  it('counts every hard-mode game toward hardModeGames, win or lose', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'won', null, 20, true)
+    stats = recordGame(stats, [{ position: 1, value: 20 }], 'lost', 900, 20, true)
+    stats = recordGame(stats, [{ position: 2, value: 30 }], 'won', null, 20, false)
+    expect(stats.hardModeGames).toBe(2)
+    expect(stats.hardModeWins).toBe(1)
   })
 
   it('tracks winTurns and resets currentWinStreak on a loss', () => {
@@ -233,6 +245,60 @@ describe('mostCommonLossBucket', () => {
     stats = recordGame(stats, [], 'lost', 850) // bucket 8
     stats = recordGame(stats, [], 'lost', 270) // bucket 2 — now the clear majority
     expect(mostCommonLossBucket(stats)).toBe(2)
+  })
+})
+
+describe('bestValueRange', () => {
+  it('returns null when no bucket has enough placements behind it', () => {
+    const stats = createEmptyStats()
+    stats.winMatrix[0][2] = 1
+    stats.lossMatrix[1][2] = 1
+    expect(bestValueRange(stats)).toBeNull()
+  })
+
+  it('returns the bucket with the highest win-association ratio once there is enough signal', () => {
+    const stats = createEmptyStats()
+    // bucket 2: 4 wins, 1 loss -> 80%
+    stats.winMatrix[0][2] = 4
+    stats.lossMatrix[1][2] = 1
+    // bucket 5: 1 win, 4 losses -> 20%
+    stats.winMatrix[2][5] = 1
+    stats.lossMatrix[3][5] = 4
+    expect(bestValueRange(stats)).toEqual({ bucket: 2, winRatePercent: 80 })
+  })
+})
+
+describe('signaturePosition', () => {
+  it('returns null before there are enough games', () => {
+    const stats = createEmptyStats()
+    stats.totalGames = 4
+    stats.matrix[3][0] = 10
+    expect(signaturePosition(stats)).toBeNull()
+  })
+
+  it('returns the position filled most often once there are enough games', () => {
+    const stats = createEmptyStats()
+    stats.totalGames = 5
+    stats.matrix[3][0] = 2
+    stats.matrix[3][4] = 3
+    stats.matrix[7][1] = 4
+    expect(signaturePosition(stats)).toEqual({ position: 3, count: 5 })
+  })
+})
+
+describe('hardModeWinRate', () => {
+  it('returns null before there are enough hard-mode games', () => {
+    const stats = createEmptyStats()
+    stats.hardModeGames = 2
+    stats.hardModeWins = 2
+    expect(hardModeWinRate(stats)).toBeNull()
+  })
+
+  it('returns the win rate restricted to hard-mode games', () => {
+    const stats = createEmptyStats()
+    stats.hardModeGames = 4
+    stats.hardModeWins = 3
+    expect(hardModeWinRate(stats)).toBe(75)
   })
 })
 

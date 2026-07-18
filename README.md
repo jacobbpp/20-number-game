@@ -22,8 +22,10 @@ correctly to win — one illegal roll ends the run.
   appears once there's enough history behind it, and never in hard mode. Free play only — daily
   board sizes vary, so a "usual spot" wouldn't mean the same thing from one day to the next.
 
-A Share button on the win/loss screen copies a Wordle-style text grid to your clipboard, ready to
-paste anywhere.
+A Share button on the win/loss screen produces a Wordle-style text grid by default. On phones that
+support sharing files (most modern ones), it instead opens the native share sheet with a generated
+image of the board, styled to match the board itself — and falls back to the copyable text
+everywhere else.
 
 Your best score (most positions filled across all attempts) is saved on this device, along with
 the board from that specific run — tap the Best pill in the header to see it. A short "What's
@@ -38,9 +40,12 @@ covers win rate and win streak (plus your best-ever streak, once you've broken o
 mirrors that for the daily challenge (current and best). Average score shows average turns per
 game, overall and for wins only, alongside a chart of how far your runs usually get. Heatmap tracks
 which value range tends to land at which position across every completed game, with the most
-recent game's placements outlined, filterable to wins-only or losses-only. Insights calls out
-whether the last game followed or broke the usual pattern, and which value range causes the most
-losses, once there's enough history for either.
+recent game's placements outlined, filterable to wins-only or losses-only. Insights is a feed of
+independent observations, each gated on its own data threshold so a newer player just sees fewer
+cards rather than a shaky one: your best-associated value range (highest share of placements ending
+in a win), your toughest range (most common cause of a loss), your most-used position, your win
+rate with hard mode on versus overall, and whether the last game followed or broke the usual
+pattern.
 
 A trophy pill on that same screen ("3/7", etc.) opens the achievements list — first win, win
 streaks, games-played milestones, a daily-streak milestone, and one for winning with hard mode on.

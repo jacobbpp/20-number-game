@@ -26,6 +26,7 @@ export interface StatsData {
   currentWinStreak: number // consecutive wins, resets to 0 on any loss
   bestWinStreak: number // longest currentWinStreak has ever reached
   hardModeWins: number // wins recorded while hard mode was on
+  hardModeGames: number // games (won or lost) recorded while hard mode was on
   scoreDistribution: number[] // placedCount bucketed into SCORE_BUCKETS ranges, across all games
   matrix: number[][] // matrix[position][bucket], across all games
   winMatrix: number[][] // same shape, won games only
@@ -55,6 +56,7 @@ export function createEmptyStats(): StatsData {
     currentWinStreak: 0,
     bestWinStreak: 0,
     hardModeWins: 0,
+    hardModeGames: 0,
     scoreDistribution: createEmptyScoreDistribution(),
     matrix: createEmptyMatrix(),
     winMatrix: createEmptyMatrix(),
@@ -141,6 +143,7 @@ export function recordGame(
     currentWinStreak,
     bestWinStreak: Math.max(stats.bestWinStreak, currentWinStreak),
     hardModeWins: stats.hardModeWins + (isWin && hardMode ? 1 : 0),
+    hardModeGames: stats.hardModeGames + (hardMode ? 1 : 0),
     scoreDistribution,
     matrix,
     winMatrix,
@@ -163,6 +166,66 @@ export function averageTurns(stats: StatsData): number | null {
 export function averageTurnsInWins(stats: StatsData): number | null {
   if (stats.totalWins === 0) return null
   return stats.winTurns / stats.totalWins
+}
+
+const MIN_BUCKET_SIGNAL = 3
+const MIN_GAMES_FOR_SIGNATURE = 5
+const MIN_HARD_MODE_GAMES = 3
+
+export interface ValueRangeStat {
+  bucket: number
+  winRatePercent: number
+}
+
+// For each value range with enough placements behind it, what fraction of
+// those placements happened in games that were ultimately won — a
+// correlation, not a causal claim, same character as the existing
+// most-common-loss-range insight.
+function bucketWinRates(stats: StatsData): { bucket: number; winRate: number; total: number }[] {
+  const rates: { bucket: number; winRate: number; total: number }[] = []
+  for (let bucket = 0; bucket < VALUE_BUCKETS; bucket++) {
+    let wins = 0
+    let losses = 0
+    for (let position = 0; position < stats.winMatrix.length; position++) {
+      wins += stats.winMatrix[position][bucket]
+      losses += stats.lossMatrix[position][bucket]
+    }
+    const total = wins + losses
+    if (total >= MIN_BUCKET_SIGNAL) rates.push({ bucket, winRate: wins / total, total })
+  }
+  return rates
+}
+
+export function bestValueRange(stats: StatsData): ValueRangeStat | null {
+  const rates = bucketWinRates(stats)
+  if (rates.length === 0) return null
+  const best = rates.reduce((a, b) => (b.winRate > a.winRate ? b : a))
+  return { bucket: best.bucket, winRatePercent: Math.round(best.winRate * 100) }
+}
+
+// The position filled most often across every completed game — not
+// necessarily meaningful on its own, just a "here's your habit" fact.
+// Requires a handful of games so one early run doesn't dominate.
+export function signaturePosition(stats: StatsData): { position: number; count: number } | null {
+  if (stats.totalGames < MIN_GAMES_FOR_SIGNATURE) return null
+
+  let best = 0
+  let bestCount = 0
+  for (let position = 0; position < stats.matrix.length; position++) {
+    const count = stats.matrix[position].reduce((sum, c) => sum + c, 0)
+    if (count > bestCount) {
+      bestCount = count
+      best = position
+    }
+  }
+  return bestCount > 0 ? { position: best, count: bestCount } : null
+}
+
+// Win rate restricted to games played with hard mode on — needs its own
+// threshold since it's a smaller sample than overall win rate.
+export function hardModeWinRate(stats: StatsData): number | null {
+  if (stats.hardModeGames < MIN_HARD_MODE_GAMES) return null
+  return Math.round((stats.hardModeWins / stats.hardModeGames) * 100)
 }
 
 // Among the positions currently legal for this roll, which one this player

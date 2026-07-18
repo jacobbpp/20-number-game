@@ -48,6 +48,22 @@ describe('stats menu', () => {
     expect(await screen.findByText('33% win rate · streak 0')).toBeInTheDocument()
     expect(screen.getByText('4.5 avg. turns')).toBeInTheDocument()
     expect(screen.getByText('No streak yet')).toBeInTheDocument()
+    expect(screen.getByText('Not enough data yet')).toBeInTheDocument()
+  })
+
+  it('shows a pattern count on the Insights row once there is enough signal', async () => {
+    const lossBucketCounts = Array(10).fill(0)
+    lossBucketCounts[2] = 3
+
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({ totalGames: 6, totalWins: 2, totalTurns: 27, matrix: emptyMatrix(), lossBucketCounts, lastGame: null }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+
+    expect(await screen.findByText('1 pattern found')).toBeInTheDocument()
   })
 
   it('navigating back from a section returns to the menu, not the game', async () => {
@@ -242,6 +258,71 @@ describe('insights section', () => {
 
     expect(await screen.findByText(/Not enough games yet/)).toBeInTheDocument()
     expect(screen.queryByText(/Most losses happen when rolling/)).not.toBeInTheDocument()
+  })
+
+  it('shows a best-range card once a value range has enough win-associated signal', async () => {
+    const winMatrix = emptyMatrix()
+    winMatrix[0][2] = 4
+    const lossMatrix = emptyMatrix()
+    lossMatrix[1][2] = 1
+
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 5,
+        totalWins: 4,
+        totalTurns: 20,
+        matrix: emptyMatrix(),
+        winMatrix,
+        lossMatrix,
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText('Best range')).toBeInTheDocument()
+    expect(screen.getByText(/201–300 is your strongest range — 80% of placements there end in a win/)).toBeInTheDocument()
+  })
+
+  it('shows a signature-position card once there are enough games', async () => {
+    const matrix = emptyMatrix()
+    matrix[3][0] = 5
+
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({ totalGames: 5, totalWins: 2, totalTurns: 20, matrix, lossBucketCounts: Array(10).fill(0), lastGame: null }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText('Signature position')).toBeInTheDocument()
+    expect(screen.getByText(/Position 4 is your most-used slot — filled 5 times/)).toBeInTheDocument()
+  })
+
+  it('shows a hard-mode win-rate card once there are enough hard-mode games', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 6,
+        totalWins: 3,
+        totalTurns: 30,
+        hardModeGames: 4,
+        hardModeWins: 3,
+        matrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText('Hard mode')).toBeInTheDocument()
+    expect(screen.getByText('75% win rate with hard mode on, vs 50% overall.')).toBeInTheDocument()
   })
 })
 
