@@ -109,6 +109,21 @@ describe('home screen', () => {
     expect(screen.queryByRole('heading', { name: 'Ready to play?' })).not.toBeInTheDocument()
   })
 
+  it('hides itself immediately and remembers the choice for next load', async () => {
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Hide this screen' }))
+
+    expect(await screen.findByRole('button', { name: 'View stats' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Ready to play?' })).not.toBeInTheDocument()
+    expect(localStorage.getItem('order20-show-home-screen')).toBe('0')
+
+    cleanup()
+    render(<App />)
+    expect(await screen.findByRole('button', { name: 'View stats' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Ready to play?' })).not.toBeInTheDocument()
+  })
+
   it('does not show a finished game overlay behind the home screen', async () => {
     localStorage.setItem(
       'order20-current-game',

@@ -647,6 +647,17 @@ button:focus-visible {
   min-height: 44px;
 }
 
+.home-screen__hide {
+  background: none;
+  border: none;
+  text-align: center;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-disabled);
+  min-height: 44px;
+}
+
 .result-grid {
   display: grid;
   grid-auto-flow: column;

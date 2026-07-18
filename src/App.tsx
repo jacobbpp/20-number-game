@@ -259,6 +259,10 @@ function App() {
           onPlayDaily={openDaily}
           onOpenStats={openStats}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
+          onHideHomeScreen={() => {
+            toggleShowHomeScreen()
+            setIsHomeOpen(false)
+          }}
         />
       ) : isDailyOpen ? (
         <DailyChallengeScreen

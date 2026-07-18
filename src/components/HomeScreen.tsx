@@ -10,6 +10,7 @@ interface HomeScreenProps {
   onPlayDaily: () => void
   onOpenStats: () => void
   onOpenHowToPlay: () => void
+  onHideHomeScreen: () => void
 }
 
 export function HomeScreen({
@@ -21,6 +22,7 @@ export function HomeScreen({
   onPlayDaily,
   onOpenStats,
   onOpenHowToPlay,
+  onHideHomeScreen,
 }: HomeScreenProps) {
   return (
     <div className="home-screen">
@@ -79,6 +81,9 @@ export function HomeScreen({
 
       <button type="button" className="home-screen__see-stats" onClick={onOpenStats}>
         See all stats
+      </button>
+      <button type="button" className="home-screen__hide" onClick={onHideHomeScreen}>
+        Hide this screen
       </button>
     </div>
   )

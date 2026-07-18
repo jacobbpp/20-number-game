@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.26.0',
+    date: '2026-07-19',
+    title: 'A faster way to hide the home screen',
+    description: 'A "Hide this screen" link now sits at the bottom of the home screen itself, right where you\'d look for it, so you don\'t need to go into Settings to turn it off.',
+  },
+  {
     version: '1.25.0',
     date: '2026-07-19',
     title: 'A guide to every stat and setting',

@@ -17,8 +17,9 @@ means re-copying its files into `src/brand` by hand.
 
 A "Ready to play?" screen greets you before each session: a Play button into free play, a daily
 challenge card (showing today's board size, or your result once you've played it), and your
-personal best and win streak. "See all stats" opens the full Stats screen from there too. Turn it
-off in Settings to skip straight to the board on every load instead.
+personal best and win streak. "See all stats" opens the full Stats screen from there too.
+"Hide this screen" at the bottom turns it off immediately and remembers the choice, the same
+setting as the Home screen toggle in Settings.
 
 ## Rules
 
