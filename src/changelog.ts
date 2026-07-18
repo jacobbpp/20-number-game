@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.19.0',
+    date: '2026-07-19',
+    title: 'A placement guide, and a clearer stats page',
+    description: 'Legal positions now show a dot marking where you\'ve usually placed similar numbers (off in hard mode). Stats is now a menu — Heatmap, Win rate & streak, Daily streak, Average score, and Insights each get their own screen instead of one long page.',
+  },
+  {
     version: '1.18.0',
     date: '2026-07-18',
     title: 'Achievements and shareable images',

@@ -17,6 +17,10 @@ correctly to win — one illegal roll ends the run.
 - Hard mode (Settings) removes the highlight — every empty position looks the same, and it's on
   you to work out where the number legally goes. A wrong tap just does nothing; there's no penalty
   for guessing.
+- Among the currently-legal positions, the one you've historically placed similar numbers at most
+  often gets a small dot — a nudge among genuine choices, not a hint about legality itself. It only
+  appears once there's enough history behind it, and never in hard mode. Free play only — daily
+  board sizes vary, so a "usual spot" wouldn't mean the same thing from one day to the next.
 
 A Share button on the win/loss screen produces a Wordle-style text grid by default. On phones that
 support sharing files (most modern ones), it instead opens the native share sheet with a generated
@@ -29,13 +33,16 @@ new" summary appears after an update if anything shipped since you last played, 
 entries available further down. The full release history is always available too — the version
 number in Settings opens the same view with every past update, not just what's unseen.
 
-The stats screen (bar-chart icon in the header) tracks win rate, win streak (plus your best-ever
-streak, once you've broken one), and daily challenge streak (current and best, same treatment as
-win streak), and shows a chart of how far your runs usually get, including your average turns per
-game overall and for wins only. It also tracks which value range tends to land at which position
-across every completed game — shown as a heatmap with the most recent game's placements outlined,
-filterable to wins-only or losses-only. Once there's enough history, it calls out whether the last
-game followed or broke the usual pattern, and which value range causes the most losses.
+The stats screen (bar-chart icon in the header) is a menu — Heatmap, Win rate & streak, Daily
+streak, Average score, and Insights — each row showing a live preview of that category and opening
+its own screen with a back arrow that returns to the menu, not out to the game. Win rate & streak
+covers win rate and win streak (plus your best-ever streak, once you've broken one). Daily streak
+mirrors that for the daily challenge (current and best). Average score shows average turns per
+game, overall and for wins only, alongside a chart of how far your runs usually get. Heatmap tracks
+which value range tends to land at which position across every completed game, with the most
+recent game's placements outlined, filterable to wins-only or losses-only. Insights calls out
+whether the last game followed or broke the usual pattern, and which value range causes the most
+losses, once there's enough history for either.
 
 A trophy pill on that same screen ("3/7", etc.) opens the achievements list — first win, win
 streaks, games-played milestones, a daily-streak milestone, and one for winning with hard mode on.

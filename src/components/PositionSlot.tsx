@@ -3,11 +3,12 @@ interface PositionSlotProps {
   value: number | null
   isValid: boolean
   hardMode: boolean
+  isSuggested: boolean
   accentColor: string
   onSelect: (index: number) => void
 }
 
-export function PositionSlot({ index, value, isValid, hardMode, accentColor, onSelect }: PositionSlotProps) {
+export function PositionSlot({ index, value, isValid, hardMode, isSuggested, accentColor, onSelect }: PositionSlotProps) {
   const filled = value !== null
   const displayPosition = index + 1
   // Hard mode hides which empty slots are legal — visually and in the
@@ -16,13 +17,17 @@ export function PositionSlot({ index, value, isValid, hardMode, accentColor, onS
   // same; a wrong tap is a silent no-op (place() already rejects it).
   const revealValid = isValid && !hardMode
   const canTap = !filled && (hardMode || isValid)
+  // The "usual spot" marker is a nudge among already-legal choices, not a
+  // new source of legality information — so it only ever shows alongside
+  // the existing valid-position highlight, never in hard mode.
+  const showSuggestion = revealValid && isSuggested
 
   const label = filled
     ? `Position ${displayPosition}, filled with ${value}`
     : hardMode
       ? `Position ${displayPosition}, empty`
-      : isValid
-        ? `Position ${displayPosition}, empty, valid placement`
+      : revealValid
+        ? `Position ${displayPosition}, empty, valid placement${showSuggestion ? ', your usual spot for this range' : ''}`
         : `Position ${displayPosition}, empty, not a valid placement`
 
   return (
@@ -43,6 +48,7 @@ export function PositionSlot({ index, value, isValid, hardMode, accentColor, onS
       <span className="slot__value" aria-hidden="true">
         {filled ? value : canTap ? 'tap' : '—'}
       </span>
+      {showSuggestion && <span className="slot__suggested" aria-hidden="true" />}
     </button>
   )
 }

@@ -151,6 +151,10 @@ export function DailyChallengeScreen({
             positions={dailyState.positions}
             validPositions={dailyState.validPositions}
             hardMode={hardMode}
+            // Daily board sizes vary day to day, so there's no shared
+            // matrix to draw a "usual spot" suggestion from the way free
+            // play has.
+            suggestedPosition={null}
             onSelect={onSelect}
           />
         </>

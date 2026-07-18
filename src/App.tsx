@@ -16,7 +16,7 @@ import { CHANGELOG } from './changelog'
 import { ACHIEVEMENTS } from './game/achievements'
 import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
-import { extractPlacements } from './game/stats'
+import { extractPlacements, suggestedPosition } from './game/stats'
 import { createInitialState, type ResultBadge } from './game/types'
 import { useAchievements } from './hooks/useAchievements'
 import { useBestScore } from './hooks/useBestScore'
@@ -228,6 +228,11 @@ function App() {
     setIsSettingsOpen(true)
   }
 
+  // Free play only — daily board sizes vary, so "position 5" doesn't mean
+  // the same thing across days the way it does for the fixed-size matrix
+  // this is built from.
+  const freePlaySuggestion = state.currentRoll !== null ? suggestedPosition(stats, state.currentRoll, state.validPositions) : null
+
   return (
     <div className="app">
       {isDailyOpen ? (
@@ -284,6 +289,7 @@ function App() {
             positions={state.positions}
             validPositions={state.validPositions}
             hardMode={hardMode}
+            suggestedPosition={freePlaySuggestion}
             onSelect={handleSelect}
           />
         </>

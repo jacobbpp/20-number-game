@@ -9,6 +9,11 @@ function emptyMatrix() {
   return Array.from({ length: 20 }, () => Array(10).fill(0))
 }
 
+async function openSection(name: string) {
+  fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+  fireEvent.click(await screen.findByRole('button', { name: new RegExp(name) }))
+}
+
 beforeEach(() => {
   localStorage.clear()
   localStorage.setItem('order20-onboarded', '1')
@@ -19,65 +24,19 @@ afterEach(() => {
   cleanup()
 })
 
-describe('stats screen', () => {
-  it('shows the overview cards and loss-pattern sentence once there is enough data', async () => {
-    const lossBucketCounts = Array(10).fill(0)
-    lossBucketCounts[2] = 3 // 201-300, the clear majority
-
+describe('stats menu', () => {
+  it('shows a live preview of each category on its menu row', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
         totalGames: 6,
         totalWins: 2,
         totalTurns: 27,
-        matrix: emptyMatrix(),
-        lossBucketCounts,
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
-
-    expect(await screen.findByText('Win rate')).toBeInTheDocument()
-    expect(screen.getByText('33%')).toBeInTheDocument()
-    expect(screen.getByText(/avg 4\.5 turns/)).toBeInTheDocument()
-    expect(screen.getByText(/Most losses happen when rolling in the 201–300 range/)).toBeInTheDocument()
-  })
-
-  it('hides the loss-pattern sentence without enough losses in one bucket', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 2,
-        totalWins: 1,
-        totalTurns: 10,
-        matrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
-
-    await screen.findByText('Win rate')
-    expect(screen.queryByText(/Most losses happen when rolling/)).not.toBeInTheDocument()
-  })
-
-  it('shows win streak, and folds avg. turns (overall and in wins) into the distribution caption', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 3,
-        totalWins: 0,
-        totalTurns: 9,
-        winTurns: 0,
         currentWinStreak: 0,
-        scoreDistribution: [3, 0, 0, 0],
         matrix: emptyMatrix(),
         winMatrix: emptyMatrix(),
         lossMatrix: emptyMatrix(),
+        scoreDistribution: [1, 2, 2, 1],
         lossBucketCounts: Array(10).fill(0),
         lastGame: null,
       }),
@@ -86,33 +45,49 @@ describe('stats screen', () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
 
-    expect(await screen.findByText('Win streak')).toBeInTheDocument()
-    // No wins yet, so the "in wins" clause is omitted rather than showing a placeholder.
-    expect(screen.getByText('How far your runs usually get — avg 3.0 turns')).toBeInTheDocument()
+    expect(await screen.findByText('33% win rate · streak 0')).toBeInTheDocument()
+    expect(screen.getByText('4.5 avg. turns')).toBeInTheDocument()
+    expect(screen.getByText('No streak yet')).toBeInTheDocument()
   })
 
-  it('adds an "in wins" clause to the distribution caption once there are wins', async () => {
+  it('navigating back from a section returns to the menu, not the game', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({ totalGames: 1, totalWins: 1, totalTurns: 1, matrix: emptyMatrix(), lossBucketCounts: Array(10).fill(0), lastGame: null }),
+    )
+
+    render(<App />)
+    await openSection('Win rate & streak')
+    expect(await screen.findByText('win rate')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to stats menu' }))
+    expect(await screen.findByRole('button', { name: /^Heatmap/ })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to game' }))
+    expect(await screen.findByRole('button', { name: 'View stats' })).toBeInTheDocument()
+  })
+})
+
+describe('win rate & streak section', () => {
+  it('shows win rate and current streak', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
-        totalGames: 4,
-        totalWins: 1,
-        totalTurns: 20,
-        winTurns: 5,
-        currentWinStreak: 1,
-        scoreDistribution: [0, 1, 0, 3],
+        totalGames: 6,
+        totalWins: 2,
+        totalTurns: 27,
+        currentWinStreak: 2,
         matrix: emptyMatrix(),
-        winMatrix: emptyMatrix(),
-        lossMatrix: emptyMatrix(),
         lossBucketCounts: Array(10).fill(0),
         lastGame: null,
       }),
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openSection('Win rate & streak')
 
-    expect(await screen.findByText('How far your runs usually get — avg 5.0 turns, 5.0 in wins')).toBeInTheDocument()
+    expect(await screen.findByText('33%')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
   })
 
   it('shows a best-win-streak record only once one has been set', async () => {
@@ -122,20 +97,16 @@ describe('stats screen', () => {
         totalGames: 4,
         totalWins: 1,
         totalTurns: 20,
-        winTurns: 5,
         currentWinStreak: 1,
         bestWinStreak: 4,
-        scoreDistribution: [0, 1, 0, 3],
         matrix: emptyMatrix(),
-        winMatrix: emptyMatrix(),
-        lossMatrix: emptyMatrix(),
         lossBucketCounts: Array(10).fill(0),
         lastGame: null,
       }),
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openSection('Win rate & streak')
 
     expect(await screen.findByText('Best: 4')).toBeInTheDocument()
   })
@@ -147,25 +118,23 @@ describe('stats screen', () => {
         totalGames: 2,
         totalWins: 0,
         totalTurns: 6,
-        winTurns: 0,
         currentWinStreak: 0,
         bestWinStreak: 0,
-        scoreDistribution: [2, 0, 0, 0],
         matrix: emptyMatrix(),
-        winMatrix: emptyMatrix(),
-        lossMatrix: emptyMatrix(),
         lossBucketCounts: Array(10).fill(0),
         lastGame: null,
       }),
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openSection('Win rate & streak')
 
-    await screen.findByText('Win streak')
+    await screen.findByText('win rate')
     expect(screen.queryByText(/Best:/)).not.toBeInTheDocument()
   })
+})
 
+describe('daily streak section', () => {
   it('shows the current and best daily streak, sourced from the daily challenge streak', async () => {
     vi.setSystemTime(new Date(2026, 0, 15, 12, 0, 0))
     const today = getLocalDateString()
@@ -183,17 +152,17 @@ describe('stats screen', () => {
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openSection('Daily streak')
 
-    expect(await screen.findByText('Daily streak')).toBeInTheDocument()
-    const dailyStreakCard = (await screen.findByText('Daily streak')).closest('.stats-overview__card') as HTMLElement
-    expect(within(dailyStreakCard).getByText('3')).toBeInTheDocument()
-    expect(within(dailyStreakCard).getByText('Best: 6')).toBeInTheDocument()
+    expect(await screen.findByText('3')).toBeInTheDocument()
+    expect(screen.getByText('Best: 6')).toBeInTheDocument()
 
     vi.useRealTimers()
   })
+})
 
-  it('describes the score distribution accessibly with actual counts', async () => {
+describe('average score section', () => {
+  it('shows avg turns overall and in wins, and an accessible chart description', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
@@ -213,14 +182,70 @@ describe('stats screen', () => {
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openSection('Average score')
 
-    const chart = await screen.findByRole('img', { name: /How far your runs usually get/ })
+    expect(await screen.findByText('5.0')).toBeInTheDocument()
+    expect(screen.getByText('5.0 in wins')).toBeInTheDocument()
+
+    const chart = screen.getByRole('img', { name: /Average 5\.0 turns per game/ })
     expect(chart).toHaveAccessibleName(
-      'How far your runs usually get — avg 5.0 turns, 5.0 in wins: 1 game placed 0–5, 2 games placed 6–10, 0 games placed 11–15, 1 game placed 16–20',
+      'Average 5.0 turns per game, 5.0 in wins: 1 game placed 0–5, 2 games placed 6–10, 0 games placed 11–15, 1 game placed 16–20',
     )
   })
 
+  it('omits the "in wins" clause when there are no wins yet', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 3,
+        totalWins: 0,
+        totalTurns: 9,
+        scoreDistribution: [3, 0, 0, 0],
+        matrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    await openSection('Average score')
+
+    expect(await screen.findByText('3.0')).toBeInTheDocument()
+    expect(screen.queryByText(/in wins/)).not.toBeInTheDocument()
+  })
+})
+
+describe('insights section', () => {
+  it('shows the loss-pattern sentence once there is enough data', async () => {
+    const lossBucketCounts = Array(10).fill(0)
+    lossBucketCounts[2] = 3 // 201-300, the clear majority
+
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({ totalGames: 6, totalWins: 2, totalTurns: 27, matrix: emptyMatrix(), lossBucketCounts, lastGame: null }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText(/Most losses happen when rolling in the 201–300 range/)).toBeInTheDocument()
+  })
+
+  it('shows a not-enough-data message without enough losses in one bucket', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({ totalGames: 2, totalWins: 1, totalTurns: 10, matrix: emptyMatrix(), lossBucketCounts: Array(10).fill(0), lastGame: null }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText(/Not enough games yet/)).toBeInTheDocument()
+    expect(screen.queryByText(/Most losses happen when rolling/)).not.toBeInTheDocument()
+  })
+})
+
+describe('heatmap section', () => {
   it('switches the heatmap between All, Wins, and Losses', async () => {
     const winMatrix = emptyMatrix()
     winMatrix[5][3] = 7
@@ -233,9 +258,6 @@ describe('stats screen', () => {
         totalGames: 5,
         totalWins: 1,
         totalTurns: 20,
-        winTurns: 7,
-        currentWinStreak: 0,
-        scoreDistribution: [0, 1, 0, 4],
         matrix: emptyMatrix(),
         winMatrix,
         lossMatrix,
@@ -245,7 +267,7 @@ describe('stats screen', () => {
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openSection('Heatmap')
 
     fireEvent.click(await screen.findByRole('button', { name: 'Wins' }))
     expect(screen.getByRole('button', { name: 'Wins' })).toHaveAttribute('aria-pressed', 'true')
@@ -259,18 +281,11 @@ describe('stats screen', () => {
   it('explains the heatmap with a gradient legend and clear copy', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 1,
-        totalWins: 1,
-        totalTurns: 5,
-        matrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
+      JSON.stringify({ totalGames: 1, totalWins: 1, totalTurns: 5, matrix: emptyMatrix(), lossBucketCounts: Array(10).fill(0), lastGame: null }),
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openSection('Heatmap')
 
     const endsLabel = await screen.findByText('Rarely lands here')
     const legend = endsLabel.closest('.heatmap__legend') as HTMLElement

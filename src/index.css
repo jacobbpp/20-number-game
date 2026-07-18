@@ -313,6 +313,17 @@ button:focus-visible {
   transform: scale(0.97);
 }
 
+.slot__suggested {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--coral-text);
+  box-shadow: 0 0 0 2px var(--coral-pale);
+}
+
 @keyframes pulse-valid {
   0%,
   100% {
@@ -509,8 +520,12 @@ button:focus-visible {
 
 .stats-screen__title {
   flex: 1;
+  min-width: 0;
   font-size: 16px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stats-screen__empty {
@@ -536,42 +551,78 @@ button:focus-visible {
   margin: 0;
 }
 
-.stats-screen__section-label {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-disabled);
+.stats-menu {
+  gap: 8px;
 }
 
-.stats-overview {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
+.stats-menu__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(var(--surface-tint-rgb), 0.05);
+  color: var(--text);
+  text-align: left;
 }
 
-.stats-overview__card {
+.stats-menu__row-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: rgba(var(--surface-tint-rgb), 0.05);
-  border-radius: 12px;
-  padding: 8px 10px;
+  min-width: 0;
 }
 
-.stats-overview__label {
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.stats-overview__value {
-  font-size: 19px;
+.stats-menu__row-title {
+  font-size: 14px;
   font-weight: 700;
 }
 
-.stats-overview__sublabel {
-  font-size: 10px;
+.stats-menu__row-preview {
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-menu__row svg {
+  flex-shrink: 0;
+  color: var(--text-disabled);
+}
+
+.stats-hero-row {
+  display: flex;
+  gap: 12px;
+}
+
+.stats-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(var(--surface-tint-rgb), 0.05);
+  border-radius: 16px;
+  padding: 22px 14px;
+  text-align: center;
+}
+
+.stats-hero__value {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stats-hero__label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.stats-hero__sublabel {
+  font-size: 11px;
   color: var(--text-disabled);
 }
 

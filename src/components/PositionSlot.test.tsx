@@ -11,8 +11,8 @@ describe('PositionSlot in normal mode', () => {
     const onSelect = vi.fn()
     render(
       <>
-        <PositionSlot index={0} value={null} isValid onSelect={onSelect} hardMode={false} accentColor="#000" />
-        <PositionSlot index={1} value={null} isValid={false} onSelect={onSelect} hardMode={false} accentColor="#000" />
+        <PositionSlot index={0} value={null} isValid onSelect={onSelect} hardMode={false} isSuggested={false} accentColor="#000" />
+        <PositionSlot index={1} value={null} isValid={false} onSelect={onSelect} hardMode={false} isSuggested={false} accentColor="#000" />
       </>,
     )
 
@@ -23,14 +23,32 @@ describe('PositionSlot in normal mode', () => {
     const invalidSlot = screen.getByRole('button', { name: 'Position 2, empty, not a valid placement' })
     expect(invalidSlot).toBeDisabled()
   })
+
+  it('marks the suggested valid slot with a "usual spot" note and a visible marker', () => {
+    render(
+      <PositionSlot index={4} value={null} isValid onSelect={vi.fn()} hardMode={false} isSuggested accentColor="#000" />,
+    )
+
+    const slot = screen.getByRole('button', { name: 'Position 5, empty, valid placement, your usual spot for this range' })
+    expect(slot.querySelector('.slot__suggested')).not.toBeNull()
+  })
+
+  it('does not mark an invalid slot as suggested even if isSuggested is somehow true', () => {
+    render(
+      <PositionSlot index={4} value={null} isValid={false} onSelect={vi.fn()} hardMode={false} isSuggested accentColor="#000" />,
+    )
+
+    const slot = screen.getByRole('button', { name: 'Position 5, empty, not a valid placement' })
+    expect(slot.querySelector('.slot__suggested')).toBeNull()
+  })
 })
 
 describe('PositionSlot in hard mode', () => {
   it('renders valid and invalid empty slots identically, both tappable', () => {
     render(
       <>
-        <PositionSlot index={0} value={null} isValid onSelect={vi.fn()} hardMode accentColor="#000" />
-        <PositionSlot index={1} value={null} isValid={false} onSelect={vi.fn()} hardMode accentColor="#000" />
+        <PositionSlot index={0} value={null} isValid onSelect={vi.fn()} hardMode isSuggested={false} accentColor="#000" />
+        <PositionSlot index={1} value={null} isValid={false} onSelect={vi.fn()} hardMode isSuggested={false} accentColor="#000" />
       </>,
     )
 
@@ -46,17 +64,26 @@ describe('PositionSlot in hard mode', () => {
 
   it('still calls onSelect when a hard-mode slot is tapped, valid or not', () => {
     const onSelect = vi.fn()
-    render(<PositionSlot index={4} value={null} isValid={false} onSelect={onSelect} hardMode accentColor="#000" />)
+    render(<PositionSlot index={4} value={null} isValid={false} onSelect={onSelect} hardMode isSuggested={false} accentColor="#000" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Position 5, empty' }))
     expect(onSelect).toHaveBeenCalledWith(4)
   })
 
   it('does not disguise a filled slot as tappable', () => {
-    render(<PositionSlot index={2} value={57} isValid={false} onSelect={vi.fn()} hardMode accentColor="#000" />)
+    render(<PositionSlot index={2} value={57} isValid={false} onSelect={vi.fn()} hardMode isSuggested={false} accentColor="#000" />)
 
     const slot = screen.getByRole('button', { name: 'Position 3, filled with 57' })
     expect(slot).toBeDisabled()
     expect(slot).toHaveTextContent('57')
+  })
+
+  it('never shows the suggestion marker or note in hard mode, even if isSuggested is true', () => {
+    render(
+      <PositionSlot index={4} value={null} isValid onSelect={vi.fn()} hardMode isSuggested accentColor="#000" />,
+    )
+
+    const slot = screen.getByRole('button', { name: 'Position 5, empty' })
+    expect(slot.querySelector('.slot__suggested')).toBeNull()
   })
 })
