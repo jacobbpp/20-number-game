@@ -1,0 +1,135 @@
+/* ============================================================
+   TB Dev — design tokens  (tokens.css)
+   The single source of truth for color, type, spacing & shape.
+   Every TB Dev app should load this file and use var(--tb-*).
+   ============================================================ */
+
+/* Fonts. You can delete this @import and use a <link> in <head>
+   instead (faster). See README. */
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  /* -- Raw palette (don't reach for these directly in components;
+        prefer the semantic tokens below) -- */
+  --tb-paper:      #f3f0ec;
+  --tb-surface:    #ffffff;
+  --tb-surface-2:  #faf8f4;
+  --tb-ink:        #1d1a24;
+  --tb-slate:      #3f3a48;
+  --tb-muted:      #7a7482;
+  --tb-line:       #e5dfd7;
+
+  --tb-violet-100: #ece7f1;
+  --tb-violet-300: #a99bc4;
+  --tb-violet-500: #6f5f8e;   /* primary accent */
+  --tb-violet-700: #5a4c76;
+
+  --tb-orange-100: #f6ece1;
+  --tb-orange-300: #e3b58e;
+  --tb-orange-500: #cf8f5f;   /* secondary accent / CTA */
+  --tb-orange-700: #b9764a;
+
+  /* -- Semantic tokens (USE THESE). They flip in dark mode. -- */
+  --tb-bg:            var(--tb-paper);
+  --tb-bg-elevated:   var(--tb-surface);
+  --tb-bg-sunken:     var(--tb-surface-2);
+  --tb-text:          var(--tb-ink);
+  --tb-text-soft:     var(--tb-slate);
+  --tb-text-muted:    var(--tb-muted);
+  --tb-border:        var(--tb-line);
+
+  --tb-accent:          var(--tb-violet-500);  /* default action */
+  --tb-accent-strong:   var(--tb-violet-700);
+  --tb-accent-tint:     var(--tb-violet-100);  /* soft bg wash */
+  --tb-accent-on:       #ffffff;               /* text on accent */
+
+  --tb-cta:           var(--tb-orange-500);     /* the rare "do it now" */
+  --tb-cta-tint:      var(--tb-orange-100);
+  --tb-cta-on:        var(--tb-ink);            /* text on orange */
+
+  /* -- Type -- */
+  --tb-font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --tb-font-mono: 'Space Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* -- Shape & depth -- */
+  --tb-radius-sm: 6px;
+  --tb-radius-md: 10px;
+  --tb-radius-lg: 14px;
+  --tb-radius-xl: 20px;
+
+  --tb-space-1: 4px;
+  --tb-space-2: 8px;
+  --tb-space-3: 12px;
+  --tb-space-4: 16px;
+  --tb-space-5: 24px;
+  --tb-space-6: 32px;
+
+  --tb-shadow-sm: 0 2px 6px -2px rgba(40,30,55,.25);
+  --tb-shadow-lg: 0 20px 44px -30px rgba(40,30,55,.45);
+
+  --tb-ease: cubic-bezier(.2,.8,.2,1);   /* snappy, slightly springy */
+  --tb-dur: 150ms;
+}
+
+/* ---- Dark theme ----
+   Applies automatically by device preference, OR force it with
+   <html data-theme="dark">.  Force light with data-theme="light". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+  :root:not([data-theme="light"]) {
+    --tb-bg:          #16131b;
+    --tb-bg-elevated: #221d2b;
+    --tb-bg-sunken:   #1b1722;
+    --tb-text:        #ece8f2;
+    --tb-text-soft:   #c4bdd0;
+    --tb-text-muted:  #9a94a6;
+    --tb-border:      #322b3d;
+
+    --tb-accent:        #7d6da0;   /* lifted for contrast on dark */
+    --tb-accent-strong: #a99bc4;
+    --tb-accent-tint:   #2a2334;
+    --tb-accent-on:     #ffffff;
+
+    --tb-cta:      #cf8f5f;
+    --tb-cta-tint: #3a2c22;
+    --tb-cta-on:   #1d1a24;
+
+    --tb-shadow-sm: 0 2px 6px -2px rgba(0,0,0,.5);
+    --tb-shadow-lg: 0 20px 44px -30px rgba(0,0,0,.7);
+  }
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --tb-bg:          #16131b;
+  --tb-bg-elevated: #221d2b;
+  --tb-bg-sunken:   #1b1722;
+  --tb-text:        #ece8f2;
+  --tb-text-soft:   #c4bdd0;
+  --tb-text-muted:  #9a94a6;
+  --tb-border:      #322b3d;
+
+  --tb-accent:        #7d6da0;
+  --tb-accent-strong: #a99bc4;
+  --tb-accent-tint:   #2a2334;
+  --tb-accent-on:     #ffffff;
+
+  --tb-cta:      #cf8f5f;
+  --tb-cta-tint: #3a2c22;
+  --tb-cta-on:   #1d1a24;
+
+  --tb-shadow-sm: 0 2px 6px -2px rgba(0,0,0,.5);
+  --tb-shadow-lg: 0 20px 44px -30px rgba(0,0,0,.7);
+}
+
+/* Sensible page defaults */
+body {
+  margin: 0;
+  background: var(--tb-bg);
+  color: var(--tb-text);
+  font-family: var(--tb-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--tb-accent); }
+a:hover { color: var(--tb-orange-700); }
+::selection { background: var(--tb-orange-300); color: var(--tb-ink); }

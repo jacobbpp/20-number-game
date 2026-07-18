@@ -1,0 +1,66 @@
+/* ============================================================
+   TB Dev — components  (components.css)
+   Optional ready-made classes built on tokens.css.
+   Load tokens.css FIRST. Use these, or just copy the ideas.
+   ============================================================ */
+
+/* ---- Wordmark & mascot ---- */
+.tb-wordmark { font-family: var(--tb-font-mono); font-weight: 700; letter-spacing: -.03em; color: var(--tb-text); white-space: nowrap; }
+.tb-wordmark .t { color: var(--tb-orange-500); }   /* the ~/ */
+.tb-wordmark .d { color: var(--tb-accent); }       /* the -dev */
+/* markup:  <span class="tb-wordmark"><span class="t">~/</span>tb<span class="d">-dev</span></span> */
+
+.tb-badge-icon {                       /* app/logo tile with Tommy */
+  display: inline-block; border-radius: var(--tb-radius-lg);
+  background-image: url('assets/icon-512.png');
+  background-size: cover; background-position: center;
+  width: 44px; height: 44px;
+}
+
+/* ---- Buttons ---- */
+.tb-btn {
+  font-family: var(--tb-font-sans); font-weight: 600; font-size: 14px;
+  padding: 10px 18px; border-radius: var(--tb-radius-md);
+  border: 1.5px solid transparent; cursor: pointer;
+  transition: transform var(--tb-dur) var(--tb-ease), background var(--tb-dur) var(--tb-ease), border-color var(--tb-dur) var(--tb-ease);
+}
+.tb-btn:active { transform: translateY(1px) scale(.99); }
+.tb-btn--primary   { background: var(--tb-accent); color: var(--tb-accent-on); }
+.tb-btn--primary:hover   { background: var(--tb-accent-strong); }
+.tb-btn--secondary { background: var(--tb-bg-elevated); color: var(--tb-accent); border-color: var(--tb-border); }
+.tb-btn--secondary:hover { border-color: var(--tb-accent); }
+.tb-btn--ghost     { background: transparent; color: var(--tb-text-soft); }
+.tb-btn--ghost:hover     { background: var(--tb-accent-tint); }
+.tb-btn--cta       { background: var(--tb-cta); color: var(--tb-cta-on); }   /* use sparingly */
+.tb-btn--cta:hover       { background: var(--tb-orange-700); color:#fff; }
+.tb-btn:disabled   { opacity: .45; cursor: not-allowed; }
+
+/* ---- Card ---- */
+.tb-card {
+  background: var(--tb-bg-elevated); border: 1px solid var(--tb-border);
+  border-radius: var(--tb-radius-lg); padding: var(--tb-space-4);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+/* ---- Input ---- */
+.tb-input {
+  font-family: var(--tb-font-sans); font-size: 14px;
+  background: var(--tb-bg-elevated); color: var(--tb-text);
+  border: 1.5px solid var(--tb-border); border-radius: var(--tb-radius-md);
+  padding: 11px 14px; outline: none;
+  transition: border-color var(--tb-dur) var(--tb-ease), box-shadow var(--tb-dur) var(--tb-ease);
+}
+.tb-input:focus { border-color: var(--tb-accent); box-shadow: 0 0 0 3px var(--tb-accent-tint); }
+.tb-label { font-family: var(--tb-font-sans); font-weight: 600; font-size: 12px; color: var(--tb-text-soft); }
+
+/* ---- Badge / pill ---- */
+.tb-pill { font-family: var(--tb-font-mono); font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+.tb-pill--violet { color: var(--tb-accent-strong); background: var(--tb-accent-tint); }
+.tb-pill--orange { color: var(--tb-orange-700); background: var(--tb-cta-tint); }
+.tb-pill--muted  { color: var(--tb-text-soft); background: var(--tb-bg-sunken); }
+
+/* ---- Numbers / scores (always mono) ---- */
+.tb-num { font-family: var(--tb-font-mono); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---- Eyebrow / meta label ---- */
+.tb-eyebrow { font-family: var(--tb-font-mono); font-weight: 700; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--tb-orange-500); }
