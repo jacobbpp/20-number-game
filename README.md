@@ -1,171 +1,44 @@
 # Order 20
 
-A mobile-first puzzle game. Roll a random number from 1 to 1,000 and place it into one of 20
-empty positions so that every position stays in ascending order from top to bottom. Place all 20
-correctly to win. One illegal roll ends the run.
+Roll a number. Place it in order. One wrong move ends the run.
 
-The app runs on the [tb-dev brand](https://github.com/jacobbpp/tb-dev-brand) (vendored as plain
-files at `src/brand`, copied in rather than tracked live, since the brand repo is private and a
-git submodule can't be fetched by CI's default token): warm paper-and-ink tones, Hanken Grotesk
-for headings and UI text, Space Mono for every number, a violet default accent, and a rare orange
-used only for the single primary action on screen. The board's low-to-high position gradient is
-built from those same two accent hues rather than a full rainbow. A small "~/order-20" mark with
-the brand's Tommy badge sits at the top of the header. Picking up a change from the brand repo
-means re-copying its files into `src/brand` by hand.
-
-## Home screen
-
-A "Ready to play?" screen greets you before each session: a Play button into free play, a daily
-challenge card (showing today's board size, or your result once you've played it), and your
-personal best and win streak. "See all stats" opens the full Stats screen from there too.
-"Hide this screen" at the bottom turns it off immediately and remembers the choice, the same
-setting as the Home screen toggle in Settings.
+Part of the tb-dev brand.
 
 ## Rules
 
-- A random whole number between 1 and 1,000 rolls automatically at the start of each game, and
-  again after every placement. Numbers never repeat within a game.
-- Tap one of the highlighted positions to place the current number there.
-- A position only accepts a number if it is greater than every occupied position above it and
-  lower than every occupied position below it.
-- Once placed, a number cannot be moved.
-- If the rolled number has no legal position, the game ends immediately.
-- Fill all 20 positions to win.
-- Hard mode (Settings) removes the highlight: every empty position looks the same, and it's on
-  you to work out where the number legally goes. A wrong tap just does nothing; there's no penalty
-  for guessing.
-- Among the currently-legal positions, the one you've historically placed similar numbers at most
-  often gets a small dot, a nudge among genuine choices, not a hint about legality itself. It only
-  appears once there's enough history behind it, and never in hard mode. Free play only: daily
-  board sizes vary, so a "usual spot" wouldn't mean the same thing from one day to the next.
+- Numbers roll automatically, 1 to 1,000, no repeats within a game.
+- Tap a highlighted position to place the roll there.
+- A position only takes a number higher than everything above it and lower than everything below it.
+- Once placed, a number stays put.
+- No legal position for a roll ends the game.
+- Fill all 20 to win.
 
-A Share button on the win/loss screen produces a Wordle-style text grid by default. On phones that
-support sharing files (most modern ones), it instead opens the native share sheet with a generated
-image of the board, styled to match the board itself in whichever theme you're on, and falls back
-to the copyable text everywhere else.
+Hard mode drops the highlight entirely: no hints, just a silent no-op on a bad tap.
 
-Your best score (most positions filled across all attempts) is saved on this device, along with
-the board from that specific run. Tap the Best pill in the header to see it. A short "What's
-new" summary appears after an update if anything shipped since you last played, with older
-entries available further down. The full release history is always available too: the version
-number in Settings opens the same view with every past update, not just what's unseen.
+## Home screen
 
-The stats screen (bar-chart icon in the header) is a menu (Heatmap, Win rate & streak, Daily
-streak, Average score, and Insights), each row showing a live preview of that category and opening
-its own screen with a back arrow that returns to the menu, not out to the game. Win rate & streak
-covers win rate and win streak (plus your best-ever streak, once you've broken one). Daily streak
-mirrors that for the daily challenge (current and best). Average score shows average turns per
-game, overall and for wins only, alongside a chart of how far your runs usually get. Heatmap tracks
-which value range tends to land at which position across every completed game, with the most
-recent game's placements outlined, filterable to wins-only or losses-only. Insights leads with a
-best score / win rate / win streak strip, then a feed of independent observations below it, each
-gated on its own data threshold so a newer player just sees fewer cards rather than a shaky one:
-your best-associated value range (highest share of placements ending in a win), your
-best-performing board position, your toughest range (most common cause of a loss), whether the top
-or bottom half of the board treats you better, your most-used position, your win rate with hard
-mode on versus overall, how close an active win streak is to your all-time best, and whether the
-last game followed or broke the usual pattern.
-
-A trophy pill on that same screen ("14/27", etc.) opens the achievements list. A "Milestones" grid
-covers every free-play score from 1/20 to 20/20. Reach a new best and that badge fills in. Below
-it, named achievements cover first win, win streaks, games-played milestones, a daily-streak
-milestone, and one for winning with hard mode on. Unlocking one shows a brief toast rather than
-interrupting whatever's on screen; a game that crosses several score milestones at once (going
-straight from 3/20 to 12/20, say) only announces the highest one, not one toast per number. A
-device already past an achievement's threshold when this feature first arrived credits it silently
-rather than firing off a toast for every past achievement at once.
+"Ready to play?" greets you on launch: a Play button, today's daily challenge, and your best score and win streak. Hide it from Settings, or right from the screen itself.
 
 ## Daily challenge
 
-The calendar icon in the header gives one shot per day at a puzzle with the same sequence of rolls
-for every player. The rolls are drawn from a deterministic generator seeded by the date, not
-`Math.random`, so a given calendar day always produces the same sequence for everyone. A ring
-around the icon means today's hasn't been played yet. The board size also varies by day (10, 15,
-25, or 30 positions, picked the same deterministic way, and deliberately never 20, that's free
-play's size), so different days are genuinely different challenges rather than the same game as
-free play with synchronized numbers. Once played, the
-icon's ring clears and opening it shows a recap of the day's result for the rest of the day; the
-Share button on it produces a date-labeled result separate from the free-play share text. Playing
-on consecutive days (win or lose, an honest attempt is what counts) builds a streak, shown in the
-recap once it reaches 2 days with its own share button, and tracked (current and best) on the
-Stats screen; missing a day resets it quietly on the next play, with no "streak lost" moment. The
-last 30 days of attempts are available from a "View history" toggle in the recap. Free play and
-the daily challenge track separate best scores, streak data, and stats: a completed daily doesn't
-feed the free-play heatmap, since "landed at position 5" means something different on a 10-slot
-board than a 30-slot one.
+One shared puzzle a day, same rolls for everyone. Board size shifts daily (10, 15, 25, or 30, never 20) so it never doubles as free play. Streaks track consecutive days played, win or lose, with 30 days of history on tap.
+
+## Stats
+
+Heatmap, win rate, streak, average score, and Insights, each its own screen. Insights opens with a best score / win rate / streak strip, then patterns as they earn enough games behind them: best range, best position, toughest range, board half, signature position, hard mode win rate, streak momentum, last game.
+
+Achievements sit behind the trophy pill: a milestone for every free-play score, 1 through 20, plus named ones for streaks, games played, and hard mode wins.
 
 ## Settings
 
-The gear icon in the header opens sound, theme, and data controls:
+- **Sound** mutes effects.
+- **Theme** switches dark and light.
+- **Hard mode** turns off the placement highlight.
+- **Home screen** toggles the landing screen.
+- **Version** shows the changelog.
+- **Learn about the app** opens a guide to every stat and setting.
+- **Reset all data** wipes this device.
 
-- **Sound**: mutes or unmutes the placement, win, loss, and share effects.
-- **Theme**: switches between dark and light. Defaults to the device's own light/dark setting
-  until changed here, then remembers the explicit choice.
-- **Hard mode**: turns off the valid-position highlight in both free play and the daily
-  challenge, so nothing tells you where a number can legally go.
-- **Home screen**: turns the "Ready to play?" landing screen on or off. Off skips straight to
-  the board on every load.
-- **Version**: shows the installed version; tap it to browse the full release history.
-- **Reset all data**: clears every saved score, stat, streak, and preference on this device.
-  Requires a second tap to confirm.
+## Sharing
 
-"Learn about the app" opens a Guide: a plain-language explanation of everything on the Stats and
-Settings screens. Insights gets its own summary line there, with a "See each pattern" toggle to
-expand into all eight pattern cards individually.
-
-## Tech stack
-
-- React + TypeScript + Vite
-- Vitest for automated tests
-- `vite-plugin-pwa` for installable, offline-capable PWA support
-
-Game logic lives entirely in [`src/game/`](src/game) as plain, framework-free TypeScript
-(`engine.ts`, `types.ts`, `stats.ts`, `daily.ts`, `share.ts`). Presentation components in
-[`src/components/`](src/components) only render state and call back into the engine. No rules
-are duplicated in the UI layer.
-
-## Setup
-
-```bash
-npm install
-```
-
-## Development
-
-```bash
-npm run dev
-```
-
-Starts the Vite dev server (default `http://localhost:5173`, or the port configured in
-`vite.config.ts`).
-
-## Testing
-
-```bash
-npm test        # run once
-npm run test:watch   # watch mode
-```
-
-Tests cover: valid placement, invalid placement, duplicate-number prevention, winning, and losing
-(see [`src/game/engine.test.ts`](src/game/engine.test.ts)); the value-bucket heatmap and
-last-game insight logic ([`src/game/stats.test.ts`](src/game/stats.test.ts)); the daily seeded
-generator and streak math ([`src/game/daily.test.ts`](src/game/daily.test.ts)); and App-level
-integration behavior: auto-roll, single game-over trigger, single stats-recording per completed
-game ([`src/App.test.tsx`](src/App.test.tsx)).
-
-## Type checking & build
-
-```bash
-npx tsc -b       # type check only
-npm run build    # type check + production build to dist/
-npm run preview  # serve the production build locally
-```
-
-## Deployment
-
-`npm run build` outputs a static site in `dist/`, including a generated service worker and web
-manifest. Deploy `dist/` to any static host (Netlify, Vercel, GitHub Pages, Cloudflare Pages,
-S3 + CloudFront, etc.). No server-side code is required.
-
-To install as a home-screen app, open the deployed URL on a mobile device and use the browser's
-"Add to Home Screen" / "Install app" option.
+Share a result as a Wordle-style grid, or as a branded image on phones that support it, matching whatever theme you're on.
