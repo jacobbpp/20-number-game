@@ -14,6 +14,7 @@ function renderScreen(overrides: Partial<Parameters<typeof SettingsScreen>[0]> =
     onToggleShowHomeScreen: vi.fn(),
     version: '1.0.0',
     onOpenChangelog: vi.fn(),
+    onOpenGuide: vi.fn(),
     onClose: vi.fn(),
     ...overrides,
   }
@@ -61,6 +62,12 @@ describe('SettingsScreen', () => {
   it('reflects the home screen being off in the toggle label', () => {
     renderScreen({ showHomeScreen: false })
     expect(screen.getByRole('button', { name: 'Show a home screen before the game' })).toBeInTheDocument()
+  })
+
+  it('opens the guide from the learn-about-the-app row', () => {
+    const props = renderScreen()
+    fireEvent.click(screen.getByRole('button', { name: /Learn about the app/ }))
+    expect(props.onOpenGuide).toHaveBeenCalledOnce()
   })
 
   it('shows the current version and opens the changelog when tapped', () => {

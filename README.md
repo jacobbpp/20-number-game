@@ -108,6 +108,10 @@ The gear icon in the header opens sound, theme, and data controls:
 - **Reset all data**: clears every saved score, stat, streak, and preference on this device.
   Requires a second tap to confirm.
 
+"Learn about the app" opens a Guide: a plain-language explanation of everything on the Stats and
+Settings screens. Insights gets its own summary line there, with a "See each pattern" toggle to
+expand into all eight pattern cards individually.
+
 ## Tech stack
 
 - React + TypeScript + Vite

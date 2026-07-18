@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.25.0',
+    date: '2026-07-19',
+    title: 'A guide to every stat and setting',
+    description: '"Learn about the app" in Settings opens a plain-language guide to everything on the Stats and Settings screens, including a breakdown of each Insights pattern you can expand or collapse.',
+  },
+  {
     version: '1.24.0',
     date: '2026-07-19',
     title: 'A home screen, and deeper insights',

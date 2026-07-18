@@ -5,6 +5,7 @@ import { BestRunScreen } from './components/BestRunScreen'
 import { Board } from './components/Board'
 import { DailyChallengeScreen } from './components/DailyChallengeScreen'
 import { GameOverScreen } from './components/GameOverScreen'
+import { GuideScreen } from './components/GuideScreen'
 import { Header } from './components/Header'
 import { HomeScreen } from './components/HomeScreen'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
@@ -43,6 +44,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [isChangelogOpen, setIsChangelogOpen] = useState(false)
+  const [isGuideOpen, setIsGuideOpen] = useState(false)
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
@@ -218,6 +220,7 @@ function App() {
     setIsHomeOpen(false)
     setIsDailyOpen(false)
     setIsSettingsOpen(false)
+    setIsGuideOpen(false)
     setIsStatsOpen(true)
   }
 
@@ -225,6 +228,7 @@ function App() {
     setIsHomeOpen(false)
     setIsStatsOpen(false)
     setIsSettingsOpen(false)
+    setIsGuideOpen(false)
     setIsDailyOpen(true)
   }
 
@@ -232,6 +236,7 @@ function App() {
     setIsHomeOpen(false)
     setIsStatsOpen(false)
     setIsDailyOpen(false)
+    setIsGuideOpen(false)
     setIsSettingsOpen(true)
   }
 
@@ -292,7 +297,18 @@ function App() {
           onToggleShowHomeScreen={toggleShowHomeScreen}
           version={APP_VERSION}
           onOpenChangelog={() => setIsChangelogOpen(true)}
+          onOpenGuide={() => {
+            setIsSettingsOpen(false)
+            setIsGuideOpen(true)
+          }}
           onClose={() => setIsSettingsOpen(false)}
+        />
+      ) : isGuideOpen ? (
+        <GuideScreen
+          onClose={() => {
+            setIsGuideOpen(false)
+            setIsSettingsOpen(true)
+          }}
         />
       ) : (
         <>
@@ -319,7 +335,7 @@ function App() {
         </>
       )}
 
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && state.status === 'lost' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
@@ -329,7 +345,7 @@ function App() {
           theme={theme}
         />
       )}
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && state.status === 'won' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && state.status === 'won' && (
         <WinScreen positions={state.positions} onNewGame={handleRestart} theme={theme} />
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}

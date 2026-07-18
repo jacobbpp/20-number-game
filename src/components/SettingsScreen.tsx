@@ -13,6 +13,7 @@ interface SettingsScreenProps {
   onToggleShowHomeScreen: () => void
   version: string
   onOpenChangelog: () => void
+  onOpenGuide: () => void
   onClose: () => void
 }
 
@@ -27,6 +28,7 @@ export function SettingsScreen({
   onToggleShowHomeScreen,
   version,
   onOpenChangelog,
+  onOpenGuide,
   onClose,
 }: SettingsScreenProps) {
   const [isConfirmingReset, setIsConfirmingReset] = useState(false)
@@ -148,6 +150,16 @@ export function SettingsScreen({
             v{version}
           </button>
         </div>
+
+        <button type="button" className="stats-menu__row" onClick={onOpenGuide}>
+          <span className="stats-menu__row-text">
+            <span className="stats-menu__row-title">Learn about the app</span>
+            <span className="stats-menu__row-preview">What every stat and setting does</span>
+          </span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
 
         <div className="settings-divider" />
 

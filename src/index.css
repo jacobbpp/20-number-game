@@ -1088,6 +1088,48 @@ button:focus-visible {
   gap: 10px;
 }
 
+.guide-section__label {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.guide-list--nested {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(var(--surface-tint-rgb), 0.05);
+  gap: 12px;
+}
+
+.guide-entry__term {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.guide-entry__desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.guide-entry__toggle {
+  padding: 0;
+  margin-top: 4px;
+}
+
 .settings-row {
   display: flex;
   align-items: center;
