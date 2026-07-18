@@ -22,10 +22,8 @@ correctly to win — one illegal roll ends the run.
   appears once there's enough history behind it, and never in hard mode. Free play only — daily
   board sizes vary, so a "usual spot" wouldn't mean the same thing from one day to the next.
 
-A Share button on the win/loss screen produces a Wordle-style text grid by default. On phones that
-support sharing files (most modern ones), it instead opens the native share sheet with a generated
-image of the board — usable anywhere a plain text grid can't reach, like Instagram or WhatsApp
-stories — and falls back to the copyable text everywhere else.
+A Share button on the win/loss screen copies a Wordle-style text grid to your clipboard, ready to
+paste anywhere.
 
 Your best score (most positions filled across all attempts) is saved on this device, along with
 the board from that specific run — tap the Best pill in the header to see it. A short "What's
