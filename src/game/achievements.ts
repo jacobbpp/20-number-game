@@ -1,9 +1,11 @@
 import type { StreakData } from './daily'
 import type { StatsData } from './stats'
+import { BOARD_SIZE } from './types'
 
 export interface AchievementContext {
   stats: StatsData
   dailyStreak: StreakData
+  bestScore: number
 }
 
 export interface Achievement {
@@ -15,7 +17,7 @@ export interface Achievement {
 
 // Ordered as the intended "ladder" — roughly easiest to hardest — since
 // that's the order they render in on the achievements screen.
-export const ACHIEVEMENTS: Achievement[] = [
+export const NAMED_ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first-win',
     title: 'First win',
@@ -59,6 +61,21 @@ export const ACHIEVEMENTS: Achievement[] = [
     isUnlocked: ({ stats }) => stats.totalGames >= 100,
   },
 ]
+
+// One per possible free-play score, 1 through the board size. Free play
+// only — bestScore has no equivalent on the daily challenge, whose board
+// size varies from day to day, so "N/20" wouldn't mean the same thing there.
+export const SCORE_MILESTONES: Achievement[] = Array.from({ length: BOARD_SIZE }, (_, i) => {
+  const n = i + 1
+  return {
+    id: `score-${n}`,
+    title: `${n}/${BOARD_SIZE}`,
+    description: `Place at least ${n} number${n === 1 ? '' : 's'} in a single free-play game.`,
+    isUnlocked: ({ bestScore }: AchievementContext) => bestScore >= n,
+  }
+})
+
+export const ACHIEVEMENTS: Achievement[] = [...NAMED_ACHIEVEMENTS, ...SCORE_MILESTONES]
 
 export function unlockedAchievementIds(ctx: AchievementContext): string[] {
   return ACHIEVEMENTS.filter(achievement => achievement.isUnlocked(ctx)).map(achievement => achievement.id)

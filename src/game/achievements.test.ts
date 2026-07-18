@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ACHIEVEMENTS, unlockedAchievementIds, type AchievementContext } from './achievements'
+import { ACHIEVEMENTS, SCORE_MILESTONES, unlockedAchievementIds, type AchievementContext } from './achievements'
 import { createEmptyStreak } from './daily'
 import { createEmptyStats } from './stats'
 
 function baseContext(): AchievementContext {
-  return { stats: createEmptyStats(), dailyStreak: createEmptyStreak() }
+  return { stats: createEmptyStats(), dailyStreak: createEmptyStreak(), bestScore: 0 }
 }
 
 function find(id: string) {
@@ -66,6 +66,28 @@ describe('achievement unlock conditions', () => {
     expect(find('week-streak').isUnlocked(ctx)).toBe(false)
     ctx.dailyStreak.bestStreak = 7
     expect(find('week-streak').isUnlocked(ctx)).toBe(true)
+  })
+})
+
+describe('score milestones', () => {
+  it('produces one milestone per board slot, 1 through 20, in ascending order', () => {
+    expect(SCORE_MILESTONES).toHaveLength(20)
+    expect(SCORE_MILESTONES.map(m => m.id)).toEqual(Array.from({ length: 20 }, (_, i) => `score-${i + 1}`))
+    expect(SCORE_MILESTONES[0].title).toBe('1/20')
+    expect(SCORE_MILESTONES[19].title).toBe('20/20')
+  })
+
+  it('unlocks a milestone once bestScore reaches it, not before', () => {
+    const ctx = baseContext()
+    ctx.bestScore = 11
+    expect(SCORE_MILESTONES[10].isUnlocked(ctx)).toBe(true) // score-11
+    expect(SCORE_MILESTONES[11].isUnlocked(ctx)).toBe(false) // score-12
+  })
+
+  it('a single high bestScore unlocks every milestone up to it', () => {
+    const ctx = baseContext()
+    ctx.bestScore = 20
+    expect(SCORE_MILESTONES.every(m => m.isUnlocked(ctx))).toBe(true)
   })
 })
 

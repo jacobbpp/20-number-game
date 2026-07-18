@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.21.0',
+    date: '2026-07-19',
+    title: '20 new milestone achievements',
+    description: 'A new "Milestones" grid in Achievements covers every free-play score, 1/20 through 20/20 — reach a new best and it fills in. A game that crosses several at once only announces the highest one, not a toast per number.',
+  },
+  {
     version: '1.20.0',
     date: '2026-07-19',
     title: 'Deeper insights, and the share image is back',

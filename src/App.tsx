@@ -60,7 +60,7 @@ function App() {
   const dailyDate = dailyDateRef.current
 
   const { todayResult, streak, history, recordDailyResult } = useDailyChallenge(dailyDate)
-  const { unlockedAt: unlockedAchievements, newlyUnlocked, dismissNewlyUnlocked } = useAchievements(stats, streak)
+  const { unlockedAt: unlockedAchievements, newlyUnlocked, dismissNewlyUnlocked } = useAchievements(stats, streak, bestScore)
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
   const [showCoachMark, setShowCoachMark] = useState(false)
   const isFirstLaunchRef = useRef(!hasSeenOnboarding)
@@ -312,11 +312,7 @@ function App() {
       {isChangelogOpen && <WhatsNewScreen entries={CHANGELOG} onClose={() => setIsChangelogOpen(false)} />}
       {isBestRunOpen && <BestRunScreen bestScore={bestScore} bestRun={bestRun} onClose={() => setIsBestRunOpen(false)} />}
       {isAchievementsOpen && (
-        <AchievementsScreen
-          achievements={ACHIEVEMENTS}
-          unlockedAt={unlockedAchievements}
-          onClose={() => setIsAchievementsOpen(false)}
-        />
+        <AchievementsScreen unlockedAt={unlockedAchievements} bestScore={bestScore} onClose={() => setIsAchievementsOpen(false)} />
       )}
       {newlyUnlocked[0] && !isOverlayActive && (
         <AchievementToast

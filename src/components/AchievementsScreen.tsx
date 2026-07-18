@@ -1,15 +1,15 @@
-import type { Achievement } from '../game/achievements'
+import { ACHIEVEMENTS, NAMED_ACHIEVEMENTS, SCORE_MILESTONES } from '../game/achievements'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface AchievementsScreenProps {
-  achievements: Achievement[]
   unlockedAt: Record<string, number>
+  bestScore: number
   onClose: () => void
 }
 
-export function AchievementsScreen({ achievements, unlockedAt, onClose }: AchievementsScreenProps) {
+export function AchievementsScreen({ unlockedAt, bestScore, onClose }: AchievementsScreenProps) {
   const containerRef = useFocusTrap<HTMLDivElement>()
-  const unlockedCount = achievements.filter(achievement => achievement.id in unlockedAt).length
+  const unlockedCount = ACHIEVEMENTS.filter(achievement => achievement.id in unlockedAt).length
 
   return (
     <div className="overlay" role="alertdialog" aria-labelledby="achievements-title" ref={containerRef}>
@@ -18,11 +18,33 @@ export function AchievementsScreen({ achievements, unlockedAt, onClose }: Achiev
           Achievements
         </h2>
         <p className="achievements__count">
-          {unlockedCount} of {achievements.length} unlocked
+          {unlockedCount} of {ACHIEVEMENTS.length} unlocked
         </p>
 
         <div className="achievements__scroll">
-          {achievements.map(achievement => {
+          <div className="milestones">
+            <p className="milestones__title">Milestones</p>
+            <p className="milestones__caption">
+              {bestScore} of {SCORE_MILESTONES.length} — your best run placed {bestScore} number{bestScore === 1 ? '' : 's'}
+            </p>
+            <div className="milestones__grid" role="group" aria-label="Score milestones, 1 to 20">
+              {SCORE_MILESTONES.map((milestone, index) => {
+                const n = index + 1
+                const unlocked = milestone.id in unlockedAt
+                return (
+                  <span
+                    key={milestone.id}
+                    className={`milestone-badge${unlocked ? ' milestone-badge--unlocked' : ''}`}
+                    aria-label={`${n} of ${SCORE_MILESTONES.length}${unlocked ? ', reached' : ', not reached yet'}`}
+                  >
+                    {n}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+
+          {NAMED_ACHIEVEMENTS.map(achievement => {
             const unlocked = achievement.id in unlockedAt
             return (
               <div key={achievement.id} className={`achievement-row${unlocked ? ' achievement-row--unlocked' : ''}`}>

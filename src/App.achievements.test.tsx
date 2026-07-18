@@ -67,9 +67,23 @@ describe('achievements', () => {
     fireEvent.click(await screen.findByRole('button', { name: /🏆/ }))
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Achievements' })
-    expect(within(dialog).getByText('1 of 7 unlocked')).toBeInTheDocument()
+    expect(within(dialog).getByText('1 of 27 unlocked')).toBeInTheDocument()
     expect(within(dialog).getByText('First win')).toBeInTheDocument()
     expect(within(dialog).getByText('Century')).toBeInTheDocument()
+  })
+
+  it('shows the milestones grid reflecting the current best score', async () => {
+    localStorage.setItem('order20-best-score', '12')
+    seedStats()
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /🏆/ }))
+
+    const dialog = await screen.findByRole('alertdialog', { name: 'Achievements' })
+    expect(within(dialog).getByText('12 of 20 — your best run placed 12 numbers')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('12 of 20, reached')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('13 of 20, not reached yet')).toBeInTheDocument()
   })
 
   it('silently backfills an already-earned achievement without a toast on first load', async () => {
@@ -97,8 +111,30 @@ describe('achievements', () => {
     fireEvent.click(within(toast).getByRole('button'))
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Achievements' })
-    expect(within(dialog).getByText('1 of 7 unlocked')).toBeInTheDocument()
+    // A perfect 20/20 win unlocks first-win plus all 20 score milestones.
+    expect(within(dialog).getByText('21 of 27 unlocked')).toBeInTheDocument()
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it("batches a perfect win's 20 newly-crossed milestones into a single follow-up toast", async () => {
+    seedStats()
+    seedOneMoveFromWinning()
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Position 20, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'New game' }))
+
+    const firstToast = await screen.findByRole('status')
+    expect(within(firstToast).getByText('First win')).toBeInTheDocument()
+    fireEvent.click(within(firstToast).getByRole('button', { name: /Achievement unlocked/ }))
+
+    // Closing the achievements list (opened by the first toast) lets the
+    // queued milestone toast surface — proving 20 crossed milestones
+    // collapsed into exactly one, for the highest score reached.
+    fireEvent.click(await screen.findByRole('button', { name: 'Close' }))
+    const secondToast = await screen.findByRole('status')
+    expect(within(secondToast).getByText('20/20')).toBeInTheDocument()
+    expect(screen.queryByText('19/20')).not.toBeInTheDocument()
   })
 
   it('does not show the toast while the win overlay is covering the board', async () => {

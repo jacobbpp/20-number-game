@@ -30,14 +30,32 @@ function writeStoredUnlockedAt(value: Record<string, number>) {
   }
 }
 
-export function useAchievements(stats: StatsData, dailyStreak: StreakData) {
+// A single great game can cross several score milestones at once (e.g.
+// 3/20 straight to 12/20). Announcing each one separately would mean a
+// string of near-identical toasts, so only the highest milestone reached
+// this sync gets queued — SCORE_MILESTONES (and therefore ACHIEVEMENTS) is
+// generated in ascending order, so the last score-* entry in the list is
+// always the highest one. Named achievements are unaffected and each still
+// get their own toast.
+function collapseMilestoneToasts(freshlyUnlocked: Achievement[]): Achievement[] {
+  const milestoneIndexes: number[] = []
+  freshlyUnlocked.forEach((achievement, index) => {
+    if (achievement.id.startsWith('score-')) milestoneIndexes.push(index)
+  })
+  if (milestoneIndexes.length <= 1) return freshlyUnlocked
+
+  const keepIndex = milestoneIndexes[milestoneIndexes.length - 1]
+  return freshlyUnlocked.filter((_, index) => !milestoneIndexes.includes(index) || index === keepIndex)
+}
+
+export function useAchievements(stats: StatsData, dailyStreak: StreakData, bestScore: number) {
   const [unlockedAt, setUnlockedAt] = useState<Record<string, number>>(readStoredUnlockedAt)
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([])
   const isFirstSyncRef = useRef(true)
   const hadPriorHistoryRef = useRef(Object.keys(unlockedAt).length > 0)
 
   useEffect(() => {
-    const ctx: AchievementContext = { stats, dailyStreak }
+    const ctx: AchievementContext = { stats, dailyStreak, bestScore }
     const currentlyUnlocked = unlockedAchievementIds(ctx)
     const freshIds = currentlyUnlocked.filter(id => !(id in unlockedAt))
     const isFirstSync = isFirstSyncRef.current
@@ -58,9 +76,10 @@ export function useAchievements(stats: StatsData, dailyStreak: StreakData) {
     // every achievement at once the moment this feature ships.
     const isSilentBackfill = isFirstSync && !hadPriorHistoryRef.current
     if (!isSilentBackfill) {
-      setNewlyUnlocked(prev => [...prev, ...ACHIEVEMENTS.filter(achievement => freshIds.includes(achievement.id))])
+      const fresh = ACHIEVEMENTS.filter(achievement => freshIds.includes(achievement.id))
+      setNewlyUnlocked(prev => [...prev, ...collapseMilestoneToasts(fresh)])
     }
-  }, [stats, dailyStreak, unlockedAt])
+  }, [stats, dailyStreak, bestScore, unlockedAt])
 
   // Stable identity: App.tsx uses this in a timeout-reset effect keyed off
   // the newlyUnlocked queue, and a fresh function reference on every render

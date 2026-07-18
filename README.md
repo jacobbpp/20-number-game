@@ -47,11 +47,14 @@ in a win), your toughest range (most common cause of a loss), your most-used pos
 rate with hard mode on versus overall, and whether the last game followed or broke the usual
 pattern.
 
-A trophy pill on that same screen ("3/7", etc.) opens the achievements list — first win, win
-streaks, games-played milestones, a daily-streak milestone, and one for winning with hard mode on.
-Unlocking one shows a brief toast rather than interrupting whatever's on screen, and a device
-already past an achievement's threshold when this feature first arrived credits it silently rather
-than firing off a toast for every past achievement at once.
+A trophy pill on that same screen ("14/27", etc.) opens the achievements list. A "Milestones" grid
+covers every free-play score from 1/20 to 20/20 — reach a new best and that badge fills in. Below
+it, named achievements cover first win, win streaks, games-played milestones, a daily-streak
+milestone, and one for winning with hard mode on. Unlocking one shows a brief toast rather than
+interrupting whatever's on screen; a game that crosses several score milestones at once (going
+straight from 3/20 to 12/20, say) only announces the highest one, not one toast per number. A
+device already past an achievement's threshold when this feature first arrived credits it silently
+rather than firing off a toast for every past achievement at once.
 
 ## Daily challenge
 
