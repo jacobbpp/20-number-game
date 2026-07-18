@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.23.0',
+    date: '2026-07-19',
+    title: 'Shared images match your theme',
+    description: 'The image behind Share now follows whichever theme you\'re on — dark stays dark, light actually looks light, instead of always rendering the dark version.',
+  },
+  {
     version: '1.22.0',
     date: '2026-07-19',
     title: 'A new look',

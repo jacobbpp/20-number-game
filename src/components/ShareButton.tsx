@@ -1,5 +1,6 @@
 import { buildDailyShareText, buildShareText, formatDailyDateLabel } from '../game/share'
 import { useCopyFeedback } from '../hooks/useCopyFeedback'
+import type { Theme } from '../hooks/useTheme'
 import { vibrate } from '../utils/haptics'
 import { buildShareImageBlob } from '../utils/shareImage'
 import { playSound } from '../utils/sound'
@@ -9,6 +10,7 @@ interface ShareButtonProps {
   placedCount: number
   won: boolean
   dailyDate?: string
+  theme: Theme
 }
 
 // Checked with a throwaway probe file, before spending time generating the
@@ -24,7 +26,7 @@ async function supportsFileShare(): Promise<boolean> {
   }
 }
 
-export function ShareButton({ positions, placedCount, won, dailyDate }: ShareButtonProps) {
+export function ShareButton({ positions, placedCount, won, dailyDate, theme }: ShareButtonProps) {
   const { copied, copy } = useCopyFeedback()
 
   const handleShare = async () => {
@@ -35,7 +37,7 @@ export function ShareButton({ positions, placedCount, won, dailyDate }: ShareBut
 
     if (await supportsFileShare()) {
       const headline = dailyDate ? `Order 20 Daily · ${formatDailyDateLabel(dailyDate)}` : 'Order 20'
-      const blob = await buildShareImageBlob({ positions, placedCount, won, headline, url })
+      const blob = await buildShareImageBlob({ positions, placedCount, won, headline, url, theme })
       const file = blob ? new File([blob], 'order-20.png', { type: 'image/png' }) : null
 
       if (file) {

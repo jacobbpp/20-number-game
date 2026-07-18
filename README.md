@@ -33,8 +33,8 @@ means re-copying its files into `src/brand` by hand.
 
 A Share button on the win/loss screen produces a Wordle-style text grid by default. On phones that
 support sharing files (most modern ones), it instead opens the native share sheet with a generated
-image of the board, styled to match the board itself — and falls back to the copyable text
-everywhere else.
+image of the board, styled to match the board itself in whichever theme you're on — and falls back
+to the copyable text everywhere else.
 
 Your best score (most positions filled across all attempts) is saved on this device, along with
 the board from that specific run — tap the Best pill in the header to see it. A short "What's

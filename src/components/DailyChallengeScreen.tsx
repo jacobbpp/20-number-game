@@ -8,6 +8,7 @@ import { buildStreakShareText, formatDailyDateLabel } from '../game/share'
 import { useCopyFeedback } from '../hooks/useCopyFeedback'
 import type { GameState } from '../game/types'
 import type { DailyResult } from '../hooks/useDailyChallenge'
+import type { Theme } from '../hooks/useTheme'
 import { vibrate } from '../utils/haptics'
 import { playSound } from '../utils/sound'
 
@@ -18,6 +19,7 @@ interface DailyChallengeScreenProps {
   history: DailyResult[]
   today: string
   hardMode: boolean
+  theme: Theme
   onSelect: (index: number) => void
   onClose: () => void
 }
@@ -29,6 +31,7 @@ export function DailyChallengeScreen({
   history,
   today,
   hardMode,
+  theme,
   onSelect,
   onClose,
 }: DailyChallengeScreenProps) {
@@ -91,6 +94,7 @@ export function DailyChallengeScreen({
                 placedCount={todayResult.placedCount}
                 won={todayResult.status === 'won'}
                 dailyDate={todayResult.date}
+                theme={theme}
               />
             </div>
 

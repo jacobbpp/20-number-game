@@ -40,6 +40,7 @@ describe('buildShareImageBlob', () => {
       placedCount: 1,
       won: false,
       headline: 'Order 20',
+      theme: 'dark',
       url: 'https://example.com/',
     })
 
@@ -70,6 +71,7 @@ describe('buildShareImageBlob', () => {
       placedCount: 2,
       won: false,
       headline: 'Order 20',
+      theme: 'dark',
       url: 'https://example.com/',
     })
 
@@ -103,9 +105,43 @@ describe('buildShareImageBlob', () => {
       placedCount: 2,
       won: true,
       headline: 'Order 20',
+      theme: 'dark',
       url: 'https://example.com/',
     })
 
     expect(fillText).toHaveBeenCalledWith('Perfect 2/2!', expect.any(Number), expect.any(Number))
+  })
+
+  it('renders the light palette background when the player is on light theme', async () => {
+    const bgFillsSeen: string[] = []
+    const ctx = {
+      fillStyle: '',
+      fillRect: vi.fn(function (this: { fillStyle: string }) {
+        bgFillsSeen.push(this.fillStyle)
+      }),
+      fillText: vi.fn(),
+      fill: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      arcTo: vi.fn(),
+      closePath: vi.fn(),
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D)
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (this: HTMLCanvasElement, callback) {
+      callback(new Blob(['fake-png'], { type: 'image/png' }))
+    })
+
+    await buildShareImageBlob({
+      positions: [10, null],
+      placedCount: 1,
+      won: false,
+      headline: 'Order 20',
+      theme: 'light',
+      url: 'https://example.com/',
+    })
+
+    // The full-canvas background fill is always the first fillRect call.
+    expect(bgFillsSeen[0]).toBe('#f3f0ec')
   })
 })

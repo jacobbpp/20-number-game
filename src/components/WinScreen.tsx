@@ -1,13 +1,15 @@
 import { ResultGrid } from './ResultGrid'
 import { ShareButton } from './ShareButton'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import type { Theme } from '../hooks/useTheme'
 
 interface WinScreenProps {
   positions: (number | null)[]
   onNewGame: () => void
+  theme: Theme
 }
 
-export function WinScreen({ positions, onNewGame }: WinScreenProps) {
+export function WinScreen({ positions, onNewGame, theme }: WinScreenProps) {
   const containerRef = useFocusTrap<HTMLDivElement>()
 
   return (
@@ -22,7 +24,7 @@ export function WinScreen({ positions, onNewGame }: WinScreenProps) {
           <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
             New game
           </button>
-          <ShareButton positions={positions} placedCount={positions.length} won />
+          <ShareButton positions={positions} placedCount={positions.length} won theme={theme} />
         </div>
       </div>
     </div>

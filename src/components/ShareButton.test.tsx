@@ -29,7 +29,7 @@ describe('ShareButton', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.assign(navigator, { clipboard: { writeText } })
 
-    render(<ShareButton positions={[10, null]} placedCount={1} won={false} />)
+    render(<ShareButton positions={[10, null]} placedCount={1} won={false} theme="dark" />)
     fireEvent.click(screen.getByRole('button', { name: 'Share' }))
 
     expect(await screen.findByRole('button', { name: 'Copied!' })).toBeInTheDocument()
@@ -43,7 +43,7 @@ describe('ShareButton', () => {
     const canShare = vi.fn().mockReturnValue(true)
     Object.assign(navigator, { clipboard: { writeText }, share, canShare })
 
-    render(<ShareButton positions={[10, null]} placedCount={1} won={false} />)
+    render(<ShareButton positions={[10, null]} placedCount={1} won={false} theme="dark" />)
     fireEvent.click(screen.getByRole('button', { name: 'Share' }))
 
     await vi.waitFor(() => expect(share).toHaveBeenCalledOnce())
@@ -62,7 +62,7 @@ describe('ShareButton', () => {
     const canShare = vi.fn().mockReturnValue(true)
     Object.assign(navigator, { clipboard: { writeText }, share, canShare })
 
-    render(<ShareButton positions={[10, null]} placedCount={1} won={false} />)
+    render(<ShareButton positions={[10, null]} placedCount={1} won={false} theme="dark" />)
     fireEvent.click(screen.getByRole('button', { name: 'Share' }))
 
     await vi.waitFor(() => expect(share).toHaveBeenCalledOnce())
@@ -77,7 +77,7 @@ describe('ShareButton', () => {
     const canShare = vi.fn().mockReturnValue(true)
     Object.assign(navigator, { clipboard: { writeText }, share, canShare })
 
-    render(<ShareButton positions={[10, null]} placedCount={1} won={false} />)
+    render(<ShareButton positions={[10, null]} placedCount={1} won={false} theme="dark" />)
     fireEvent.click(screen.getByRole('button', { name: 'Share' }))
 
     expect(await screen.findByRole('button', { name: 'Copied!' })).toBeInTheDocument()
