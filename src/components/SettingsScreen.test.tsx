@@ -10,6 +10,8 @@ function renderScreen(overrides: Partial<Parameters<typeof SettingsScreen>[0]> =
     onToggleTheme: vi.fn(),
     hardMode: false,
     onToggleHardMode: vi.fn(),
+    showHomeScreen: true,
+    onToggleShowHomeScreen: vi.fn(),
     version: '1.0.0',
     onOpenChangelog: vi.fn(),
     onClose: vi.fn(),
@@ -48,6 +50,17 @@ describe('SettingsScreen', () => {
   it('reflects hard mode being on in the toggle label', () => {
     renderScreen({ hardMode: true })
     expect(screen.getByRole('button', { name: 'Turn off hard mode' })).toBeInTheDocument()
+  })
+
+  it('calls onToggleShowHomeScreen from the home screen row, with a label reflecting current state', () => {
+    const props = renderScreen({ showHomeScreen: true })
+    fireEvent.click(screen.getByRole('button', { name: 'Skip the home screen and jump straight into a game' }))
+    expect(props.onToggleShowHomeScreen).toHaveBeenCalledOnce()
+  })
+
+  it('reflects the home screen being off in the toggle label', () => {
+    renderScreen({ showHomeScreen: false })
+    expect(screen.getByRole('button', { name: 'Show a home screen before the game' })).toBeInTheDocument()
   })
 
   it('shows the current version and opens the changelog when tapped', () => {

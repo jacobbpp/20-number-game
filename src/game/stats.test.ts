@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   averageTurns,
   averageTurnsInWins,
+  bestPositionInsight,
+  boardHalfComparison,
   bucketForValue,
   computeInsight,
   createEmptyStats,
@@ -14,6 +16,7 @@ import {
   scoreBucketForCount,
   scoreBucketLabel,
   signaturePosition,
+  streakMomentum,
   suggestedPosition,
   winRate,
   type StatsData,
@@ -406,5 +409,75 @@ describe('computeInsight', () => {
 
     const insight = computeInsight(stats)
     expect(insight).toEqual({ kind: 'match', position: 9, value: 570, bucket: 5, usualPosition: 9 })
+  })
+})
+
+describe('bestPositionInsight', () => {
+  it('returns null when no position has enough placements behind it', () => {
+    const stats = createEmptyStats()
+    stats.winMatrix[3][0] = 1
+    stats.lossMatrix[3][1] = 1
+    expect(bestPositionInsight(stats)).toBeNull()
+  })
+
+  it('returns the position with the highest win-association ratio once there is enough signal', () => {
+    const stats = createEmptyStats()
+    // position 3: 4 wins, 1 loss across buckets -> 80%
+    stats.winMatrix[3][0] = 3
+    stats.winMatrix[3][1] = 1
+    stats.lossMatrix[3][2] = 1
+    // position 7: 1 win, 4 losses -> 20%
+    stats.winMatrix[7][0] = 1
+    stats.lossMatrix[7][1] = 4
+    expect(bestPositionInsight(stats)).toEqual({ position: 3, winRatePercent: 80 })
+  })
+})
+
+describe('boardHalfComparison', () => {
+  it('returns null when either half lacks enough signal', () => {
+    const stats = createEmptyStats()
+    stats.winMatrix[0][0] = 3
+    expect(boardHalfComparison(stats)).toBeNull()
+  })
+
+  it('returns null when both halves tie exactly', () => {
+    const stats = createEmptyStats()
+    for (let position = 0; position < 5; position++) stats.winMatrix[position][0] = 5
+    for (let position = 10; position < 15; position++) stats.winMatrix[position][0] = 5
+    expect(boardHalfComparison(stats)).toBeNull()
+  })
+
+  it('identifies the stronger half once both halves have enough signal', () => {
+    const stats = createEmptyStats()
+    // Top half (positions 0-9): 8 wins, 2 losses -> 80%
+    stats.winMatrix[0][0] = 8
+    stats.lossMatrix[1][0] = 2
+    // Bottom half (positions 10-19): 2 wins, 8 losses -> 20%
+    stats.winMatrix[10][0] = 2
+    stats.lossMatrix[11][0] = 8
+    expect(boardHalfComparison(stats)).toEqual({ strongerHalf: 'top', strongerWinRatePercent: 80, weakerWinRatePercent: 20 })
+  })
+})
+
+describe('streakMomentum', () => {
+  it('returns null when there is no active win streak', () => {
+    const stats = createEmptyStats()
+    stats.currentWinStreak = 0
+    stats.bestWinStreak = 5
+    expect(streakMomentum(stats)).toBeNull()
+  })
+
+  it('reports chasing the record when the current streak is below the best', () => {
+    const stats = createEmptyStats()
+    stats.currentWinStreak = 3
+    stats.bestWinStreak = 5
+    expect(streakMomentum(stats)).toEqual({ kind: 'chasing', winsToTie: 2 })
+  })
+
+  it('reports a new record when the current streak has reached the best', () => {
+    const stats = createEmptyStats()
+    stats.currentWinStreak = 5
+    stats.bestWinStreak = 5
+    expect(streakMomentum(stats)).toEqual({ kind: 'record', winsToTie: 0 })
   })
 })

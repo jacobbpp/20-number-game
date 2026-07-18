@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.24.0',
+    date: '2026-07-19',
+    title: 'A home screen, and deeper insights',
+    description: 'A new "Ready to play?" screen greets you before each session, with today\'s daily challenge and your personal best and win streak front and center — turn it off in Settings to jump straight to the board instead. Insights now leads with a best score/win rate/streak strip and adds three new patterns: your best-performing position, whether the top or bottom half of the board treats you better, and how close your current streak is to your record.',
+  },
+  {
     version: '1.23.0',
     date: '2026-07-19',
     title: 'Shared images match your theme',

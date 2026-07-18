@@ -259,6 +259,80 @@ export function mostCommonLossBucket(stats: StatsData): number | null {
   return stats.lossBucketCounts[best] > 0 ? best : null
 }
 
+export interface PositionWinRateStat {
+  position: number
+  winRatePercent: number
+}
+
+// Mirrors bestValueRange, but sliced by board position instead of value
+// range — for each position with enough placements behind it, what
+// fraction of those placements happened in games that were ultimately won.
+export function bestPositionInsight(stats: StatsData): PositionWinRateStat | null {
+  const rates: { position: number; winRate: number; total: number }[] = []
+  for (let position = 0; position < stats.winMatrix.length; position++) {
+    const wins = stats.winMatrix[position].reduce((sum, c) => sum + c, 0)
+    const losses = stats.lossMatrix[position].reduce((sum, c) => sum + c, 0)
+    const total = wins + losses
+    if (total >= MIN_BUCKET_SIGNAL) rates.push({ position, winRate: wins / total, total })
+  }
+  if (rates.length === 0) return null
+  const best = rates.reduce((a, b) => (b.winRate > a.winRate ? b : a))
+  return { position: best.position, winRatePercent: Math.round(best.winRate * 100) }
+}
+
+const MIN_HALF_SIGNAL = 5
+
+export interface BoardHalfStat {
+  strongerHalf: 'top' | 'bottom'
+  strongerWinRatePercent: number
+  weakerWinRatePercent: number
+}
+
+// Splits the board into its top and bottom halves (positions 0-9 vs
+// 10-19 on the fixed 20-slot free-play board) and compares win rate
+// between them — a coarse structural read rather than a specific range
+// or position, using the same win/loss matrices as every other insight.
+export function boardHalfComparison(stats: StatsData): BoardHalfStat | null {
+  const midpoint = Math.floor(stats.winMatrix.length / 2)
+  const halfRate = (from: number, to: number) => {
+    let wins = 0
+    let losses = 0
+    for (let position = from; position < to; position++) {
+      wins += stats.winMatrix[position].reduce((sum, c) => sum + c, 0)
+      losses += stats.lossMatrix[position].reduce((sum, c) => sum + c, 0)
+    }
+    const total = wins + losses
+    return total >= MIN_HALF_SIGNAL ? wins / total : null
+  }
+
+  const topRate = halfRate(0, midpoint)
+  const bottomRate = halfRate(midpoint, stats.winMatrix.length)
+  if (topRate === null || bottomRate === null || topRate === bottomRate) return null
+
+  const strongerHalf = topRate > bottomRate ? 'top' : 'bottom'
+  const strongerRate = Math.max(topRate, bottomRate)
+  const weakerRate = Math.min(topRate, bottomRate)
+  return {
+    strongerHalf,
+    strongerWinRatePercent: Math.round(strongerRate * 100),
+    weakerWinRatePercent: Math.round(weakerRate * 100),
+  }
+}
+
+export interface StreakMomentum {
+  kind: 'record' | 'chasing'
+  winsToTie: number
+}
+
+// Reframes the win-streak numbers already shown elsewhere as forward-looking
+// context rather than a flat readout. Only meaningful while a streak is
+// actually active — a broken streak has nothing to chase.
+export function streakMomentum(stats: StatsData): StreakMomentum | null {
+  if (stats.currentWinStreak === 0) return null
+  if (stats.currentWinStreak >= stats.bestWinStreak) return { kind: 'record', winsToTie: 0 }
+  return { kind: 'chasing', winsToTie: stats.bestWinStreak - stats.currentWinStreak }
+}
+
 export function maxCount(matrix: number[][]): number {
   let max = 0
   for (const row of matrix) {

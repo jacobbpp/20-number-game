@@ -22,6 +22,7 @@ function mockRollSequence(values: number[]) {
 beforeEach(() => {
   localStorage.clear()
   localStorage.setItem('order20-onboarded', '1')
+  localStorage.setItem('order20-show-home-screen', '0')
   localStorage.setItem('order20-whatsnew-seen-version', APP_VERSION)
 })
 

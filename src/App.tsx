@@ -6,6 +6,7 @@ import { Board } from './components/Board'
 import { DailyChallengeScreen } from './components/DailyChallengeScreen'
 import { GameOverScreen } from './components/GameOverScreen'
 import { Header } from './components/Header'
+import { HomeScreen } from './components/HomeScreen'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { RollDisplay } from './components/RollDisplay'
 import { SettingsScreen } from './components/SettingsScreen'
@@ -26,6 +27,7 @@ import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useGameStats } from './hooks/useGameStats'
 import { useHardMode } from './hooks/useHardMode'
 import { useOnboarding } from './hooks/useOnboarding'
+import { useShowHomeScreen } from './hooks/useShowHomeScreen'
 import { useSoundSetting } from './hooks/useSoundSetting'
 import { useTheme } from './hooks/useTheme'
 import { useWhatsNew } from './hooks/useWhatsNew'
@@ -49,6 +51,8 @@ function App() {
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
   const { hardMode, toggleHardMode } = useHardMode()
+  const { showHomeScreen, toggleShowHomeScreen } = useShowHomeScreen()
+  const [isHomeOpen, setIsHomeOpen] = useState(showHomeScreen)
   const { isOpen: isWhatsNewOpen, unseenEntries, close: closeWhatsNew } = useWhatsNew(hasSeenOnboarding)
 
   // Frozen once per session — every daily-mode concept ("today's" rng,
@@ -211,22 +215,27 @@ function App() {
   }
 
   const openStats = () => {
+    setIsHomeOpen(false)
     setIsDailyOpen(false)
     setIsSettingsOpen(false)
     setIsStatsOpen(true)
   }
 
   const openDaily = () => {
+    setIsHomeOpen(false)
     setIsStatsOpen(false)
     setIsSettingsOpen(false)
     setIsDailyOpen(true)
   }
 
   const openSettings = () => {
+    setIsHomeOpen(false)
     setIsStatsOpen(false)
     setIsDailyOpen(false)
     setIsSettingsOpen(true)
   }
+
+  const handlePlay = () => setIsHomeOpen(false)
 
   // Free play only — daily board sizes vary, so "position 5" doesn't mean
   // the same thing across days the way it does for the fixed-size matrix
@@ -235,7 +244,18 @@ function App() {
 
   return (
     <div className="app">
-      {isDailyOpen ? (
+      {isHomeOpen ? (
+        <HomeScreen
+          bestScore={bestScore}
+          winStreak={stats.currentWinStreak}
+          todayResult={todayResult}
+          dailyBoardSize={dailyBoardSize}
+          onPlay={handlePlay}
+          onPlayDaily={openDaily}
+          onOpenStats={openStats}
+          onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
+        />
+      ) : isDailyOpen ? (
         <DailyChallengeScreen
           dailyState={dailyState}
           todayResult={todayResult}
@@ -253,6 +273,7 @@ function App() {
           streak={streak}
           today={dailyDate}
           theme={theme}
+          bestScore={bestScore}
           unlockedAchievementCount={Object.keys(unlockedAchievements).length}
           totalAchievementCount={ACHIEVEMENTS.length}
           onClose={() => setIsStatsOpen(false)}
@@ -267,6 +288,8 @@ function App() {
           onToggleTheme={toggleTheme}
           hardMode={hardMode}
           onToggleHardMode={toggleHardMode}
+          showHomeScreen={showHomeScreen}
+          onToggleShowHomeScreen={toggleShowHomeScreen}
           version={APP_VERSION}
           onOpenChangelog={() => setIsChangelogOpen(true)}
           onClose={() => setIsSettingsOpen(false)}
@@ -296,7 +319,7 @@ function App() {
         </>
       )}
 
-      {!isStatsOpen && !isDailyOpen && !isSettingsOpen && state.status === 'lost' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
@@ -306,7 +329,7 @@ function App() {
           theme={theme}
         />
       )}
-      {!isStatsOpen && !isDailyOpen && !isSettingsOpen && state.status === 'won' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && state.status === 'won' && (
         <WinScreen positions={state.positions} onNewGame={handleRestart} theme={theme} />
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}

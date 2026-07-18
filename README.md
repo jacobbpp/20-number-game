@@ -13,6 +13,13 @@ built from those same two accent hues rather than a full rainbow. A small "~/ord
 the brand's Tommy badge sits at the top of the header. Picking up a change from the brand repo
 means re-copying its files into `src/brand` by hand.
 
+## Home screen
+
+A "Ready to play?" screen greets you before each session: a Play button into free play, a daily
+challenge card (showing today's board size, or your result once you've played it), and your
+personal best and win streak. "See all stats" opens the full Stats screen from there too. Turn it
+off in Settings to skip straight to the board on every load instead.
+
 ## Rules
 
 - A random whole number between 1 and 1,000 rolls automatically at the start of each game, and
@@ -49,12 +56,14 @@ covers win rate and win streak (plus your best-ever streak, once you've broken o
 mirrors that for the daily challenge (current and best). Average score shows average turns per
 game, overall and for wins only, alongside a chart of how far your runs usually get. Heatmap tracks
 which value range tends to land at which position across every completed game, with the most
-recent game's placements outlined, filterable to wins-only or losses-only. Insights is a feed of
-independent observations, each gated on its own data threshold so a newer player just sees fewer
-cards rather than a shaky one: your best-associated value range (highest share of placements ending
-in a win), your toughest range (most common cause of a loss), your most-used position, your win
-rate with hard mode on versus overall, and whether the last game followed or broke the usual
-pattern.
+recent game's placements outlined, filterable to wins-only or losses-only. Insights leads with a
+best score / win rate / win streak strip, then a feed of independent observations below it, each
+gated on its own data threshold so a newer player just sees fewer cards rather than a shaky one:
+your best-associated value range (highest share of placements ending in a win), your
+best-performing board position, your toughest range (most common cause of a loss), whether the top
+or bottom half of the board treats you better, your most-used position, your win rate with hard
+mode on versus overall, how close an active win streak is to your all-time best, and whether the
+last game followed or broke the usual pattern.
 
 A trophy pill on that same screen ("14/27", etc.) opens the achievements list. A "Milestones" grid
 covers every free-play score from 1/20 to 20/20 — reach a new best and that badge fills in. Below
@@ -93,6 +102,8 @@ The gear icon in the header opens sound, theme, and data controls:
   until changed here, then remembers the explicit choice.
 - **Hard mode** — turns off the valid-position highlight in both free play and the daily
   challenge, so nothing tells you where a number can legally go.
+- **Home screen** — turns the "Ready to play?" landing screen on or off. Off skips straight to
+  the board on every load.
 - **Version** — shows the installed version; tap it to browse the full release history.
 - **Reset all data** — clears every saved score, stat, streak, and preference on this device.
   Requires a second tap to confirm.

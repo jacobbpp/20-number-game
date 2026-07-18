@@ -17,6 +17,7 @@ async function openSection(name: string) {
 beforeEach(() => {
   localStorage.clear()
   localStorage.setItem('order20-onboarded', '1')
+  localStorage.setItem('order20-show-home-screen', '0')
   localStorage.setItem('order20-whatsnew-seen-version', APP_VERSION)
 })
 
@@ -323,6 +324,109 @@ describe('insights section', () => {
 
     expect(await screen.findByText('Hard mode')).toBeInTheDocument()
     expect(screen.getByText('75% win rate with hard mode on, vs 50% overall.')).toBeInTheDocument()
+  })
+
+  it('shows a hero strip of best score, win rate, and win streak', async () => {
+    localStorage.setItem('order20-best-score', '14')
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 4,
+        totalWins: 2,
+        totalTurns: 16,
+        currentWinStreak: 2,
+        matrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText('14')).toBeInTheDocument()
+    expect(screen.getByText('best score')).toBeInTheDocument()
+    expect(screen.getByText('50%')).toBeInTheDocument()
+    expect(screen.getByText('win rate')).toBeInTheDocument()
+    expect(screen.getByText('win streak')).toBeInTheDocument()
+  })
+
+  it('shows a best-position card once a position has enough win-associated signal', async () => {
+    const winMatrix = emptyMatrix()
+    winMatrix[3][0] = 4
+    const lossMatrix = emptyMatrix()
+    lossMatrix[7][0] = 1
+
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 5,
+        totalWins: 4,
+        totalTurns: 20,
+        matrix: emptyMatrix(),
+        winMatrix,
+        lossMatrix,
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText('Best position')).toBeInTheDocument()
+    expect(screen.getByText(/Position 4 has your best record — 100% of placements there end in a win/)).toBeInTheDocument()
+  })
+
+  it('shows a board-half card once both halves have enough signal', async () => {
+    const winMatrix = emptyMatrix()
+    winMatrix[0][0] = 8
+    const lossMatrix = emptyMatrix()
+    lossMatrix[1][0] = 2
+    lossMatrix[10][0] = 8
+    winMatrix[11][0] = 2
+
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 20,
+        totalWins: 10,
+        totalTurns: 100,
+        matrix: emptyMatrix(),
+        winMatrix,
+        lossMatrix,
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText('Board half')).toBeInTheDocument()
+    expect(screen.getByText(/Numbers you place in the top half of the board win more often \(80% vs 20%\)/)).toBeInTheDocument()
+  })
+
+  it('shows a streak-momentum card while chasing a past record', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 6,
+        totalWins: 3,
+        totalTurns: 30,
+        currentWinStreak: 2,
+        bestWinStreak: 5,
+        matrix: emptyMatrix(),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByText('Streak momentum')).toBeInTheDocument()
+    expect(screen.getByText('3 more wins ties your best streak ever.')).toBeInTheDocument()
   })
 })
 

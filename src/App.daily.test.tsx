@@ -33,6 +33,7 @@ beforeEach(() => {
   // Skip the first-launch onboarding overlay and the What's New popup —
   // not what these tests cover.
   localStorage.setItem('order20-onboarded', '1')
+  localStorage.setItem('order20-show-home-screen', '0')
   localStorage.setItem('order20-whatsnew-seen-version', APP_VERSION)
   // Frozen "today" so getDailyBoardSize/createDailyRng/getLocalDateString
   // all agree with what App.tsx's dailyDateRef captures at mount.

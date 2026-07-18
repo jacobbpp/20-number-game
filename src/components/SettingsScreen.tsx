@@ -9,6 +9,8 @@ interface SettingsScreenProps {
   onToggleTheme: () => void
   hardMode: boolean
   onToggleHardMode: () => void
+  showHomeScreen: boolean
+  onToggleShowHomeScreen: () => void
   version: string
   onOpenChangelog: () => void
   onClose: () => void
@@ -21,6 +23,8 @@ export function SettingsScreen({
   onToggleTheme,
   hardMode,
   onToggleHardMode,
+  showHomeScreen,
+  onToggleShowHomeScreen,
   version,
   onOpenChangelog,
   onClose,
@@ -110,6 +114,29 @@ export function SettingsScreen({
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
                 <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        <div className="settings-row">
+          <span>Home screen</span>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={onToggleShowHomeScreen}
+            aria-label={showHomeScreen ? 'Skip the home screen and jump straight into a game' : 'Show a home screen before the game'}
+            aria-pressed={showHomeScreen}
+          >
+            {showHomeScreen ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 11l9-7 9 7" />
+                <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 4l8 8-8 8" />
+                <path d="M13 4l8 8-8 8" />
               </svg>
             )}
           </button>

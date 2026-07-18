@@ -4,7 +4,9 @@ import {
   VALUE_BUCKETS,
   averageTurns,
   averageTurnsInWins,
+  bestPositionInsight,
   bestValueRange,
+  boardHalfComparison,
   bucketForValue,
   bucketLabel,
   computeInsight,
@@ -15,6 +17,7 @@ import {
   mostCommonLossBucket,
   scoreBucketLabel,
   signaturePosition,
+  streakMomentum,
   winRate,
   type StatsData,
 } from '../game/stats'
@@ -31,6 +34,7 @@ interface StatsScreenProps {
   streak: StreakData
   today: string
   theme: Theme
+  bestScore: number
   unlockedAchievementCount: number
   totalAchievementCount: number
   onClose: () => void
@@ -71,6 +75,7 @@ export function StatsScreen({
   streak,
   today,
   theme,
+  bestScore,
   unlockedAchievementCount,
   totalAchievementCount,
   onClose,
@@ -88,11 +93,23 @@ export function StatsScreen({
   const avgTurnsWins = averageTurnsInWins(stats)
   const lossBucket = mostCommonLossBucket(stats)
   const bestRange = bestValueRange(stats)
+  const bestPosition = bestPositionInsight(stats)
+  const boardHalf = boardHalfComparison(stats)
+  const momentum = streakMomentum(stats)
   const signature = signaturePosition(stats)
   const hardRate = hardModeWinRate(stats)
   const scoreMax = Math.max(...stats.scoreDistribution, 1)
   const currentDailyStreak = isStreakActive(streak, today) ? streak.count : 0
-  const insightCount = [bestRange !== null, lossBucket !== null, signature !== null, hardRate !== null, insight !== null].filter(Boolean).length
+  const insightCount = [
+    bestRange !== null,
+    lossBucket !== null,
+    bestPosition !== null,
+    boardHalf !== null,
+    momentum !== null,
+    signature !== null,
+    hardRate !== null,
+    insight !== null,
+  ].filter(Boolean).length
 
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
@@ -205,7 +222,23 @@ export function StatsScreen({
           )}
 
           {section === 'insights' && (
-            <div className="insights-list">
+            <div className="insights-body">
+              <div className="stats-hero-strip">
+                <div className="stats-hero-strip__card">
+                  <p className="stats-hero-strip__value">{bestScore}</p>
+                  <p className="stats-hero-strip__label">best score</p>
+                </div>
+                <div className="stats-hero-strip__card">
+                  <p className="stats-hero-strip__value">{rate}%</p>
+                  <p className="stats-hero-strip__label">win rate</p>
+                </div>
+                <div className="stats-hero-strip__card">
+                  <p className="stats-hero-strip__value">{stats.currentWinStreak}</p>
+                  <p className="stats-hero-strip__label">win streak</p>
+                </div>
+              </div>
+
+              <div className="insights-list">
               {bestRange !== null && (
                 <div className="insight-card insight-card--best">
                   <span className="insight-card__icon" aria-hidden="true">
@@ -220,6 +253,20 @@ export function StatsScreen({
                 </div>
               )}
 
+              {bestPosition !== null && (
+                <div className="insight-card insight-card--best">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🧭
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Best position</p>
+                    <p className="insight-card__desc">
+                      Position {bestPosition.position + 1} has your best record — {bestPosition.winRatePercent}% of placements there end in a win.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {lossBucket !== null && (
                 <div className="insight-card insight-card--worst">
                   <span className="insight-card__icon" aria-hidden="true">
@@ -228,6 +275,21 @@ export function StatsScreen({
                   <div>
                     <p className="insight-card__title">Toughest range</p>
                     <p className="insight-card__desc">Most losses happen when rolling in the {bucketLabel(lossBucket)} range.</p>
+                  </div>
+                </div>
+              )}
+
+              {boardHalf !== null && (
+                <div className="insight-card insight-card--boardhalf">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    ⚖️
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Board half</p>
+                    <p className="insight-card__desc">
+                      Numbers you place in the {boardHalf.strongerHalf} half of the board win more often ({boardHalf.strongerWinRatePercent}% vs{' '}
+                      {boardHalf.weakerWinRatePercent}%).
+                    </p>
                   </div>
                 </div>
               )}
@@ -260,6 +322,22 @@ export function StatsScreen({
                 </div>
               )}
 
+              {momentum !== null && (
+                <div className="insight-card insight-card--streak">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🔥
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Streak momentum</p>
+                    <p className="insight-card__desc">
+                      {momentum.kind === 'record'
+                        ? 'This is your best win streak yet.'
+                        : `${momentum.winsToTie} more win${momentum.winsToTie === 1 ? '' : 's'} ties your best streak ever.`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {insight && (
                 <div className="insight-card insight-card--neutral">
                   <span className="insight-card__icon" aria-hidden="true">
@@ -273,6 +351,7 @@ export function StatsScreen({
               )}
 
               {insightCount === 0 && <p className="stats-screen__caption">Not enough games yet to spot a pattern — keep playing.</p>}
+              </div>
             </div>
           )}
 
