@@ -82,6 +82,19 @@ describe('recordGame', () => {
     expect(stats.lossBucketCounts.every(c => c === 0)).toBe(true)
   })
 
+  it('counts a win toward hardModeWins only when hard mode was on', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'won', null, 20, true)
+    stats = recordGame(stats, [{ position: 1, value: 20 }], 'won', null, 20, false)
+    expect(stats.hardModeWins).toBe(1)
+  })
+
+  it('does not count a hard-mode loss toward hardModeWins', () => {
+    let stats = createEmptyStats()
+    stats = recordGame(stats, [{ position: 0, value: 10 }], 'lost', 900, 20, true)
+    expect(stats.hardModeWins).toBe(0)
+  })
+
   it('tracks winTurns and resets currentWinStreak on a loss', () => {
     let stats = createEmptyStats()
     stats = recordGame(stats, [{ position: 0, value: 10 }, { position: 1, value: 20 }], 'won', null, 20)

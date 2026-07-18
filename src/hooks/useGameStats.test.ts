@@ -71,6 +71,33 @@ describe('useGameStats', () => {
     expect(result.current.stats.bestWinStreak).toBe(3)
   })
 
+  it('fills in hardModeWins as 0 for stats saved before it existed', () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({
+        totalGames: 5,
+        totalWins: 2,
+        matrix: Array.from({ length: 20 }, () => Array(10).fill(0)),
+        lossBucketCounts: Array(10).fill(0),
+        lastGame: null,
+      }),
+    )
+
+    const { result } = renderHook(() => useGameStats())
+
+    expect(result.current.stats.hardModeWins).toBe(0)
+  })
+
+  it('threads hardMode through to hardModeWins on a win', () => {
+    const { result } = renderHook(() => useGameStats())
+
+    act(() => {
+      result.current.recordCompletedGame([{ position: 0, value: 10 }], 'won', null, 20, true)
+    })
+
+    expect(result.current.stats.hardModeWins).toBe(1)
+  })
+
   it('records the losing roll into lossBucketCounts', () => {
     const { result } = renderHook(() => useGameStats())
 

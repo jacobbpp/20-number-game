@@ -43,6 +43,7 @@ function normalizeStats(data: StatsData): StatsData {
         : typeof data.currentWinStreak === 'number'
           ? data.currentWinStreak
           : 0,
+    hardModeWins: typeof data.hardModeWins === 'number' ? data.hardModeWins : 0,
     scoreDistribution:
       Array.isArray(data.scoreDistribution) && data.scoreDistribution.length === SCORE_BUCKETS
         ? data.scoreDistribution
@@ -74,9 +75,15 @@ export function useGameStats() {
   const [stats, setStats] = useState<StatsData>(readStored)
 
   const recordCompletedGame = useCallback(
-    (placements: Placement[], result: 'won' | 'lost', losingValue: number | null = null, total: number = BOARD_SIZE) => {
+    (
+      placements: Placement[],
+      result: 'won' | 'lost',
+      losingValue: number | null = null,
+      total: number = BOARD_SIZE,
+      hardMode: boolean = false,
+    ) => {
       setStats(prev => {
-        const next = recordGame(prev, placements, result, losingValue, total)
+        const next = recordGame(prev, placements, result, losingValue, total, hardMode)
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
         } catch {

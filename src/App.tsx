@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { AchievementsScreen } from './components/AchievementsScreen'
+import { AchievementToast } from './components/AchievementToast'
 import { BestRunScreen } from './components/BestRunScreen'
 import { Board } from './components/Board'
 import { DailyChallengeScreen } from './components/DailyChallengeScreen'
@@ -11,10 +13,12 @@ import { StatsScreen } from './components/StatsScreen'
 import { WhatsNewScreen } from './components/WhatsNewScreen'
 import { WinScreen } from './components/WinScreen'
 import { CHANGELOG } from './changelog'
+import { ACHIEVEMENTS } from './game/achievements'
 import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
 import { extractPlacements } from './game/stats'
 import { createInitialState, type ResultBadge } from './game/types'
+import { useAchievements } from './hooks/useAchievements'
 import { useBestScore } from './hooks/useBestScore'
 import { useCurrentDailyGame } from './hooks/useCurrentDailyGame'
 import { useCurrentGame } from './hooks/useCurrentGame'
@@ -37,6 +41,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [isChangelogOpen, setIsChangelogOpen] = useState(false)
+  const [isAchievementsOpen, setIsAchievementsOpen] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
@@ -55,6 +60,7 @@ function App() {
   const dailyDate = dailyDateRef.current
 
   const { todayResult, streak, history, recordDailyResult } = useDailyChallenge(dailyDate)
+  const { unlockedAt: unlockedAchievements, newlyUnlocked, dismissNewlyUnlocked } = useAchievements(stats, streak)
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
   const [showCoachMark, setShowCoachMark] = useState(false)
   const isFirstLaunchRef = useRef(!hasSeenOnboarding)
@@ -69,11 +75,29 @@ function App() {
   )
   const dailyPrevPlacedRef = useRef(dailyState.placedCount)
 
+  // True whenever a full-screen modal (win/loss included) is covering the
+  // board — the achievement toast waits for these to clear rather than
+  // floating on top of a modal's dark scrim.
+  const isOverlayActive =
+    isHowToPlayOpen ||
+    isWhatsNewOpen ||
+    isChangelogOpen ||
+    isBestRunOpen ||
+    isAchievementsOpen ||
+    state.status === 'lost' ||
+    state.status === 'won'
+
   useEffect(() => {
     if (!showCoachMark) return
     const timeout = setTimeout(() => setShowCoachMark(false), 4000)
     return () => clearTimeout(timeout)
   }, [showCoachMark])
+
+  useEffect(() => {
+    if (newlyUnlocked.length === 0 || isOverlayActive) return
+    const timeout = setTimeout(() => dismissNewlyUnlocked(), 4000)
+    return () => clearTimeout(timeout)
+  }, [newlyUnlocked, dismissNewlyUnlocked, isOverlayActive])
 
   useEffect(() => {
     if (state.status !== 'won' && state.status !== 'lost') return
@@ -102,6 +126,7 @@ function App() {
       state.status,
       state.status === 'lost' ? state.currentRoll : null,
       state.positions.length,
+      hardMode,
     )
     setHasRecorded(true)
   }, [
@@ -110,6 +135,7 @@ function App() {
     state.positions,
     state.currentRoll,
     hasRecorded,
+    hardMode,
     reportScore,
     recordCompletedGame,
     setHasRecorded,
@@ -221,8 +247,11 @@ function App() {
           streak={streak}
           today={dailyDate}
           theme={theme}
+          unlockedAchievementCount={Object.keys(unlockedAchievements).length}
+          totalAchievementCount={ACHIEVEMENTS.length}
           onClose={() => setIsStatsOpen(false)}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
+          onOpenAchievements={() => setIsAchievementsOpen(true)}
         />
       ) : isSettingsOpen ? (
         <SettingsScreen
@@ -276,6 +305,22 @@ function App() {
       {isWhatsNewOpen && <WhatsNewScreen entries={unseenEntries} onClose={closeWhatsNew} />}
       {isChangelogOpen && <WhatsNewScreen entries={CHANGELOG} onClose={() => setIsChangelogOpen(false)} />}
       {isBestRunOpen && <BestRunScreen bestScore={bestScore} bestRun={bestRun} onClose={() => setIsBestRunOpen(false)} />}
+      {isAchievementsOpen && (
+        <AchievementsScreen
+          achievements={ACHIEVEMENTS}
+          unlockedAt={unlockedAchievements}
+          onClose={() => setIsAchievementsOpen(false)}
+        />
+      )}
+      {newlyUnlocked[0] && !isOverlayActive && (
+        <AchievementToast
+          achievement={newlyUnlocked[0]}
+          onOpen={() => {
+            dismissNewlyUnlocked()
+            setIsAchievementsOpen(true)
+          }}
+        />
+      )}
     </div>
   )
 }

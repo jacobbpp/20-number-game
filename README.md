@@ -18,6 +18,11 @@ correctly to win — one illegal roll ends the run.
   you to work out where the number legally goes. A wrong tap just does nothing; there's no penalty
   for guessing.
 
+A Share button on the win/loss screen produces a Wordle-style text grid by default. On phones that
+support sharing files (most modern ones), it instead opens the native share sheet with a generated
+image of the board — usable anywhere a plain text grid can't reach, like Instagram or WhatsApp
+stories — and falls back to the copyable text everywhere else.
+
 Your best score (most positions filled across all attempts) is saved on this device, along with
 the board from that specific run — tap the Best pill in the header to see it. A short "What's
 new" summary appears after an update if anything shipped since you last played, with older
@@ -31,6 +36,12 @@ game overall and for wins only. It also tracks which value range tends to land a
 across every completed game — shown as a heatmap with the most recent game's placements outlined,
 filterable to wins-only or losses-only. Once there's enough history, it calls out whether the last
 game followed or broke the usual pattern, and which value range causes the most losses.
+
+A trophy pill on that same screen ("3/7", etc.) opens the achievements list — first win, win
+streaks, games-played milestones, a daily-streak milestone, and one for winning with hard mode on.
+Unlocking one shows a brief toast rather than interrupting whatever's on screen, and a device
+already past an achievement's threshold when this feature first arrived credits it silently rather
+than firing off a toast for every past achievement at once.
 
 ## Daily challenge
 

@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.18.0',
+    date: '2026-07-18',
+    title: 'Achievements and shareable images',
+    description: 'A trophy pill on Stats opens 7 achievements to unlock, from your first win to winning with hard mode on. Sharing a result now offers a real branded image on phones that support it, not just text.',
+  },
+  {
     version: '1.17.0',
     date: '2026-07-18',
     title: 'Hard mode',

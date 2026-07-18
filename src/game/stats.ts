@@ -25,6 +25,7 @@ export interface StatsData {
   winTurns: number // sum of placements across won games only, for average-turns-in-wins
   currentWinStreak: number // consecutive wins, resets to 0 on any loss
   bestWinStreak: number // longest currentWinStreak has ever reached
+  hardModeWins: number // wins recorded while hard mode was on
   scoreDistribution: number[] // placedCount bucketed into SCORE_BUCKETS ranges, across all games
   matrix: number[][] // matrix[position][bucket], across all games
   winMatrix: number[][] // same shape, won games only
@@ -53,6 +54,7 @@ export function createEmptyStats(): StatsData {
     winTurns: 0,
     currentWinStreak: 0,
     bestWinStreak: 0,
+    hardModeWins: 0,
     scoreDistribution: createEmptyScoreDistribution(),
     matrix: createEmptyMatrix(),
     winMatrix: createEmptyMatrix(),
@@ -108,6 +110,7 @@ export function recordGame(
   result: 'won' | 'lost',
   losingValue: number | null = null,
   total: number = BOARD_SIZE,
+  hardMode: boolean = false,
 ): StatsData {
   const matrix = stats.matrix.map(row => [...row])
   const winMatrix = stats.winMatrix.map(row => [...row])
@@ -137,6 +140,7 @@ export function recordGame(
     winTurns: stats.winTurns + (isWin ? placements.length : 0),
     currentWinStreak,
     bestWinStreak: Math.max(stats.bestWinStreak, currentWinStreak),
+    hardModeWins: stats.hardModeWins + (isWin && hardMode ? 1 : 0),
     scoreDistribution,
     matrix,
     winMatrix,

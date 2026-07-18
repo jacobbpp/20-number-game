@@ -27,8 +27,11 @@ interface StatsScreenProps {
   streak: StreakData
   today: string
   theme: Theme
+  unlockedAchievementCount: number
+  totalAchievementCount: number
   onClose: () => void
   onOpenHowToPlay: () => void
+  onOpenAchievements: () => void
 }
 
 const PANEL_RGB_DARK: RGB = [42, 33, 81] // #2A2151
@@ -40,7 +43,17 @@ function cellColor(count: number, peak: number, theme: Theme): string {
   return lerpColor(zeroRgb, AMBER_RGB, peak === 0 ? 0 : count / peak)
 }
 
-export function StatsScreen({ stats, streak, today, theme, onClose, onOpenHowToPlay }: StatsScreenProps) {
+export function StatsScreen({
+  stats,
+  streak,
+  today,
+  theme,
+  unlockedAchievementCount,
+  totalAchievementCount,
+  onClose,
+  onOpenHowToPlay,
+  onOpenAchievements,
+}: StatsScreenProps) {
   const { totalGames, lastGame } = stats
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
@@ -71,6 +84,9 @@ export function StatsScreen({ stats, streak, today, theme, onClose, onOpenHowToP
             <path d="M9.5 9a2.5 2.5 0 0 1 4.9.75c0 1.5-2.15 2-2.4 3.25" />
             <path d="M12 17.5v.01" />
           </svg>
+        </button>
+        <button type="button" className="pill header__best" onClick={onOpenAchievements}>
+          🏆 {unlockedAchievementCount}/{totalAchievementCount}
         </button>
         <span className="pill header__best">
           {totalGames} game{totalGames === 1 ? '' : 's'}
