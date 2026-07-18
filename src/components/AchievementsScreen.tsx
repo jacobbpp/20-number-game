@@ -25,7 +25,7 @@ export function AchievementsScreen({ unlockedAt, bestScore, onClose }: Achieveme
           <div className="milestones">
             <p className="milestones__title">Milestones</p>
             <p className="milestones__caption">
-              {bestScore} of {SCORE_MILESTONES.length} — your best run placed {bestScore} number{bestScore === 1 ? '' : 's'}
+              {bestScore} of {SCORE_MILESTONES.length}: your best run placed {bestScore} number{bestScore === 1 ? '' : 's'}
             </p>
             <div className="milestones__grid" role="group" aria-label="Score milestones, 1 to 20">
               {SCORE_MILESTONES.map((milestone, index) => {

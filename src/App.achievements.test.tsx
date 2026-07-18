@@ -82,7 +82,7 @@ describe('achievements', () => {
     fireEvent.click(await screen.findByRole('button', { name: /🏆/ }))
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Achievements' })
-    expect(within(dialog).getByText('12 of 20 — your best run placed 12 numbers')).toBeInTheDocument()
+    expect(within(dialog).getByText('12 of 20: your best run placed 12 numbers')).toBeInTheDocument()
     expect(within(dialog).getByLabelText('12 of 20, reached')).toBeInTheDocument()
     expect(within(dialog).getByLabelText('13 of 20, not reached yet')).toBeInTheDocument()
   })

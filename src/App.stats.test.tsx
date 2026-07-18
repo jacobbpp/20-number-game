@@ -285,7 +285,7 @@ describe('insights section', () => {
     await openSection('Insights')
 
     expect(await screen.findByText('Best range')).toBeInTheDocument()
-    expect(screen.getByText(/201–300 is your strongest range — 80% of placements there end in a win/)).toBeInTheDocument()
+    expect(screen.getByText(/201–300 is your strongest range: 80% of placements there end in a win/)).toBeInTheDocument()
   })
 
   it('shows a signature-position card once there are enough games', async () => {
@@ -301,7 +301,7 @@ describe('insights section', () => {
     await openSection('Insights')
 
     expect(await screen.findByText('Signature position')).toBeInTheDocument()
-    expect(screen.getByText(/Position 4 is your most-used slot — filled 5 times/)).toBeInTheDocument()
+    expect(screen.getByText(/Position 4 is your most-used slot, filled 5 times/)).toBeInTheDocument()
   })
 
   it('shows a hard-mode win-rate card once there are enough hard-mode games', async () => {
@@ -375,7 +375,7 @@ describe('insights section', () => {
     await openSection('Insights')
 
     expect(await screen.findByText('Best position')).toBeInTheDocument()
-    expect(screen.getByText(/Position 4 has your best record — 100% of placements there end in a win/)).toBeInTheDocument()
+    expect(screen.getByText(/Position 4 has your best record: 100% of placements there end in a win/)).toBeInTheDocument()
   })
 
   it('shows a board-half card once both halves have enough signal', async () => {

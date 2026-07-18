@@ -247,7 +247,7 @@ export function StatsScreen({
                   <div>
                     <p className="insight-card__title">Best range</p>
                     <p className="insight-card__desc">
-                      {bucketLabel(bestRange.bucket)} is your strongest range — {bestRange.winRatePercent}% of placements there end in a win.
+                      {bucketLabel(bestRange.bucket)} is your strongest range: {bestRange.winRatePercent}% of placements there end in a win.
                     </p>
                   </div>
                 </div>
@@ -261,7 +261,7 @@ export function StatsScreen({
                   <div>
                     <p className="insight-card__title">Best position</p>
                     <p className="insight-card__desc">
-                      Position {bestPosition.position + 1} has your best record — {bestPosition.winRatePercent}% of placements there end in a win.
+                      Position {bestPosition.position + 1} has your best record: {bestPosition.winRatePercent}% of placements there end in a win.
                     </p>
                   </div>
                 </div>
@@ -302,7 +302,7 @@ export function StatsScreen({
                   <div>
                     <p className="insight-card__title">Signature position</p>
                     <p className="insight-card__desc">
-                      Position {signature.position + 1} is your most-used slot — filled {signature.count} times.
+                      Position {signature.position + 1} is your most-used slot, filled {signature.count} times.
                     </p>
                   </div>
                 </div>
@@ -350,7 +350,7 @@ export function StatsScreen({
                 </div>
               )}
 
-              {insightCount === 0 && <p className="stats-screen__caption">Not enough games yet to spot a pattern — keep playing.</p>}
+              {insightCount === 0 && <p className="stats-screen__caption">Not enough games yet to spot a pattern. Keep playing.</p>}
               </div>
             </div>
           )}
