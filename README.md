@@ -4,6 +4,13 @@ A mobile-first puzzle game. Roll a random number from 1 to 1,000 and place it in
 empty positions so that every position stays in ascending order from top to bottom. Place all 20
 correctly to win — one illegal roll ends the run.
 
+The app runs on the [tb-dev brand](https://github.com/jacobbpp/tb-dev-brand) (vendored as a git
+submodule at `src/brand`): warm paper-and-ink tones, Hanken Grotesk for headings and UI text,
+Space Mono for every number, a violet default accent, and a rare orange used only for the single
+primary action on screen. The board's low-to-high position gradient is built from those same two
+accent hues rather than a full rainbow. A small "~/order-20" mark with the brand's Tommy badge
+sits at the top of the header.
+
 ## Rules
 
 - A random whole number between 1 and 1,000 rolls automatically at the start of each game, and
@@ -101,7 +108,11 @@ are duplicated in the UI layer.
 
 ## Setup
 
+This repo vendors its brand package as a git submodule, so clone with `--recurse-submodules`, or
+run `git submodule update --init` afterwards:
+
 ```bash
+git submodule update --init
 npm install
 ```
 

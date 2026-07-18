@@ -7,16 +7,15 @@ export function lerpColor(from: RGB, to: RGB, t: number): string {
   return `rgb(${r} ${g} ${b})`
 }
 
-const SEQUENCE_CORAL: RGB = [240, 153, 123] // #F0997B
-const SEQUENCE_PURPLE: RGB = [107, 90, 158] // #6B5A9E
-const SEQUENCE_AMBER: RGB = [239, 159, 39] // #EF9F27
+const SEQUENCE_VIOLET: RGB = [111, 95, 142] // #6F5F8E — tb-dev accent
+const SEQUENCE_ORANGE: RGB = [207, 143, 95] // #CF8F5F — tb-dev cta
 
-// Coral -> purple -> amber, the same low-to-high sequence used for the
-// board's position-index chips. t is a 0-1 fraction of the way through
-// the sequence (e.g. position index / (size - 1)).
+// Violet -> orange, the same low-to-high sequence used for the board's
+// position-index chips. Built only from the brand's two accent hues, so
+// it stays on-brand while still giving a scannable low-to-high cue. t is
+// a 0-1 fraction of the way through the sequence (e.g. position index /
+// (size - 1)).
 export function sequenceColor(t: number): string {
   const clamped = Math.max(0, Math.min(1, t))
-  return clamped <= 0.5
-    ? lerpColor(SEQUENCE_CORAL, SEQUENCE_PURPLE, clamped / 0.5)
-    : lerpColor(SEQUENCE_PURPLE, SEQUENCE_AMBER, (clamped - 0.5) / 0.5)
+  return lerpColor(SEQUENCE_VIOLET, SEQUENCE_ORANGE, clamped)
 }

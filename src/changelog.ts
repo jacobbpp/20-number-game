@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.22.0',
+    date: '2026-07-19',
+    title: 'A new look',
+    description: 'Order 20 now runs on the tb-dev brand — warm paper and ink tones, Hanken Grotesk headings, Space Mono for every number, and a violet-to-orange board gradient in place of the old rainbow. A small "~/order-20" mark with the Tommy badge now sits at the top of the header.',
+  },
+  {
     version: '1.21.0',
     date: '2026-07-19',
     title: '20 new milestone achievements',

@@ -2,16 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { sequenceColor } from './color'
 
 describe('sequenceColor', () => {
-  it('starts at coral', () => {
-    expect(sequenceColor(0)).toBe('rgb(240 153 123)')
+  it('starts at violet', () => {
+    expect(sequenceColor(0)).toBe('rgb(111 95 142)')
   })
 
-  it('sits at purple exactly at the midpoint', () => {
-    expect(sequenceColor(0.5)).toBe('rgb(107 90 158)')
+  it('sits halfway between violet and orange at the midpoint', () => {
+    expect(sequenceColor(0.5)).toBe('rgb(159 119 119)')
   })
 
-  it('ends at amber', () => {
-    expect(sequenceColor(1)).toBe('rgb(239 159 39)')
+  it('ends at orange', () => {
+    expect(sequenceColor(1)).toBe('rgb(207 143 95)')
   })
 
   it('clamps out-of-range fractions instead of extrapolating', () => {

@@ -1,30 +1,35 @@
-:root {
-  --bg: #1f1533;
-  --panel: #2a2151;
-  --slot-filled: #26215c;
-  --text: #f1edf9;
-  --text-dim: #b9aee0;
-  --text-disabled: #7a7191;
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
-  --amber: #ef9f27;
-  --amber-text: #412402;
-  --coral: #f0997b;
-  --coral-strong: #d85a30;
-  --coral-text: #4a1b0c;
-  --coral-pale: #faece7;
+:root {
+  --bg: #16131b;
+  --panel: #221d2b;
+  --slot-filled: #1b1722;
+  --text: #ece8f2;
+  --text-dim: #c4bdd0;
+  --text-disabled: #9a94a6;
+
+  --accent: #7d6da0;
+  --accent-on: #ffffff;
+  --accent-strong: #a99bc4;
+  --accent-tint: #2a2334;
+  --cta: #cf8f5f;
+  --cta-on: #1d1a24;
   --danger: #e24b4a;
   --danger-bg: #3a1414;
   --win: #7ed9a8;
   --win-bg: #123322;
 
-  --purple-pill-bg: #3c3489;
-  --purple-pill-text: #cecbf6;
-  --purple-tint-bg: rgba(60, 52, 137, 0.35);
-  --surface-tint-rgb: 241, 237, 249;
+  --purple-pill-bg: var(--accent);
+  --purple-pill-text: var(--accent-on);
+  --purple-tint-bg: var(--accent-tint);
+  --surface-tint-rgb: 236, 232, 242;
 
-  --focus-ring: 0 0 0 3px #1f1533, 0 0 0 6px #ffffff;
+  --focus-ring: 0 0 0 3px #16131b, 0 0 0 6px #ece8f2;
 
-  font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --brand-tile: #1d1a24;
+
+  font: 16px/1.5 'Hanken Grotesk', system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: dark;
   color: var(--text);
   background: var(--bg);
@@ -32,30 +37,30 @@
 }
 
 :root[data-theme='light'] {
-  --bg: #f3effa;
+  --bg: #f3f0ec;
   --panel: #ffffff;
-  --slot-filled: #e5e0f5;
-  --text: #2a2151;
-  --text-dim: #6b5a9e;
-  --text-disabled: #a89fc7;
+  --slot-filled: #faf8f4;
+  --text: #1d1a24;
+  --text-dim: #3f3a48;
+  --text-disabled: #7a7482;
 
-  --amber: #ef9f27;
-  --amber-text: #412402;
-  --coral: #f0997b;
-  --coral-strong: #d85a30;
-  --coral-text: #4a1b0c;
-  --coral-pale: #faece7;
+  --accent: #6f5f8e;
+  --accent-on: #ffffff;
+  --accent-strong: #5a4c76;
+  --accent-tint: #ece7f1;
+  --cta: #cf8f5f;
+  --cta-on: #1d1a24;
   --danger: #c93433;
   --danger-bg: #fbe4e3;
   --win: #1a8f5c;
   --win-bg: #e3f5ec;
 
-  --purple-pill-bg: #ece9fb;
-  --purple-pill-text: #3c3489;
-  --purple-tint-bg: #ece9fb;
-  --surface-tint-rgb: 42, 33, 81;
+  --purple-pill-bg: var(--accent-tint);
+  --purple-pill-text: var(--accent-strong);
+  --purple-tint-bg: var(--accent-tint);
+  --surface-tint-rgb: 29, 26, 36;
 
-  --focus-ring: 0 0 0 3px #f3effa, 0 0 0 6px #2a2151;
+  --focus-ring: 0 0 0 3px #f3f0ec, 0 0 0 6px #1d1a24;
 
   color-scheme: light;
 }
@@ -113,6 +118,49 @@ button:focus-visible {
 
 .header {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brand-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--brand-tile);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-badge__img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+
+.brand-wordmark {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.brand-wordmark__symbol {
+  color: var(--cta);
+}
+
+.brand-wordmark__name {
+  color: var(--accent);
+}
+
+.header__row {
+  display: flex;
   justify-content: space-between;
   align-items: center;
 }
@@ -139,6 +187,8 @@ button:focus-visible {
 .header__best {
   color: var(--purple-pill-text);
   background: var(--purple-pill-bg);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .icon-btn {
@@ -160,7 +210,7 @@ button:focus-visible {
 }
 
 .icon-btn--ring {
-  border: 1.5px solid var(--amber);
+  border: 1.5px solid var(--accent);
 }
 
 .icon-btn--confirm {
@@ -199,8 +249,10 @@ button:focus-visible {
   width: 76px;
   height: 76px;
   border-radius: 50%;
-  background: var(--amber);
-  color: var(--amber-text);
+  background: var(--accent);
+  color: var(--accent-on);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 28px;
   font-weight: 700;
   display: flex;
@@ -267,6 +319,8 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   color: var(--text);
@@ -276,6 +330,8 @@ button:focus-visible {
 }
 
 .slot__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 14px;
   font-weight: 600;
   overflow: hidden;
@@ -294,19 +350,19 @@ button:focus-visible {
 }
 
 .slot--valid {
-  background: var(--coral);
-  color: var(--coral-text);
-  box-shadow: inset 0 0 0 2px var(--coral-strong);
+  background: var(--accent);
+  color: var(--accent-on);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
   animation: pulse-valid 1.4s ease-in-out infinite;
 }
 
 .slot--valid .slot__index {
-  background: var(--coral-strong);
-  color: var(--coral-pale);
+  background: rgba(0, 0, 0, 0.15);
+  color: var(--accent-on);
 }
 
 .slot--valid .slot__value {
-  color: var(--coral-text);
+  color: var(--accent-on);
 }
 
 .slot--valid:active {
@@ -320,17 +376,17 @@ button:focus-visible {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--coral-text);
-  box-shadow: 0 0 0 2px var(--coral-pale);
+  background: var(--accent-on);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 @keyframes pulse-valid {
   0%,
   100% {
-    box-shadow: inset 0 0 0 2px var(--coral-strong);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
   }
   50% {
-    box-shadow: inset 0 0 0 2px var(--coral-strong), 0 0 0 3px rgba(240, 153, 123, 0.35);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25), 0 0 0 3px rgba(111, 95, 142, 0.35);
   }
 }
 
@@ -351,8 +407,8 @@ button:focus-visible {
 }
 
 .btn--primary {
-  background: var(--amber);
-  color: var(--amber-text);
+  background: var(--cta);
+  color: var(--cta-on);
 }
 
 .overlay {
@@ -611,6 +667,8 @@ button:focus-visible {
 }
 
 .stats-hero__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 36px;
   font-weight: 700;
   line-height: 1;
@@ -806,11 +864,11 @@ button:focus-visible {
 }
 
 .insight-card--position {
-  background: rgba(240, 153, 123, 0.12);
+  background: rgba(111, 95, 142, 0.12);
 }
 
 .insight-card--position .insight-card__title {
-  color: var(--coral);
+  color: var(--accent);
 }
 
 .insight-card--hardmode {
@@ -1097,8 +1155,8 @@ button:focus-visible {
 }
 
 .achievement-row--unlocked {
-  background: rgba(240, 153, 123, 0.16);
-  border-color: var(--coral-strong);
+  background: rgba(111, 95, 142, 0.16);
+  border-color: var(--accent);
 }
 
 .achievement-row__icon {
@@ -1114,8 +1172,8 @@ button:focus-visible {
 }
 
 .achievement-row--unlocked .achievement-row__icon {
-  color: var(--coral-strong);
-  background: rgba(240, 153, 123, 0.2);
+  color: var(--accent);
+  background: rgba(111, 95, 142, 0.2);
 }
 
 .achievement-row__text {
@@ -1171,14 +1229,16 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 13px;
   font-weight: 700;
 }
 
 .milestone-badge--unlocked {
-  background: rgba(240, 153, 123, 0.18);
-  border: 1px solid var(--coral-strong);
-  color: var(--coral);
+  background: rgba(111, 95, 142, 0.18);
+  border: 1px solid var(--accent);
+  color: var(--accent);
 }
 
 .achievement-toast {
@@ -1450,5 +1510,5 @@ button:focus-visible {
 }
 
 .daily-history__score--won {
-  color: var(--amber);
+  color: var(--accent);
 }
