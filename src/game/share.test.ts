@@ -9,18 +9,18 @@ describe('buildShareText', () => {
     positions[3] = 118
     positions[9] = 500
 
-    const text = buildShareText(positions, 3, false, 'https://example.com/')
+    const text = buildShareText(positions, 3, false)
 
     const lines = text.split('\n')
     expect(lines[0]).toBe('Order 20: 3/20')
     expect(lines[1]).toBe('🟧⬜⬜🟧⬜⬜⬜⬜⬜🟧⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜')
-    expect(lines[2]).toBe('https://example.com/')
+    expect(lines).toHaveLength(2)
   })
 
   it('builds a win summary with every cell filled', () => {
     const positions = Array.from({ length: BOARD_SIZE }, (_, i) => (i + 1) * 40)
 
-    const text = buildShareText(positions, BOARD_SIZE, true, 'https://example.com/')
+    const text = buildShareText(positions, BOARD_SIZE, true)
 
     const lines = text.split('\n')
     expect(lines[0]).toBe('Order 20: perfect! 20/20')
@@ -40,18 +40,18 @@ describe('buildDailyShareText', () => {
     const positions: (number | null)[] = Array(BOARD_SIZE).fill(null)
     positions[0] = 42
 
-    const text = buildDailyShareText(positions, 1, false, '2026-07-17', 'https://example.com/')
+    const text = buildDailyShareText(positions, 1, false, '2026-07-17')
 
     const lines = text.split('\n')
     expect(lines[0]).toBe('Order 20 Daily (Jul 17): 1/20')
     expect(lines[1]).toBe(`🟧${'⬜'.repeat(BOARD_SIZE - 1)}`)
-    expect(lines[2]).toBe('https://example.com/')
+    expect(lines).toHaveLength(2)
   })
 
   it('marks a win as perfect, same as the free-play share text', () => {
     const positions = Array.from({ length: BOARD_SIZE }, (_, i) => (i + 1) * 40)
 
-    const text = buildDailyShareText(positions, BOARD_SIZE, true, '2026-07-17', 'https://example.com/')
+    const text = buildDailyShareText(positions, BOARD_SIZE, true, '2026-07-17')
 
     expect(text.split('\n')[0]).toBe('Order 20 Daily (Jul 17): perfect! 20/20')
   })
@@ -60,7 +60,7 @@ describe('buildDailyShareText', () => {
     const positions: (number | null)[] = Array(10).fill(null)
     positions[0] = 55
 
-    const text = buildDailyShareText(positions, 1, false, '2026-07-17', 'https://example.com/')
+    const text = buildDailyShareText(positions, 1, false, '2026-07-17')
 
     const lines = text.split('\n')
     expect(lines[0]).toBe('Order 20 Daily (Jul 17): 1/10')
@@ -69,11 +69,9 @@ describe('buildDailyShareText', () => {
 })
 
 describe('buildStreakShareText', () => {
-  it('includes the streak count and the url', () => {
-    const text = buildStreakShareText({ count: 7, lastPlayedDate: '2026-07-17', bestStreak: 7 }, 'https://example.com/')
+  it('includes the streak count', () => {
+    const text = buildStreakShareText({ count: 7, lastPlayedDate: '2026-07-17', bestStreak: 7 })
 
-    const lines = text.split('\n')
-    expect(lines[0]).toBe('🔥 7 day streak on Order 20 Daily!')
-    expect(lines[1]).toBe('https://example.com/')
+    expect(text).toBe('🔥 7 day streak on Order 20 Daily!')
   })
 })

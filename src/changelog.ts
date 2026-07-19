@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.27.2',
+    date: '2026-07-19',
+    title: 'A shorter share',
+    description: 'The link is gone from Share too. It is just the score and the emoji grid now.',
+  },
+  {
     version: '1.27.1',
     date: '2026-07-19',
     title: 'Share stays as text',

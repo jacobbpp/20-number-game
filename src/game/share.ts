@@ -4,10 +4,10 @@ function buildGrid(positions: (number | null)[]): string {
   return positions.map(value => (value !== null ? '🟧' : '⬜')).join('')
 }
 
-export function buildShareText(positions: (number | null)[], placedCount: number, won: boolean, url: string): string {
+export function buildShareText(positions: (number | null)[], placedCount: number, won: boolean): string {
   const size = positions.length
   const headline = won ? `Order 20: perfect! ${size}/${size}` : `Order 20: ${placedCount}/${size}`
-  return `${headline}\n${buildGrid(positions)}\n${url}`
+  return `${headline}\n${buildGrid(positions)}`
 }
 
 export function formatDailyDateLabel(dateString: string): string {
@@ -21,16 +21,15 @@ export function buildDailyShareText(
   placedCount: number,
   won: boolean,
   dateString: string,
-  url: string,
 ): string {
   const size = positions.length
   const dateLabel = formatDailyDateLabel(dateString)
   const headline = won
     ? `Order 20 Daily (${dateLabel}): perfect! ${size}/${size}`
     : `Order 20 Daily (${dateLabel}): ${placedCount}/${size}`
-  return `${headline}\n${buildGrid(positions)}\n${url}`
+  return `${headline}\n${buildGrid(positions)}`
 }
 
-export function buildStreakShareText(streak: StreakData, url: string): string {
-  return `🔥 ${streak.count} day streak on Order 20 Daily!\n${url}`
+export function buildStreakShareText(streak: StreakData): string {
+  return `🔥 ${streak.count} day streak on Order 20 Daily!`
 }

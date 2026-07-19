@@ -14,10 +14,9 @@ export function ShareButton({ positions, placedCount, won, dailyDate }: ShareBut
   const { copied, copy } = useCopyFeedback()
 
   const handleShare = async () => {
-    const url = `${window.location.origin}${window.location.pathname}`
     const text = dailyDate
-      ? buildDailyShareText(positions, placedCount, won, dailyDate, url)
-      : buildShareText(positions, placedCount, won, url)
+      ? buildDailyShareText(positions, placedCount, won, dailyDate)
+      : buildShareText(positions, placedCount, won)
 
     const didCopy = await copy(text)
     if (!didCopy) return

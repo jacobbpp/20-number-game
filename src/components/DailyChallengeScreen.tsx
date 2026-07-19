@@ -40,8 +40,7 @@ export function DailyChallengeScreen({
   const pastHistory = history.filter(entry => entry.date !== today)
 
   const handleShareStreak = async () => {
-    const url = `${window.location.origin}${window.location.pathname}`
-    const didCopy = await copyStreak(buildStreakShareText(streak, url))
+    const didCopy = await copyStreak(buildStreakShareText(streak))
     if (!didCopy) return
 
     vibrate('copy')
