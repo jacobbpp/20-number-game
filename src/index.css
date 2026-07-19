@@ -601,9 +601,6 @@ button:focus-visible {
 .leaderboard-row--you {
   background: var(--cta-tint);
   border-radius: 8px;
-  margin: 0 -16px;
-  padding-left: 16px;
-  padding-right: 16px;
 }
 
 .leaderboard-row--you .leaderboard-row__rank,
