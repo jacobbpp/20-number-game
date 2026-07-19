@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
+import { peekNextRolls } from './game/dailyPeek'
 import { place, roll } from './game/engine'
 import { createInitialState, type GameState } from './game/types'
 import { APP_VERSION } from './version'
@@ -130,5 +131,67 @@ describe('App daily challenge', () => {
 
     const resultWrites = setItemSpy.mock.calls.filter(([key]) => key === 'order20-daily-result')
     expect(resultWrites).toHaveLength(0)
+  })
+
+  it('shows the loss reason and what would have come next after a daily loss', async () => {
+    // A date confirmed (by direct simulation) to end in a loss with this
+    // always-place-at-the-first-valid-position strategy.
+    vi.setSystemTime(new Date(2026, 6, 19, 12, 0, 0))
+    const today = getLocalDateString()
+    const boardSize = getDailyBoardSize(today)
+    const rng = createDailyRng(today)
+    const { clicks, finalState } = simulateDailyGame(boardSize, rng)
+    expect(finalState.status).toBe('lost')
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`Today's ${boardSize}-slot challenge`) }))
+    for (const position of clicks) {
+      fireEvent.click(await screen.findByRole('button', { name: `Position ${position + 1}, empty, valid placement` }))
+    }
+
+    await screen.findByText(`${finalState.placedCount} of ${boardSize} today`)
+    expect(screen.getByText(finalState.lossReason ?? '')).toBeInTheDocument()
+
+    expect(await screen.findByText('What came next')).toBeInTheDocument()
+    const expectedPeeks = peekNextRolls(today, finalState.usedNumbers, finalState.positions)
+    for (const peek of expectedPeeks) {
+      expect(screen.getByText(String(peek.value))).toBeInTheDocument()
+    }
+  })
+
+  it('never shows a loss reason or peek for a won daily result', async () => {
+    const today = getLocalDateString()
+    const boardSize = getDailyBoardSize(today)
+    const positions = Array.from({ length: boardSize }, (_, i) => Math.round(((i + 1) * 1000) / (boardSize + 1)))
+    localStorage.setItem(
+      'order20-daily-result',
+      JSON.stringify({ date: today, positions, placedCount: boardSize, status: 'won', lossReason: null, usedNumbers: positions }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: /Today's challenge/ }))
+
+    await screen.findByText(`Perfect ${boardSize}/${boardSize} today!`)
+    expect(screen.queryByText('What came next')).not.toBeInTheDocument()
+  })
+
+  it('shows the loss reason but no peek for a result saved before usedNumbers existed', async () => {
+    const today = getLocalDateString()
+    localStorage.setItem(
+      'order20-daily-result',
+      JSON.stringify({
+        date: today,
+        positions: [64, 75],
+        placedCount: 2,
+        status: 'lost',
+        lossReason: '99 cannot legally be placed in any remaining position.',
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: /Today's challenge/ }))
+
+    expect(await screen.findByText('99 cannot legally be placed in any remaining position.')).toBeInTheDocument()
+    expect(screen.queryByText('What came next')).not.toBeInTheDocument()
   })
 })

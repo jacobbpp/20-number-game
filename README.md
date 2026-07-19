@@ -23,6 +23,8 @@ Hard mode drops the highlight entirely: no hints, just a silent no-op on a bad t
 
 One shared puzzle a day, same rolls for everyone. Board size shifts daily (10, 15, 25, or 30, never 20) so it never doubles as free play. Streaks track consecutive days played, win or lose, with 30 days of history on tap.
 
+A loss shows the roll that ended it, plus what the next few rolls would have been and where (if anywhere) they'd have fit. Since everyone gets the same rolls for the day, that's a real answer rather than a guess.
+
 ## Stats
 
 Heatmap, win rate, streak, average score, and Insights, each its own screen. Insights opens with a best score / average score / games-today strip, since winning outright is rare and score says more than win rate does. Below that: leaderboard reach (how many of today's games made a board), then patterns as they earn enough games behind them: best range, best position, toughest range, board half, signature position, hard mode, streak momentum, last game.

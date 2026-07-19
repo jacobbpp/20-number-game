@@ -4,6 +4,7 @@ import { ResultGrid } from './ResultGrid'
 import { RollDisplay } from './RollDisplay'
 import { ShareButton } from './ShareButton'
 import { isStreakActive, type StreakData } from '../game/daily'
+import { peekNextRolls } from '../game/dailyPeek'
 import { buildStreakShareText, formatDailyDateLabel } from '../game/share'
 import { useCopyFeedback } from '../hooks/useCopyFeedback'
 import type { GameState } from '../game/types'
@@ -38,6 +39,12 @@ export function DailyChallengeScreen({
   // Today's own entry is already shown in the recap above, so the list
   // below only needs the days before it.
   const pastHistory = history.filter(entry => entry.date !== today)
+  // Only meaningful for a loss with a roll history behind it — results
+  // saved before this field existed have no usedNumbers to replay.
+  const peeks =
+    todayResult?.status === 'lost' && todayResult.usedNumbers && todayResult.usedNumbers.length > 0
+      ? peekNextRolls(todayResult.date, todayResult.usedNumbers, todayResult.positions)
+      : []
 
   const handleShareStreak = async () => {
     const didCopy = await copyStreak(buildStreakShareText(streak))
@@ -67,7 +74,27 @@ export function DailyChallengeScreen({
                   ? `Perfect ${todayResult.positions.length}/${todayResult.positions.length} today!`
                   : `${todayResult.placedCount} of ${todayResult.positions.length} today`}
               </p>
+              {todayResult.status === 'lost' && todayResult.lossReason && (
+                <p className="daily-screen__loss-reason">{todayResult.lossReason}</p>
+              )}
               <ResultGrid positions={todayResult.positions} />
+              {peeks.length > 0 && (
+                <div className="daily-peek">
+                  <p className="daily-peek__label">What came next</p>
+                  <ul className="daily-peek__list">
+                    {peeks.map((peek, index) => (
+                      <li key={index} className="daily-peek__row">
+                        <span className="daily-peek__value">{peek.value}</span>
+                        <span className="daily-peek__outcome">
+                          {peek.validPositions.length > 0
+                            ? `would have fit position ${peek.validPositions[0] + 1}`
+                            : 'also had nowhere to go'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {active && streak.count >= 2 && (
                 <button type="button" className="daily-screen__streak" onClick={handleShareStreak}>
                   {streakCopied ? (

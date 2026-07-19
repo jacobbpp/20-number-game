@@ -205,8 +205,17 @@ function App() {
       placedCount: dailyState.placedCount,
       status: dailyState.status,
       lossReason: dailyState.lossReason,
+      usedNumbers: dailyState.usedNumbers,
     })
-  }, [dailyState.status, dailyState.positions, dailyState.placedCount, dailyState.lossReason, todayResult, recordDailyResult])
+  }, [
+    dailyState.status,
+    dailyState.positions,
+    dailyState.placedCount,
+    dailyState.lossReason,
+    dailyState.usedNumbers,
+    todayResult,
+    recordDailyResult,
+  ])
 
   useEffect(() => {
     if (dailyState.placedCount > dailyPrevPlacedRef.current) {

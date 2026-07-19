@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.30.0',
+    date: '2026-07-19',
+    title: 'What came next',
+    description: 'A daily challenge loss now shows the roll that ended it, plus what the next few rolls would have been and where they would have fit. The daily rolls are the same for everyone, so this is a real answer, not a guess.',
+  },
+  {
     version: '1.29.0',
     date: '2026-07-19',
     title: 'Insights, reimagined',

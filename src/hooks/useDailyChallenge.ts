@@ -12,6 +12,9 @@ export interface DailyResult {
   placedCount: number
   status: 'won' | 'lost'
   lossReason: string | null
+  // Optional so results saved before this field existed still validate —
+  // missing it just means the "what came next" peek has nothing to replay.
+  usedNumbers?: number[]
 }
 
 function isDailyResult(value: unknown): value is DailyResult {
