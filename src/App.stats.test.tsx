@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { getLocalDateString } from './game/daily'
+import { recordGameResult } from './game/dailyActivity'
 import { APP_VERSION } from './version'
 import { STATS_STORAGE_KEY } from './hooks/useGameStats'
 
@@ -53,12 +54,12 @@ describe('stats menu', () => {
   })
 
   it('shows a pattern count on the Insights row once there is enough signal', async () => {
-    const lossBucketCounts = Array(10).fill(0)
-    lossBucketCounts[2] = 3
+    const matrix = emptyMatrix()
+    matrix[3][2] = 4
 
     localStorage.setItem(
       STATS_STORAGE_KEY,
-      JSON.stringify({ totalGames: 6, totalWins: 2, totalTurns: 27, matrix: emptyMatrix(), lossBucketCounts, lastGame: null }),
+      JSON.stringify({ totalGames: 6, totalWins: 2, totalTurns: 27, matrix, lossBucketCounts: Array(10).fill(0), lastGame: null }),
     )
 
     render(<App />)
@@ -233,44 +234,16 @@ describe('average score section', () => {
 })
 
 describe('insights section', () => {
-  it('shows the loss-pattern sentence once there is enough data', async () => {
-    const lossBucketCounts = Array(10).fill(0)
-    lossBucketCounts[2] = 3 // 201-300, the clear majority
-
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({ totalGames: 6, totalWins: 2, totalTurns: 27, matrix: emptyMatrix(), lossBucketCounts, lastGame: null }),
-    )
-
-    render(<App />)
-    await openSection('Insights')
-
-    expect(await screen.findByText(/Most losses happen when rolling in the 201–300 range/)).toBeInTheDocument()
-  })
-
-  it('shows a not-enough-data message without enough losses in one bucket', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({ totalGames: 2, totalWins: 1, totalTurns: 10, matrix: emptyMatrix(), lossBucketCounts: Array(10).fill(0), lastGame: null }),
-    )
-
-    render(<App />)
-    await openSection('Insights')
-
-    expect(await screen.findByText(/Not enough games yet/)).toBeInTheDocument()
-    expect(screen.queryByText(/Most losses happen when rolling/)).not.toBeInTheDocument()
-  })
-
-  it('shows a best-range card once a value range has enough win-associated signal', async () => {
+  it('shows best and toughest range once a value range has enough signal', async () => {
     const winMatrix = emptyMatrix()
-    winMatrix[0][2] = 4
+    winMatrix[0][2] = 4 // 201-300, clear win-rate winner
     const lossMatrix = emptyMatrix()
-    lossMatrix[1][2] = 1
+    lossMatrix[1][5] = 3 // 501-600, clear win-rate loser
 
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
-        totalGames: 5,
+        totalGames: 7,
         totalWins: 4,
         totalTurns: 20,
         matrix: emptyMatrix(),
@@ -284,8 +257,19 @@ describe('insights section', () => {
     render(<App />)
     await openSection('Insights')
 
-    expect(await screen.findByText('Best range')).toBeInTheDocument()
-    expect(screen.getByText('201–300 is the range you handle best.')).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'Performance by value range. Best: 201–300. Toughest: 501–600.' })).toBeInTheDocument()
+  })
+
+  it('shows a not-enough-data message without enough signal in any range', async () => {
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({ totalGames: 2, totalWins: 1, totalTurns: 10, matrix: emptyMatrix(), lossBucketCounts: Array(10).fill(0), lastGame: null }),
+    )
+
+    render(<App />)
+    await openSection('Insights')
+
+    expect(await screen.findByRole('img', { name: 'Not enough games yet to compare ranges.' })).toBeInTheDocument()
   })
 
   it('shows a signature-position card once there are enough games', async () => {
@@ -341,14 +325,10 @@ describe('insights section', () => {
       }),
     )
     const today = getLocalDateString()
-    localStorage.setItem(
-      'order20-leaderboard-activity',
-      JSON.stringify([
-        { date: today, windows: [] },
-        { date: today, windows: ['day'] },
-        { date: '2000-01-01', windows: ['day', 'week', 'month', 'all'] },
-      ]),
-    )
+    let dailyActivity = recordGameResult({}, today, 3, [])
+    dailyActivity = recordGameResult(dailyActivity, today, 5, ['day'])
+    dailyActivity = recordGameResult(dailyActivity, '2000-01-01', 8, ['day', 'week', 'month', 'all'])
+    localStorage.setItem('order20-daily-activity', JSON.stringify(dailyActivity))
 
     render(<App />)
     await openSection('Insights')

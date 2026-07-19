@@ -177,12 +177,19 @@ export interface ValueRangeStat {
   winRatePercent: number
 }
 
-// For each value range with enough placements behind it, what fraction of
-// those placements happened in games that were ultimately won — a
-// correlation, not a causal claim, same character as the existing
-// most-common-loss-range insight.
-function bucketWinRates(stats: StatsData): { bucket: number; winRate: number; total: number }[] {
-  const rates: { bucket: number; winRate: number; total: number }[] = []
+export interface ValueRangeBarStat {
+  bucket: number
+  winRate: number // 0 when hasSignal is false — the bar has nothing to show, not a real 0%
+  total: number
+  hasSignal: boolean
+}
+
+// Every value range's win-rate correlation, signal or not — a bar chart
+// needs all ten slots to stay in place even when some don't have enough
+// data yet, unlike the best/worst picks below which only ever consider
+// ranges that cleared the signal threshold.
+export function allValueRangeStats(stats: StatsData): ValueRangeBarStat[] {
+  const result: ValueRangeBarStat[] = []
   for (let bucket = 0; bucket < VALUE_BUCKETS; bucket++) {
     let wins = 0
     let losses = 0
@@ -191,9 +198,17 @@ function bucketWinRates(stats: StatsData): { bucket: number; winRate: number; to
       losses += stats.lossMatrix[position][bucket]
     }
     const total = wins + losses
-    if (total >= MIN_BUCKET_SIGNAL) rates.push({ bucket, winRate: wins / total, total })
+    result.push({ bucket, winRate: total > 0 ? wins / total : 0, total, hasSignal: total >= MIN_BUCKET_SIGNAL })
   }
-  return rates
+  return result
+}
+
+// For each value range with enough placements behind it, what fraction of
+// those placements happened in games that were ultimately won — a
+// correlation, not a causal claim, same character as the existing
+// most-common-loss-range insight.
+function bucketWinRates(stats: StatsData): { bucket: number; winRate: number; total: number }[] {
+  return allValueRangeStats(stats).filter(stat => stat.hasSignal)
 }
 
 export function bestValueRange(stats: StatsData): ValueRangeStat | null {

@@ -5,7 +5,7 @@ export function getLocalDateString(date: Date = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
-function addDays(dateString: string, days: number): string {
+export function addDays(dateString: string, days: number): string {
   const [year, month, day] = dateString.split('-').map(Number)
   const date = new Date(year, month - 1, day)
   date.setDate(date.getDate() + days)

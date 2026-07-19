@@ -27,7 +27,7 @@ A loss shows the roll that ended it, plus what the next few rolls would have bee
 
 ## Stats
 
-Heatmap, win rate, streak, average score, and Insights, each its own screen. Insights opens with a best score / average score / games-today strip, since winning outright is rare and score says more than win rate does. Below that: leaderboard reach (how many of today's games made a board), then patterns as they earn enough games behind them: best range, best position, toughest range, board half, signature position, hard mode, streak momentum, last game.
+Heatmap, win rate, streak, average score, and Insights, each its own screen. Insights is a dashboard: a hero row of best score, average score (with a trend arrow vs last week), and games played today with a 7-day sparkline; a 30-day calendar of games played with the busiest day ever highlighted; a bar chart of win rate across every value range; leaderboard reach chips for day, week, month, and all-time; a line chart of best score climbing over time; a closest-calls count for games that ended exactly one placement short of the best; then patterns as they earn enough games behind them: best position, board half, signature position, hard mode, streak momentum, last game.
 
 Achievements sit behind the trophy pill: a milestone for every free-play score, 1 through 20, plus named ones for streaks, games played, and hard mode wins.
 

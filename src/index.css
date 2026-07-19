@@ -1065,6 +1065,124 @@ button:focus-visible {
   color: var(--text-disabled);
 }
 
+.stats-hero-strip__delta {
+  margin: 4px 0 0;
+  font-size: 9px;
+  color: var(--text-disabled);
+}
+
+.stats-hero-strip__delta--up {
+  color: var(--win);
+}
+
+.mini-sparkline {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  height: 14px;
+  margin-top: 5px;
+}
+
+.mini-sparkline__bar {
+  width: 3px;
+  border-radius: 1px;
+  min-height: 2px;
+}
+
+.insight-panel {
+  background: rgba(var(--surface-tint-rgb), 0.05);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.insight-panel__label {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.insight-panel--leaderboard {
+  background: var(--cta-tint);
+}
+
+.insight-panel__label--leaderboard {
+  color: var(--cta);
+}
+
+.activity-cal {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.activity-cal__cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+}
+
+.range-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.range-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-bar-row__label {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  color: var(--text-disabled);
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.range-bar-row__track {
+  flex: 1;
+  height: 10px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(var(--surface-tint-rgb), 0.08);
+}
+
+.range-bar-row__fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.reach-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.reach-chip {
+  text-align: center;
+}
+
+.reach-chip__val {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.reach-chip__lbl {
+  margin: 2px 0 0;
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
 .insights-list {
   display: flex;
   flex-direction: column;

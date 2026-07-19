@@ -33,15 +33,18 @@ const STATS_ENTRIES: Entry[] = [
 ]
 
 const INSIGHT_ENTRIES: Entry[] = [
-  { term: 'Leaderboard reach', desc: "How many of today's games made a leaderboard, and which ones." },
+  { term: 'Best, average, and games today', desc: 'Your best-ever score, average score with a trend arrow against last week, and games played today with a 7-day sparkline.' },
+  { term: 'Last 30 days', desc: 'A calendar of games played each day, with your busiest day ever highlighted.' },
+  { term: 'Performance by range', desc: 'A bar for every value range, showing which you handle best and which trips you up most.' },
+  { term: 'Leaderboard reach', desc: "How many of today's games made the day, week, month, and all-time leaderboards." },
+  { term: 'Best score over time', desc: 'A line chart of your personal best climbing as you set new records.' },
+  { term: 'Closest calls', desc: 'How many games have ended exactly one placement short of your best.' },
   { term: 'Signature position', desc: 'Your single most-used board position, across every game.' },
   { term: 'Last game', desc: 'Whether your last game matched or broke your usual placement pattern.' },
-  { term: 'Best range', desc: 'The value range you handle best.' },
   { term: 'Best position', desc: 'The board position with your best record behind it.' },
   { term: 'Board half', desc: 'Whether the top or bottom half of the board treats you better.' },
   { term: 'Hard mode', desc: 'Whether hard mode has slowed your results down or not.' },
   { term: 'Streak momentum', desc: 'How close an active win streak is to your all-time best.' },
-  { term: 'Toughest range', desc: 'The value range most often rolled right before a loss.' },
 ]
 
 const ACHIEVEMENTS_ENTRY: Entry = {

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { API_BASE } from '../api'
-import type { LeaderboardActivityEntry, LeaderboardWindow } from '../game/leaderboardActivity'
+import { recordGameResult, type DailyActivityLog } from '../game/dailyActivity'
+import type { LeaderboardWindow } from '../game/leaderboardActivity'
 
 export type { LeaderboardWindow }
 
@@ -10,10 +11,7 @@ export interface LeaderboardEntry {
 }
 
 const NAME_KEY = 'order20-leaderboard-name'
-const ACTIVITY_KEY = 'order20-leaderboard-activity'
-// Comfortably more than a day's realistic play volume, while keeping the
-// stored history from growing without bound over months of use.
-const ACTIVITY_LIMIT = 200
+const ACTIVITY_KEY = 'order20-daily-activity'
 
 interface CheckResponse {
   windows?: string[]
@@ -23,34 +21,38 @@ interface LeaderboardResponse {
   entries?: LeaderboardEntry[]
 }
 
-function isActivityEntry(value: unknown): value is LeaderboardActivityEntry {
-  if (!value || typeof value !== 'object') return false
-  const candidate = value as Partial<LeaderboardActivityEntry>
-  return typeof candidate.date === 'string' && Array.isArray(candidate.windows)
+function isDailyActivityLog(value: unknown): value is DailyActivityLog {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  return Object.entries(value as Record<string, unknown>).every(([date, entry]) => {
+    if (typeof date !== 'string' || !entry || typeof entry !== 'object') return false
+    const candidate = entry as { date?: unknown; scoreHistogram?: unknown }
+    return typeof candidate.date === 'string' && Array.isArray(candidate.scoreHistogram)
+  })
 }
 
-function readActivity(): LeaderboardActivityEntry[] {
-  if (typeof window === 'undefined') return []
+function readDailyActivity(): DailyActivityLog {
+  if (typeof window === 'undefined') return {}
   try {
     const raw = window.localStorage.getItem(ACTIVITY_KEY)
-    if (!raw) return []
+    if (!raw) return {}
     const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter(isActivityEntry)
+    return isDailyActivityLog(parsed) ? parsed : {}
   } catch {
-    return []
+    return {}
   }
 }
 
 // Backs the arcade-style "enter your name" prompt: which window(s) a score
 // currently qualifies for, submitting a qualifying score, and the name
 // itself, remembered across games so it's not retyped every time. Also
-// keeps a local log of every completed game's qualifying result, so
-// Insights can say how many of today's games made a board without needing
-// any new server-side tracking.
+// keeps a local, per-day log of every completed game's score and
+// qualifying result, so Insights can build a real dashboard (busiest day,
+// score trend, closest calls, and so on) without any new server-side
+// tracking — one row per calendar date, kept indefinitely, rather than one
+// row per game.
 export function useLeaderboard() {
   const [name, setName] = useState<string>(() => localStorage.getItem(NAME_KEY) ?? '')
-  const [activityLog, setActivityLog] = useState<LeaderboardActivityEntry[]>(readActivity)
+  const [dailyActivity, setDailyActivity] = useState<DailyActivityLog>(readDailyActivity)
 
   const checkQualifies = useCallback(async (boardSize: number, score: number): Promise<LeaderboardWindow[]> => {
     try {
@@ -90,9 +92,9 @@ export function useLeaderboard() {
     }
   }, [])
 
-  const logActivity = useCallback((date: string, windows: LeaderboardWindow[]) => {
-    setActivityLog(prev => {
-      const next = [...prev, { date, windows }].slice(-ACTIVITY_LIMIT)
+  const recordActivity = useCallback((date: string, score: number, windows: LeaderboardWindow[]) => {
+    setDailyActivity(prev => {
+      const next = recordGameResult(prev, date, score, windows)
       try {
         window.localStorage.setItem(ACTIVITY_KEY, JSON.stringify(next))
       } catch {
@@ -102,5 +104,5 @@ export function useLeaderboard() {
     })
   }, [])
 
-  return { name, activityLog, checkQualifies, submitScore, fetchLeaderboard, logActivity }
+  return { name, dailyActivity, checkQualifies, submitScore, fetchLeaderboard, recordActivity }
 }

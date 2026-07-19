@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { getLocalDateString } from './game/daily'
+import { recordGameResult } from './game/dailyActivity'
 import { STATS_STORAGE_KEY } from './hooks/useGameStats'
 import { APP_VERSION } from './version'
 
@@ -186,32 +187,37 @@ describe('insights leaderboard activity', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
     await screen.findByRole('heading', { name: 'Game over' })
 
+    const expected = recordGameResult({}, getLocalDateString(), 2, [])
     await vi.waitFor(() => {
-      const log: unknown = JSON.parse(localStorage.getItem('order20-leaderboard-activity') ?? '[]')
-      expect(log).toEqual([{ date: getLocalDateString(), windows: [] }])
+      const log: unknown = JSON.parse(localStorage.getItem('order20-daily-activity') ?? '{}')
+      expect(log).toEqual(expected)
     })
   })
 
-  it('shows a Leaderboard reach card summarizing today\'s qualifying games', async () => {
+  it('shows a Leaderboard reach panel summarizing today\'s qualifying games', async () => {
     seedPlayedStats()
     mockLeaderboardApi()
     const today = getLocalDateString()
-    localStorage.setItem(
-      'order20-leaderboard-activity',
-      JSON.stringify([
-        { date: today, windows: ['day'] },
-        { date: today, windows: [] },
-        { date: today, windows: ['week', 'all'] },
-      ]),
-    )
+    let dailyActivity = recordGameResult({}, today, 3, ['day'])
+    dailyActivity = recordGameResult(dailyActivity, today, 3, ['week'])
+    dailyActivity = recordGameResult(dailyActivity, today, 3, ['week'])
+    dailyActivity = recordGameResult(dailyActivity, today, 3, ['all'])
+    dailyActivity = recordGameResult(dailyActivity, today, 3, ['all'])
+    dailyActivity = recordGameResult(dailyActivity, today, 3, ['all'])
+    localStorage.setItem('order20-daily-activity', JSON.stringify(dailyActivity))
 
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
     fireEvent.click(await screen.findByRole('button', { name: /Insights/ }))
 
-    expect(await screen.findByText('Leaderboard reach')).toBeInTheDocument()
-    expect(
-      screen.getByText("3 games played today. 1 made today's board, 1 made this week's, and 1 made the all-time board."),
-    ).toBeInTheDocument()
+    const panel = (await screen.findByText('🏆 Leaderboard reach')).closest('.insight-panel--leaderboard') as HTMLElement
+    expect(within(panel).getByText('1')).toBeInTheDocument()
+    expect(within(panel).getByText('today')).toBeInTheDocument()
+    expect(within(panel).getByText('2')).toBeInTheDocument()
+    expect(within(panel).getByText('week')).toBeInTheDocument()
+    expect(within(panel).getByText('0')).toBeInTheDocument()
+    expect(within(panel).getByText('month')).toBeInTheDocument()
+    expect(within(panel).getByText('3')).toBeInTheDocument()
+    expect(within(panel).getByText('all-time')).toBeInTheDocument()
   })
 })

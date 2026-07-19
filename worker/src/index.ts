@@ -126,15 +126,18 @@ function windowCutoff(window: LeaderboardWindow): string | null {
 }
 
 // The score sitting in 10th place for a window — null means fewer than 10
-// entries exist yet, so any score clears the bar.
+// distinct players exist yet, so any score clears the bar. Grouped by name
+// so a player who has saved several qualifying games in the same window
+// only occupies one of the ten spots, at their own best.
 async function tenthPlaceScore(env: Env, boardSize: number, window: LeaderboardWindow): Promise<number | null> {
   const cutoff = windowCutoff(window)
   const query = cutoff
-    ? env.DB.prepare('SELECT score FROM scores WHERE board_size = ?1 AND created_at >= ?2 ORDER BY score DESC LIMIT 1 OFFSET 9').bind(
+    ? env.DB.prepare(
+        'SELECT MAX(score) AS score FROM scores WHERE board_size = ?1 AND created_at >= ?2 GROUP BY name ORDER BY score DESC LIMIT 1 OFFSET 9',
+      ).bind(boardSize, cutoff)
+    : env.DB.prepare('SELECT MAX(score) AS score FROM scores WHERE board_size = ?1 GROUP BY name ORDER BY score DESC LIMIT 1 OFFSET 9').bind(
         boardSize,
-        cutoff,
       )
-    : env.DB.prepare('SELECT score FROM scores WHERE board_size = ?1 ORDER BY score DESC LIMIT 1 OFFSET 9').bind(boardSize)
   const row = await query.first<{ score: number }>()
   return row ? row.score : null
 }
@@ -235,15 +238,23 @@ async function handleLeaderboard(request: Request, env: Env): Promise<Response> 
 
   const window = windowParam as LeaderboardWindow
   const cutoff = windowCutoff(window)
+  // Grouped by name so a player who has saved several qualifying games in
+  // the same window shows once, at their own best, rather than crowding
+  // the board with every individual save.
   const query = cutoff
-    ? env.DB.prepare('SELECT name, score FROM scores WHERE board_size = ?1 AND created_at >= ?2 ORDER BY score DESC, created_at ASC LIMIT 10').bind(
-        boardSize,
-        cutoff,
-      )
-    : env.DB.prepare('SELECT name, score FROM scores WHERE board_size = ?1 ORDER BY score DESC, created_at ASC LIMIT 10').bind(boardSize)
+    ? env.DB.prepare(
+        `SELECT name, MAX(score) AS score, MIN(created_at) AS created_at FROM scores
+         WHERE board_size = ?1 AND created_at >= ?2
+         GROUP BY name ORDER BY score DESC, created_at ASC LIMIT 10`,
+      ).bind(boardSize, cutoff)
+    : env.DB.prepare(
+        `SELECT name, MAX(score) AS score, MIN(created_at) AS created_at FROM scores
+         WHERE board_size = ?1
+         GROUP BY name ORDER BY score DESC, created_at ASC LIMIT 10`,
+      ).bind(boardSize)
 
   const { results } = await query.all<{ name: string; score: number }>()
-  return json({ boardSize, window, entries: results })
+  return json({ boardSize, window, entries: results.map(({ name, score }) => ({ name, score })) })
 }
 
 export default {

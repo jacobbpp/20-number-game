@@ -55,8 +55,7 @@ function App() {
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
   const { matrix: communityMatrix, reportPlacements } = useCommunityStats()
-  const { name: leaderboardName, activityLog: leaderboardActivity, checkQualifies, submitScore, fetchLeaderboard, logActivity } =
-    useLeaderboard()
+  const { name: leaderboardName, dailyActivity, checkQualifies, submitScore, fetchLeaderboard, recordActivity } = useLeaderboard()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
@@ -157,9 +156,9 @@ function App() {
     const requestedGameId = gameIdRef.current
     checkQualifies(state.positions.length, state.placedCount).then(windows => {
       if (gameIdRef.current !== requestedGameId) return
-      // Logged regardless of whether it qualified — Insights needs the full
-      // count of today's games as the denominator, not just the hits.
-      logActivity(dailyDate, windows)
+      // Recorded regardless of whether it qualified — Insights needs the
+      // full count of today's games as the denominator, not just the hits.
+      recordActivity(dailyDate, state.placedCount, windows)
       if (windows.length > 0) setLeaderboardWindows(windows)
     })
   }, [
@@ -174,7 +173,7 @@ function App() {
     reportPlacements,
     setHasRecorded,
     checkQualifies,
-    logActivity,
+    recordActivity,
     dailyDate,
   ])
 
@@ -327,7 +326,7 @@ function App() {
           today={dailyDate}
           theme={theme}
           bestScore={bestScore}
-          leaderboardActivity={leaderboardActivity}
+          dailyActivity={dailyActivity}
           unlockedAchievementCount={Object.keys(unlockedAchievements).length}
           totalAchievementCount={ACHIEVEMENTS.length}
           onClose={() => setIsStatsOpen(false)}

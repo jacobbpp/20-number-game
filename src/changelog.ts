@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.31.0',
+    date: '2026-07-19',
+    title: 'A real dashboard for Insights',
+    description: 'Insights is rebuilt as a dashboard: a hero row of best score, average score (with a trend arrow vs last week), and games played today with a 7-day sparkline; a 30-day calendar of games played with your busiest day ever highlighted; a bar chart across every value range; leaderboard reach chips for day, week, month, and all-time; a line chart of your best score climbing over time; and a count of games that ended exactly one placement short of your best.',
+  },
+  {
     version: '1.30.0',
     date: '2026-07-19',
     title: 'What came next',

@@ -2,10 +2,10 @@ import { Fragment, useState } from 'react'
 import {
   BUCKET_SIZE,
   VALUE_BUCKETS,
+  allValueRangeStats,
   averageTurns,
   averageTurnsInWins,
   bestPositionInsight,
-  bestValueRange,
   boardHalfComparison,
   bucketForValue,
   bucketLabel,
@@ -14,7 +14,6 @@ import {
   describeScoreDistribution,
   hardModeWinRate,
   maxCount,
-  mostCommonLossBucket,
   scoreBucketLabel,
   signaturePosition,
   streakMomentum,
@@ -23,12 +22,24 @@ import {
 } from '../game/stats'
 import { BOARD_SIZE } from '../game/types'
 import { isStreakActive, type StreakData } from '../game/daily'
-import { describeLeaderboardReach, summarizeActivity, type LeaderboardActivityEntry } from '../game/leaderboardActivity'
+import {
+  activityWindow,
+  bestScoreTrend,
+  busiestDay,
+  closestCalls,
+  shortGamesCount,
+  todayReach,
+  weeklyAverageDelta,
+  type DailyActivityLog,
+} from '../game/dailyActivity'
+import { formatDailyDateLabel } from '../game/share'
 import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
 
 type HeatmapView = 'all' | 'wins' | 'losses'
 type StatsSection = 'menu' | 'heatmap' | 'wins' | 'daily' | 'average' | 'insights'
+
+const SHORT_GAME_THRESHOLD = 10
 
 interface StatsScreenProps {
   stats: StatsData
@@ -38,7 +49,7 @@ interface StatsScreenProps {
   bestScore: number
   unlockedAchievementCount: number
   totalAchievementCount: number
-  leaderboardActivity: LeaderboardActivityEntry[]
+  dailyActivity: DailyActivityLog
   onClose: () => void
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
@@ -81,7 +92,7 @@ export function StatsScreen({
   bestScore,
   unlockedAchievementCount,
   totalAchievementCount,
-  leaderboardActivity,
+  dailyActivity,
   onClose,
   onOpenHowToPlay,
   onOpenAchievements,
@@ -96,8 +107,6 @@ export function StatsScreen({
   const rate = winRate(stats)
   const avgTurns = averageTurns(stats)
   const avgTurnsWins = averageTurnsInWins(stats)
-  const lossBucket = mostCommonLossBucket(stats)
-  const bestRange = bestValueRange(stats)
   const bestPosition = bestPositionInsight(stats)
   const boardHalf = boardHalfComparison(stats)
   const momentum = streakMomentum(stats)
@@ -105,12 +114,38 @@ export function StatsScreen({
   const hardRate = hardModeWinRate(stats)
   const scoreMax = Math.max(...stats.scoreDistribution, 1)
   const currentDailyStreak = isStreakActive(streak, today) ? streak.count : 0
-  const activitySummary = summarizeActivity(leaderboardActivity, today)
-  const leaderboardReachText = describeLeaderboardReach(activitySummary)
-  const insightCount = [
-    leaderboardReachText !== null,
-    bestRange !== null,
-    lossBucket !== null,
+
+  const rangeStats = allValueRangeStats(stats)
+  const todayEntry = dailyActivity[today]
+  const reach = todayReach(dailyActivity, today)
+  const busiest = busiestDay(dailyActivity)
+  const calendarDays = activityWindow(dailyActivity, today, 30)
+  const calendarMax = Math.max(...calendarDays.map(day => day.games), 1)
+  const last7Days = activityWindow(dailyActivity, today, 7)
+  const last7DaysMax = Math.max(...last7Days.map(day => day.games), 1)
+  const trend = bestScoreTrend(dailyActivity)
+  const closeCalls = closestCalls(dailyActivity, bestScore)
+  const weeklyDelta = weeklyAverageDelta(dailyActivity, today)
+  const shortToday = shortGamesCount(todayEntry, SHORT_GAME_THRESHOLD)
+
+  const signalRanges = rangeStats.filter(stat => stat.hasSignal)
+  const bestRangeStat = signalRanges.length > 0 ? signalRanges.reduce((a, b) => (b.winRate > a.winRate ? b : a)) : null
+  const worstRangeStat = signalRanges.length > 0 ? signalRanges.reduce((a, b) => (b.winRate < a.winRate ? b : a)) : null
+  const rangeChartLabel =
+    bestRangeStat === null || worstRangeStat === null
+      ? 'Not enough games yet to compare ranges.'
+      : `Performance by value range. Best: ${bucketLabel(bestRangeStat.bucket)}. Toughest: ${bucketLabel(worstRangeStat.bucket)}.`
+
+  const trendMin = trend.length > 0 ? trend[0].score : 0
+  const trendMax = trend.length > 0 ? trend[trend.length - 1].score : 0
+  const trendPoints = trend.map((point, index) => ({
+    ...point,
+    x: trend.length > 1 ? (index / (trend.length - 1)) * 260 : 130,
+    y: trendMax === trendMin ? 24 : 6 + (1 - (point.score - trendMin) / (trendMax - trendMin)) * 36,
+  }))
+  const trendPolyline = trendPoints.map(point => `${point.x},${point.y}`).join(' ')
+
+  const patternCount = [
     bestPosition !== null,
     boardHalf !== null,
     momentum !== null,
@@ -118,6 +153,7 @@ export function StatsScreen({
     hardRate !== null,
     insight !== null,
   ].filter(Boolean).length
+  const insightCount = patternCount + (reach.gamesToday > 0 ? 1 : 0) + (trend.length >= 2 ? 1 : 0) + (closeCalls > 0 ? 1 : 0)
 
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
@@ -246,22 +282,160 @@ export function StatsScreen({
                 <div className="stats-hero-strip__card">
                   <p className="stats-hero-strip__value">{avgTurns?.toFixed(1) ?? '—'}</p>
                   <p className="stats-hero-strip__label">avg. score</p>
+                  {weeklyDelta !== null && weeklyDelta.thisWeek !== weeklyDelta.lastWeek && (
+                    <p
+                      className={
+                        weeklyDelta.thisWeek > weeklyDelta.lastWeek
+                          ? 'stats-hero-strip__delta stats-hero-strip__delta--up'
+                          : 'stats-hero-strip__delta'
+                      }
+                    >
+                      {weeklyDelta.thisWeek > weeklyDelta.lastWeek ? '▲' : '▼'} {Math.abs(weeklyDelta.thisWeek - weeklyDelta.lastWeek).toFixed(1)}{' '}
+                      vs last wk
+                    </p>
+                  )}
                 </div>
                 <div className="stats-hero-strip__card">
-                  <p className="stats-hero-strip__value">{activitySummary.gamesToday}</p>
+                  <p className="stats-hero-strip__value">{reach.gamesToday}</p>
                   <p className="stats-hero-strip__label">games today</p>
+                  <div className="mini-sparkline" aria-hidden="true">
+                    {last7Days.map((day, i) => (
+                      <div
+                        key={day.date}
+                        className="mini-sparkline__bar"
+                        style={{
+                          height: `${Math.max(10, (day.games / last7DaysMax) * 100)}%`,
+                          background: i === last7Days.length - 1 ? 'var(--cta)' : 'var(--text-disabled)',
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
 
+              {reach.gamesToday > 0 && shortToday > 0 && (
+                <p className="stats-screen__caption" style={{ textAlign: 'center', margin: '-6px 0 0' }}>
+                  {shortToday} of {reach.gamesToday} games today ended before move {SHORT_GAME_THRESHOLD}.
+                </p>
+              )}
+
+              <div className="insight-panel">
+                <p className="insight-panel__label">Last 30 days</p>
+                <div
+                  className="activity-cal"
+                  role="img"
+                  aria-label={`Games played each day for the last 30 days. ${
+                    busiest ? `Busiest day: ${busiest.games} game${busiest.games === 1 ? '' : 's'} on ${busiest.date}.` : 'No games logged yet.'
+                  }`}
+                >
+                  {calendarDays.map(day => {
+                    const isToday = day.date === today
+                    const isBusiest = busiest !== null && day.date === busiest.date && day.games > 0
+                    const alpha = day.games === 0 ? 0 : 0.15 + (day.games / calendarMax) * 0.85
+                    return (
+                      <div
+                        key={day.date}
+                        className="activity-cal__cell"
+                        aria-hidden="true"
+                        style={{
+                          background: day.games === 0 ? 'rgba(var(--surface-tint-rgb), 0.06)' : `rgba(207, 143, 95, ${alpha.toFixed(2)})`,
+                          boxShadow: isToday ? '0 0 0 1.5px var(--text)' : isBusiest ? '0 0 0 1.5px #f2c869' : 'none',
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+                <p className="stats-screen__caption" style={{ margin: '10px 0 0' }}>
+                  {busiest === null
+                    ? 'No games logged yet.'
+                    : busiest.date === today
+                      ? `Busiest day yet: ${busiest.games} game${busiest.games === 1 ? '' : 's'}, today.`
+                      : `Busiest day: ${busiest.games} game${busiest.games === 1 ? '' : 's'}, on ${formatDailyDateLabel(busiest.date)}. Today: ${reach.gamesToday}.`}
+                </p>
+              </div>
+
+              <div className="insight-panel">
+                <p className="insight-panel__label">Performance by range</p>
+                <div className="range-bars" role="img" aria-label={rangeChartLabel}>
+                  {rangeStats.map(stat => {
+                    const isBest = bestRangeStat !== null && stat.bucket === bestRangeStat.bucket
+                    const isWorst = worstRangeStat !== null && stat.bucket === worstRangeStat.bucket && !isBest
+                    const color = !stat.hasSignal ? 'var(--text-disabled)' : isBest ? 'var(--win)' : isWorst ? 'var(--danger)' : 'var(--accent)'
+                    const width = stat.hasSignal ? `${Math.round(stat.winRate * 100)}%` : '8%'
+                    return (
+                      <div key={stat.bucket} className="range-bar-row" aria-hidden="true">
+                        <span className="range-bar-row__label">{bucketLabel(stat.bucket)}</span>
+                        <div className="range-bar-row__track">
+                          <div className="range-bar-row__fill" style={{ width, background: color, opacity: stat.hasSignal ? 1 : 0.4 }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {reach.gamesToday > 0 && (
+                <div className="insight-panel insight-panel--leaderboard">
+                  <p className="insight-panel__label insight-panel__label--leaderboard">🏆 Leaderboard reach</p>
+                  <div className="reach-chips">
+                    <div className="reach-chip">
+                      <p className="reach-chip__val">{reach.hits.day}</p>
+                      <p className="reach-chip__lbl">today</p>
+                    </div>
+                    <div className="reach-chip">
+                      <p className="reach-chip__val">{reach.hits.week}</p>
+                      <p className="reach-chip__lbl">week</p>
+                    </div>
+                    <div className="reach-chip">
+                      <p className="reach-chip__val">{reach.hits.month}</p>
+                      <p className="reach-chip__lbl">month</p>
+                    </div>
+                    <div className="reach-chip">
+                      <p className="reach-chip__val">{reach.hits.all}</p>
+                      <p className="reach-chip__lbl">all-time</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {trendPoints.length >= 2 && (
+                <div className="insight-panel">
+                  <p className="insight-panel__label">Best score over time</p>
+                  <svg
+                    viewBox="0 0 260 48"
+                    width="100%"
+                    height="48"
+                    role="img"
+                    aria-label={`Best score has climbed from ${trendMin} to ${trendMax} across ${trendPoints.length} personal bests.`}
+                  >
+                    <polyline points={trendPolyline} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    {trendPoints.map((point, i) => (
+                      <circle
+                        key={point.date}
+                        cx={point.x}
+                        cy={point.y}
+                        r={i === trendPoints.length - 1 ? 3.5 : 2}
+                        fill={i === trendPoints.length - 1 ? 'var(--cta)' : 'var(--accent)'}
+                      />
+                    ))}
+                  </svg>
+                  <p className="stats-screen__caption" style={{ margin: '4px 0 0' }}>
+                    From {trendMin} to {trendMax}.
+                  </p>
+                </div>
+              )}
+
               <div className="insights-list">
-              {leaderboardReachText !== null && (
-                <div className="insight-card insight-card--leaderboard">
+              {closeCalls > 0 && (
+                <div className="insight-card insight-card--streak">
                   <span className="insight-card__icon" aria-hidden="true">
-                    🏆
+                    🤏
                   </span>
                   <div>
-                    <p className="insight-card__title">Leaderboard reach</p>
-                    <p className="insight-card__desc">{leaderboardReachText}</p>
+                    <p className="insight-card__title">Closest calls</p>
+                    <p className="insight-card__desc">
+                      {closeCalls} game{closeCalls === 1 ? '' : 's'} ended exactly one placement short of your best.
+                    </p>
                   </div>
                 </div>
               )}
@@ -288,18 +462,6 @@ export function StatsScreen({
                   <div>
                     <p className="insight-card__title">Last game</p>
                     <p className="insight-card__desc">{describeInsight(insight)}</p>
-                  </div>
-                </div>
-              )}
-
-              {bestRange !== null && (
-                <div className="insight-card insight-card--best">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    🎯
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Best range</p>
-                    <p className="insight-card__desc">{bucketLabel(bestRange.bucket)} is the range you handle best.</p>
                   </div>
                 </div>
               )}
@@ -363,19 +525,9 @@ export function StatsScreen({
                 </div>
               )}
 
-              {lossBucket !== null && (
-                <div className="insight-card insight-card--worst">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    ⚠️
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Toughest range</p>
-                    <p className="insight-card__desc">Most losses happen when rolling in the {bucketLabel(lossBucket)} range.</p>
-                  </div>
-                </div>
+              {patternCount === 0 && closeCalls === 0 && (
+                <p className="stats-screen__caption">Not enough games yet to spot a pattern. Keep playing.</p>
               )}
-
-              {insightCount === 0 && <p className="stats-screen__caption">Not enough games yet to spot a pattern. Keep playing.</p>}
               </div>
             </div>
           )}
