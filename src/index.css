@@ -609,6 +609,20 @@ button:focus-visible {
   border-bottom: none;
 }
 
+.daily-history__row.leaderboard-row--you:first-child {
+  margin-top: -4px;
+  padding-top: 14px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.daily-history__row.leaderboard-row--you:last-child {
+  margin-bottom: -4px;
+  padding-bottom: 14px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
 .leaderboard-row--you .leaderboard-row__rank,
 .leaderboard-row--you .leaderboard-row__score {
   color: var(--cta);

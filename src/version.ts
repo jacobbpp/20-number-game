@@ -5,7 +5,7 @@
 // Semver discipline: PATCH for fixes and small polish (not changelog-worthy
 // on their own), MINOR for a genuinely new capability (gets a changelog
 // entry), MAJOR reserved for a real relaunch.
-export const APP_VERSION = '1.31.1'
+export const APP_VERSION = '1.31.2'
 
 export function compareVersions(a: string, b: string): number {
   const partsA = a.split('.').map(Number)
