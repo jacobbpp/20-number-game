@@ -41,4 +41,4 @@ Achievements sit behind the trophy pill: a milestone for every free-play score, 
 
 ## Sharing
 
-Share a result as a Wordle-style grid, or as a branded image on phones that support it, matching whatever theme you're on.
+Share a result as a Wordle-style emoji grid, copied straight to your clipboard.

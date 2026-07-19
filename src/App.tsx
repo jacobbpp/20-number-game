@@ -277,7 +277,6 @@ function App() {
           history={history}
           today={dailyDate}
           hardMode={hardMode}
-          theme={theme}
           onSelect={handleDailySelect}
           onClose={() => setIsDailyOpen(false)}
         />
@@ -351,11 +350,10 @@ function App() {
           resultBadge={resultBadge}
           positions={state.positions}
           onNewGame={handleRestart}
-          theme={theme}
         />
       )}
       {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && state.status === 'won' && (
-        <WinScreen positions={state.positions} onNewGame={handleRestart} theme={theme} />
+        <WinScreen positions={state.positions} onNewGame={handleRestart} />
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}
       {isWhatsNewOpen && <WhatsNewScreen entries={unseenEntries} onClose={closeWhatsNew} />}

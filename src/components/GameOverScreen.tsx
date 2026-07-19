@@ -2,7 +2,6 @@ import { ResultGrid } from './ResultGrid'
 import { ShareButton } from './ShareButton'
 import type { ResultBadge } from '../game/types'
 import { useFocusTrap } from '../hooks/useFocusTrap'
-import type { Theme } from '../hooks/useTheme'
 
 interface GameOverScreenProps {
   reason: string
@@ -10,10 +9,9 @@ interface GameOverScreenProps {
   resultBadge: ResultBadge
   positions: (number | null)[]
   onNewGame: () => void
-  theme: Theme
 }
 
-export function GameOverScreen({ reason, placedCount, resultBadge, positions, onNewGame, theme }: GameOverScreenProps) {
+export function GameOverScreen({ reason, placedCount, resultBadge, positions, onNewGame }: GameOverScreenProps) {
   const containerRef = useFocusTrap<HTMLDivElement>()
 
   return (
@@ -33,7 +31,7 @@ export function GameOverScreen({ reason, placedCount, resultBadge, positions, on
           <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
             New game
           </button>
-          <ShareButton positions={positions} placedCount={placedCount} won={false} theme={theme} />
+          <ShareButton positions={positions} placedCount={placedCount} won={false} />
         </div>
       </div>
     </div>
