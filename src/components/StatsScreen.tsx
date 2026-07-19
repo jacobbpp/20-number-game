@@ -38,6 +38,7 @@ import { lerpColor, type RGB } from '../utils/color'
 
 type HeatmapView = 'all' | 'wins' | 'losses'
 type StatsSection = 'menu' | 'heatmap' | 'wins' | 'daily' | 'average' | 'insights'
+type InsightsTab = 'dashboard' | 'patterns'
 
 const SHORT_GAME_THRESHOLD = 10
 
@@ -101,6 +102,7 @@ export function StatsScreen({
   const { totalGames, lastGame } = stats
   const [section, setSection] = useState<StatsSection>('menu')
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
+  const [insightsTab, setInsightsTab] = useState<InsightsTab>('dashboard')
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
   const peak = maxCount(activeMatrix)
   const insight = computeInsight(stats)
@@ -274,6 +276,27 @@ export function StatsScreen({
 
           {section === 'insights' && (
             <div className="insights-body">
+              <div className="heatmap-toggle" role="group" aria-label="Insights view">
+                <button
+                  type="button"
+                  className={`heatmap-toggle__option${insightsTab === 'dashboard' ? ' heatmap-toggle__option--active' : ''}`}
+                  aria-pressed={insightsTab === 'dashboard'}
+                  onClick={() => setInsightsTab('dashboard')}
+                >
+                  Dashboard
+                </button>
+                <button
+                  type="button"
+                  className={`heatmap-toggle__option${insightsTab === 'patterns' ? ' heatmap-toggle__option--active' : ''}`}
+                  aria-pressed={insightsTab === 'patterns'}
+                  onClick={() => setInsightsTab('patterns')}
+                >
+                  Patterns
+                </button>
+              </div>
+
+              {insightsTab === 'dashboard' && (
+              <>
               <div className="stats-hero-strip">
                 <div className="stats-hero-strip__card">
                   <p className="stats-hero-strip__value">{bestScore}</p>
@@ -425,7 +448,6 @@ export function StatsScreen({
                 </div>
               )}
 
-              <div className="insights-list">
               {closeCalls > 0 && (
                 <div className="insight-card insight-card--streak">
                   <span className="insight-card__icon" aria-hidden="true">
@@ -439,6 +461,11 @@ export function StatsScreen({
                   </div>
                 </div>
               )}
+              </>
+              )}
+
+              {insightsTab === 'patterns' && (
+              <div className="insights-list">
 
               {signature !== null && (
                 <div className="insight-card insight-card--position">
@@ -525,10 +552,11 @@ export function StatsScreen({
                 </div>
               )}
 
-              {patternCount === 0 && closeCalls === 0 && (
+              {patternCount === 0 && (
                 <p className="stats-screen__caption">Not enough games yet to spot a pattern. Keep playing.</p>
               )}
               </div>
+              )}
             </div>
           )}
 

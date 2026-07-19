@@ -15,6 +15,10 @@ async function openSection(name: string) {
   fireEvent.click(await screen.findByRole('button', { name: new RegExp(name) }))
 }
 
+async function openPatternsTab() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Patterns' }))
+}
+
 beforeEach(() => {
   localStorage.clear()
   localStorage.setItem('order20-onboarded', '1')
@@ -283,6 +287,7 @@ describe('insights section', () => {
 
     render(<App />)
     await openSection('Insights')
+    await openPatternsTab()
 
     expect(await screen.findByText('Signature position')).toBeInTheDocument()
     expect(screen.getByText(/Position 4 is your most-used slot, filled 5 times/)).toBeInTheDocument()
@@ -305,6 +310,7 @@ describe('insights section', () => {
 
     render(<App />)
     await openSection('Insights')
+    await openPatternsTab()
 
     expect(await screen.findByText('Hard mode')).toBeInTheDocument()
     expect(screen.getByText("Hard mode hasn't slowed you down. You do just as well without the hints.")).toBeInTheDocument()
@@ -364,6 +370,7 @@ describe('insights section', () => {
 
     render(<App />)
     await openSection('Insights')
+    await openPatternsTab()
 
     expect(await screen.findByText('Best position')).toBeInTheDocument()
     expect(screen.getByText('Position 4 is where you have your best record.')).toBeInTheDocument()
@@ -393,6 +400,7 @@ describe('insights section', () => {
 
     render(<App />)
     await openSection('Insights')
+    await openPatternsTab()
 
     expect(await screen.findByText('Board half')).toBeInTheDocument()
     expect(screen.getByText('Numbers you place in the top half of the board tend to work out better than the bottom half.')).toBeInTheDocument()
@@ -415,6 +423,7 @@ describe('insights section', () => {
 
     render(<App />)
     await openSection('Insights')
+    await openPatternsTab()
 
     expect(await screen.findByText('Streak momentum')).toBeInTheDocument()
     expect(screen.getByText('3 more wins ties your best streak ever.')).toBeInTheDocument()

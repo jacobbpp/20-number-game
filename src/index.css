@@ -600,7 +600,13 @@ button:focus-visible {
 
 .leaderboard-row--you {
   background: var(--cta-tint);
-  border-radius: 8px;
+  border-radius: 10px;
+}
+
+.daily-history__row.leaderboard-row--you {
+  margin: 0 -16px;
+  padding: 10px 16px;
+  border-bottom: none;
 }
 
 .leaderboard-row--you .leaderboard-row__rank,
