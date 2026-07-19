@@ -1,0 +1,16 @@
+{
+  "name": "order20-community-stats-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "migrate:local": "wrangler d1 execute order20-community-stats --local --file=./schema.sql",
+    "migrate:remote": "wrangler d1 execute order20-community-stats --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260714.1",
+    "typescript": "~6.0.2",
+    "wrangler": "^4.112.0"
+  }
+}

@@ -13,7 +13,7 @@ Part of the tb-dev brand.
 - No legal position for a roll ends the game.
 - Fill all 20 to win.
 
-Hard mode drops the highlight entirely: no hints, just a silent no-op on a bad tap.
+Hard mode drops the highlight entirely: no hints, just a silent no-op on a bad tap. Otherwise, among the currently-legal positions, a small dot marks where similar numbers usually land across everyone who plays, backed by a small Cloudflare Worker and D1 database (`worker/`), no sign-in or personal data involved.
 
 ## Home screen
 

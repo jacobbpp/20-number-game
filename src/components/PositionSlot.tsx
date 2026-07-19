@@ -27,7 +27,7 @@ export function PositionSlot({ index, value, isValid, hardMode, isSuggested, acc
     : hardMode
       ? `Position ${displayPosition}, empty`
       : revealValid
-        ? `Position ${displayPosition}, empty, valid placement${showSuggestion ? ', your usual spot for this range' : ''}`
+        ? `Position ${displayPosition}, empty, valid placement${showSuggestion ? ', where players usually place this range' : ''}`
         : `Position ${displayPosition}, empty, not a valid placement`
 
   return (

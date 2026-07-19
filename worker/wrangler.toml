@@ -1,0 +1,8 @@
+name = "order20-community-stats"
+main = "src/index.ts"
+compatibility_date = "2026-07-19"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "order20-community-stats"
+database_id = "49b5b071-db4b-4edf-91c5-1fafaf078dcd"

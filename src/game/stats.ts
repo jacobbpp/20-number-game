@@ -228,17 +228,19 @@ export function hardModeWinRate(stats: StatsData): number | null {
   return Math.round((stats.hardModeWins / stats.hardModeGames) * 100)
 }
 
-// Among the positions currently legal for this roll, which one this player
-// has historically placed similar-value numbers at most often — a nudge
-// among genuine choices, not a hint about legality itself (that's already
-// conveyed by which positions are highlighted at all). Only meaningful when
-// there's an actual choice to make and enough history behind the pick.
-export function suggestedPosition(stats: StatsData, value: number, validPositions: number[]): number | null {
+// Among the positions currently legal for this roll, which one similar-value
+// numbers have most often landed on in the given matrix, a nudge among
+// genuine choices, not a hint about legality itself (that's already conveyed
+// by which positions are highlighted at all). The matrix is caller-supplied
+// so this works the same whether it's personal or community history. Only
+// meaningful when there's an actual choice to make and enough signal behind
+// the pick.
+export function suggestedPosition(matrix: number[][], value: number, validPositions: number[]): number | null {
   if (validPositions.length <= 1) return null
 
   const bucket = bucketForValue(value)
   const candidates = validPositions
-    .map(position => ({ position, count: stats.matrix[position][bucket] }))
+    .map(position => ({ position, count: matrix[position][bucket] }))
     .filter(c => c.count >= MIN_SIGNAL)
 
   if (candidates.length === 0) return null

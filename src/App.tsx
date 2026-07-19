@@ -25,6 +25,7 @@ import { useBestScore } from './hooks/useBestScore'
 import { useCurrentDailyGame } from './hooks/useCurrentDailyGame'
 import { useCurrentGame } from './hooks/useCurrentGame'
 import { useDailyChallenge } from './hooks/useDailyChallenge'
+import { useCommunityStats } from './hooks/useCommunityStats'
 import { useGameStats } from './hooks/useGameStats'
 import { useHardMode } from './hooks/useHardMode'
 import { useOnboarding } from './hooks/useOnboarding'
@@ -49,6 +50,7 @@ function App() {
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
+  const { matrix: communityMatrix, reportPlacements } = useCommunityStats()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
@@ -134,6 +136,7 @@ function App() {
       state.positions.length,
       hardMode,
     )
+    reportPlacements(extractPlacements(state.positions))
     setHasRecorded(true)
   }, [
     state.status,
@@ -144,6 +147,7 @@ function App() {
     hardMode,
     reportScore,
     recordCompletedGame,
+    reportPlacements,
     setHasRecorded,
   ])
 
@@ -245,7 +249,8 @@ function App() {
   // Free play only — daily board sizes vary, so "position 5" doesn't mean
   // the same thing across days the way it does for the fixed-size matrix
   // this is built from.
-  const freePlaySuggestion = state.currentRoll !== null ? suggestedPosition(stats, state.currentRoll, state.validPositions) : null
+  const freePlaySuggestion =
+    state.currentRoll !== null ? suggestedPosition(communityMatrix, state.currentRoll, state.validPositions) : null
 
   return (
     <div className="app">

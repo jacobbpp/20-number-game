@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.27.0',
+    date: '2026-07-19',
+    title: 'A community usual spot',
+    description: 'The dot marking a likely position for your roll now reflects everyone who plays, not just your own history. No sign-in, nothing personal shared, just how the rolls tend to land.',
+  },
+  {
     version: '1.26.0',
     date: '2026-07-19',
     title: 'A faster way to hide the home screen',

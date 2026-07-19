@@ -6,6 +6,7 @@ import {
   boardHalfComparison,
   bucketForValue,
   computeInsight,
+  createEmptyMatrix,
   createEmptyStats,
   describeScoreDistribution,
   extractPlacements,
@@ -307,37 +308,37 @@ describe('hardModeWinRate', () => {
 
 describe('suggestedPosition', () => {
   it('returns null when there is only one valid position — nothing to guide between', () => {
-    const stats = createEmptyStats()
-    stats.matrix[3][2] = 5
-    expect(suggestedPosition(stats, 250, [3])).toBeNull()
+    const matrix = createEmptyMatrix()
+    matrix[3][2] = 5
+    expect(suggestedPosition(matrix, 250, [3])).toBeNull()
   })
 
   it('returns null when no candidate has enough history', () => {
-    const stats = createEmptyStats()
-    stats.matrix[3][2] = 1 // below MIN_SIGNAL
-    expect(suggestedPosition(stats, 250, [3, 5])).toBeNull()
+    const matrix = createEmptyMatrix()
+    matrix[3][2] = 1 // below MIN_SIGNAL
+    expect(suggestedPosition(matrix, 250, [3, 5])).toBeNull()
   })
 
   it('returns the valid position with the most history in this value bucket', () => {
-    const stats = createEmptyStats()
-    stats.matrix[3][2] = 2
-    stats.matrix[5][2] = 6
-    stats.matrix[7][2] = 4
-    expect(suggestedPosition(stats, 250, [3, 5, 7])).toBe(5)
+    const matrix = createEmptyMatrix()
+    matrix[3][2] = 2
+    matrix[5][2] = 6
+    matrix[7][2] = 4
+    expect(suggestedPosition(matrix, 250, [3, 5, 7])).toBe(5)
   })
 
   it('ignores history at positions outside the currently valid set', () => {
-    const stats = createEmptyStats()
-    stats.matrix[9][2] = 100 // huge signal, but not a legal spot for this roll
-    stats.matrix[3][2] = 2
-    expect(suggestedPosition(stats, 250, [3, 5])).toBe(3)
+    const matrix = createEmptyMatrix()
+    matrix[9][2] = 100 // huge signal, but not a legal spot for this roll
+    matrix[3][2] = 2
+    expect(suggestedPosition(matrix, 250, [3, 5])).toBe(3)
   })
 
   it('breaks a tie by the first candidate in valid-position order', () => {
-    const stats = createEmptyStats()
-    stats.matrix[3][2] = 4
-    stats.matrix[5][2] = 4
-    expect(suggestedPosition(stats, 250, [3, 5])).toBe(3)
+    const matrix = createEmptyMatrix()
+    matrix[3][2] = 4
+    matrix[5][2] = 4
+    expect(suggestedPosition(matrix, 250, [3, 5])).toBe(3)
   })
 })
 
