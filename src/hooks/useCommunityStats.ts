@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import { API_BASE } from '../api'
 import { bucketForValue, createEmptyMatrix, type Placement } from '../game/stats'
 import { BOARD_SIZE } from '../game/types'
-
-const API_BASE = 'https://order20-community-stats.tb-dev.workers.dev'
 
 interface SummaryResponse {
   matrix?: number[][]

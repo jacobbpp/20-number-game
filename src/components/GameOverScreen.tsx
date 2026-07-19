@@ -1,7 +1,9 @@
+import { LeaderboardPrompt } from './LeaderboardPrompt'
 import { ResultGrid } from './ResultGrid'
 import { ShareButton } from './ShareButton'
 import type { ResultBadge } from '../game/types'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import type { LeaderboardWindow } from '../hooks/useLeaderboard'
 
 interface GameOverScreenProps {
   reason: string
@@ -9,9 +11,23 @@ interface GameOverScreenProps {
   resultBadge: ResultBadge
   positions: (number | null)[]
   onNewGame: () => void
+  leaderboardWindows: LeaderboardWindow[] | null
+  rememberedName: string
+  onSaveScore: (name: string) => void
+  onSkipScore: () => void
 }
 
-export function GameOverScreen({ reason, placedCount, resultBadge, positions, onNewGame }: GameOverScreenProps) {
+export function GameOverScreen({
+  reason,
+  placedCount,
+  resultBadge,
+  positions,
+  onNewGame,
+  leaderboardWindows,
+  rememberedName,
+  onSaveScore,
+  onSkipScore,
+}: GameOverScreenProps) {
   const containerRef = useFocusTrap<HTMLDivElement>()
 
   return (
@@ -27,8 +43,11 @@ export function GameOverScreen({ reason, placedCount, resultBadge, positions, on
           {resultBadge === 'new-best' && ' · new best!'}
           {resultBadge === 'tied-best' && ' · matched your best!'}
         </p>
+        {leaderboardWindows && (
+          <LeaderboardPrompt windows={leaderboardWindows} rememberedName={rememberedName} onSave={onSaveScore} onSkip={onSkipScore} />
+        )}
         <div className="overlay__actions">
-          <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus>
+          <button type="button" className="btn btn--primary" onClick={onNewGame} autoFocus={!leaderboardWindows}>
             New game
           </button>
           <ShareButton positions={positions} placedCount={placedCount} won={false} />

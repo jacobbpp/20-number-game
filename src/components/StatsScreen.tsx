@@ -40,6 +40,7 @@ interface StatsScreenProps {
   onClose: () => void
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
+  onOpenLeaderboard: () => void
 }
 
 // Shorter than the menu row titles on purpose — the header has less room
@@ -81,6 +82,7 @@ export function StatsScreen({
   onClose,
   onOpenHowToPlay,
   onOpenAchievements,
+  onOpenLeaderboard,
 }: StatsScreenProps) {
   const { totalGames, lastGame } = stats
   const [section, setSection] = useState<StatsSection>('menu')
@@ -175,6 +177,13 @@ export function StatsScreen({
               <ChevronRightIcon />
             </button>
           ))}
+          <button type="button" className="stats-menu__row" onClick={onOpenLeaderboard}>
+            <span className="stats-menu__row-text">
+              <span className="stats-menu__row-title">Leaderboard</span>
+              <span className="stats-menu__row-preview">Top scores, day/week/month/all-time</span>
+            </span>
+            <ChevronRightIcon />
+          </button>
         </div>
       ) : (
         <div className="stats-screen__body">

@@ -528,6 +528,89 @@ button:focus-visible {
   color: var(--accent-on);
 }
 
+.leaderboard-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--cta-tint);
+  text-align: left;
+}
+
+.leaderboard-prompt__text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.leaderboard-prompt__input {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  text-align: center;
+  text-transform: uppercase;
+  background: var(--slot-filled);
+  color: var(--text);
+  border: 1.5px solid var(--accent);
+  border-radius: 12px;
+  padding: 10px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.leaderboard-prompt__hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-disabled);
+  text-align: center;
+}
+
+.leaderboard-row__rank {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-disabled);
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.leaderboard-row__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-row__score {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.leaderboard-row--you {
+  background: var(--cta-tint);
+  border-radius: 8px;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.leaderboard-row--you .leaderboard-row__rank,
+.leaderboard-row--you .leaderboard-row__score {
+  color: var(--cta);
+}
+
 .home-screen {
   flex: 1;
   min-height: 0;

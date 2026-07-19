@@ -29,6 +29,8 @@ Heatmap, win rate, streak, average score, and Insights, each its own screen. Ins
 
 Achievements sit behind the trophy pill: a milestone for every free-play score, 1 through 20, plus named ones for streaks, games played, and hard mode wins.
 
+Leaderboard tracks the top 10 free-play scores by day, week, month, and all time. A score that makes the cut prompts for a name, arcade-style, no sign-in, just remembered on this device for next time.
+
 ## Settings
 
 - **Sound** mutes effects.

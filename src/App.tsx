@@ -9,6 +9,7 @@ import { GuideScreen } from './components/GuideScreen'
 import { Header } from './components/Header'
 import { HomeScreen } from './components/HomeScreen'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
+import { LeaderboardScreen } from './components/LeaderboardScreen'
 import { RollDisplay } from './components/RollDisplay'
 import { SettingsScreen } from './components/SettingsScreen'
 import { StatsScreen } from './components/StatsScreen'
@@ -28,6 +29,7 @@ import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useCommunityStats } from './hooks/useCommunityStats'
 import { useGameStats } from './hooks/useGameStats'
 import { useHardMode } from './hooks/useHardMode'
+import { useLeaderboard, type LeaderboardWindow } from './hooks/useLeaderboard'
 import { useOnboarding } from './hooks/useOnboarding'
 import { useShowHomeScreen } from './hooks/useShowHomeScreen'
 import { useSoundSetting } from './hooks/useSoundSetting'
@@ -47,10 +49,13 @@ function App() {
   const [isChangelogOpen, setIsChangelogOpen] = useState(false)
   const [isGuideOpen, setIsGuideOpen] = useState(false)
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false)
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
+  const [leaderboardWindows, setLeaderboardWindows] = useState<LeaderboardWindow[] | null>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
   const { matrix: communityMatrix, reportPlacements } = useCommunityStats()
+  const { name: leaderboardName, checkQualifies, submitScore, fetchLeaderboard } = useLeaderboard()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
@@ -66,6 +71,13 @@ function App() {
   // parts of the UI silently disagreeing about what day it is.
   const dailyDateRef = useRef(getLocalDateString())
   const dailyDate = dailyDateRef.current
+
+  // Lets the leaderboard-qualification check (below) discard its result if
+  // the player has already restarted by the time the network call resolves.
+  const gameIdRef = useRef(gameId)
+  useEffect(() => {
+    gameIdRef.current = gameId
+  }, [gameId])
 
   const { todayResult, streak, history, recordDailyResult } = useDailyChallenge(dailyDate)
   const { unlockedAt: unlockedAchievements, newlyUnlocked, dismissNewlyUnlocked } = useAchievements(stats, streak, bestScore)
@@ -138,6 +150,14 @@ function App() {
     )
     reportPlacements(extractPlacements(state.positions))
     setHasRecorded(true)
+
+    // Free play only (fixed board size 20) — daily board sizes vary, so a
+    // "top 10" wouldn't mean the same thing from one day to the next.
+    const requestedGameId = gameIdRef.current
+    checkQualifies(state.positions.length, state.placedCount).then(windows => {
+      if (gameIdRef.current !== requestedGameId) return
+      if (windows.length > 0) setLeaderboardWindows(windows)
+    })
   }, [
     state.status,
     state.placedCount,
@@ -149,6 +169,7 @@ function App() {
     recordCompletedGame,
     reportPlacements,
     setHasRecorded,
+    checkQualifies,
   ])
 
   useEffect(() => {
@@ -209,6 +230,7 @@ function App() {
     restart()
     setGameId(id => id + 1)
     setResultBadge(null)
+    setLeaderboardWindows(null)
   }
 
   const handleCloseHowToPlay = () => {
@@ -225,6 +247,7 @@ function App() {
     setIsDailyOpen(false)
     setIsSettingsOpen(false)
     setIsGuideOpen(false)
+    setIsLeaderboardOpen(false)
     setIsStatsOpen(true)
   }
 
@@ -233,6 +256,7 @@ function App() {
     setIsStatsOpen(false)
     setIsSettingsOpen(false)
     setIsGuideOpen(false)
+    setIsLeaderboardOpen(false)
     setIsDailyOpen(true)
   }
 
@@ -241,6 +265,7 @@ function App() {
     setIsStatsOpen(false)
     setIsDailyOpen(false)
     setIsGuideOpen(false)
+    setIsLeaderboardOpen(false)
     setIsSettingsOpen(true)
   }
 
@@ -292,6 +317,10 @@ function App() {
           onClose={() => setIsStatsOpen(false)}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
           onOpenAchievements={() => setIsAchievementsOpen(true)}
+          onOpenLeaderboard={() => {
+            setIsStatsOpen(false)
+            setIsLeaderboardOpen(true)
+          }}
         />
       ) : isSettingsOpen ? (
         <SettingsScreen
@@ -316,6 +345,15 @@ function App() {
           onClose={() => {
             setIsGuideOpen(false)
             setIsSettingsOpen(true)
+          }}
+        />
+      ) : isLeaderboardOpen ? (
+        <LeaderboardScreen
+          rememberedName={leaderboardName}
+          fetchLeaderboard={fetchLeaderboard}
+          onClose={() => {
+            setIsLeaderboardOpen(false)
+            setIsStatsOpen(true)
           }}
         />
       ) : (
@@ -343,17 +381,34 @@ function App() {
         </>
       )}
 
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && state.status === 'lost' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
           resultBadge={resultBadge}
           positions={state.positions}
           onNewGame={handleRestart}
+          leaderboardWindows={leaderboardWindows}
+          rememberedName={leaderboardName}
+          onSaveScore={name => {
+            submitScore(state.positions.length, name, state.placedCount)
+            setLeaderboardWindows(null)
+          }}
+          onSkipScore={() => setLeaderboardWindows(null)}
         />
       )}
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && state.status === 'won' && (
-        <WinScreen positions={state.positions} onNewGame={handleRestart} />
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && state.status === 'won' && (
+        <WinScreen
+          positions={state.positions}
+          onNewGame={handleRestart}
+          leaderboardWindows={leaderboardWindows}
+          rememberedName={leaderboardName}
+          onSaveScore={name => {
+            submitScore(state.positions.length, name, state.placedCount)
+            setLeaderboardWindows(null)
+          }}
+          onSkipScore={() => setLeaderboardWindows(null)}
+        />
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}
       {isWhatsNewOpen && <WhatsNewScreen entries={unseenEntries} onClose={closeWhatsNew} />}

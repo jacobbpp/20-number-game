@@ -104,6 +104,148 @@ async function handleSummary(request: Request, env: Env): Promise<Response> {
   return json({ boardSize, matrix })
 }
 
+type LeaderboardWindow = 'day' | 'week' | 'month' | 'all'
+const LEADERBOARD_WINDOWS = new Set<string>(['day', 'week', 'month', 'all'])
+
+// UTC calendar boundaries, so the board resets at the same instant for
+// every player regardless of their own timezone — same anchoring the daily
+// challenge already uses for "today".
+function windowCutoff(window: LeaderboardWindow): string | null {
+  const now = new Date()
+  if (window === 'all') return null
+  if (window === 'day') {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString()
+  }
+  if (window === 'month') {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
+  }
+  // week: most recent UTC Monday (ISO week start).
+  const day = now.getUTCDay() // 0 = Sunday .. 6 = Saturday
+  const diffToMonday = day === 0 ? 6 : day - 1
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diffToMonday)).toISOString()
+}
+
+// The score sitting in 10th place for a window — null means fewer than 10
+// entries exist yet, so any score clears the bar.
+async function tenthPlaceScore(env: Env, boardSize: number, window: LeaderboardWindow): Promise<number | null> {
+  const cutoff = windowCutoff(window)
+  const query = cutoff
+    ? env.DB.prepare('SELECT score FROM scores WHERE board_size = ?1 AND created_at >= ?2 ORDER BY score DESC LIMIT 1 OFFSET 9').bind(
+        boardSize,
+        cutoff,
+      )
+    : env.DB.prepare('SELECT score FROM scores WHERE board_size = ?1 ORDER BY score DESC LIMIT 1 OFFSET 9').bind(boardSize)
+  const row = await query.first<{ score: number }>()
+  return row ? row.score : null
+}
+
+interface ScoreCheckBody {
+  boardSize: number
+  score: number
+}
+
+function isValidScoreCheck(body: unknown): body is ScoreCheckBody {
+  if (!body || typeof body !== 'object') return false
+  const { boardSize, score } = body as Record<string, unknown>
+  return (
+    typeof boardSize === 'number' &&
+    VALID_BOARD_SIZES.has(boardSize) &&
+    typeof score === 'number' &&
+    Number.isInteger(score) &&
+    score >= 1 &&
+    score <= boardSize
+  )
+}
+
+// Tells the caller which leaderboard windows a just-finished score would
+// currently place top 10 in, before anything is written — the frontend
+// only shows the name prompt when this comes back non-empty.
+async function handleScoreCheck(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  if (!isValidScoreCheck(body)) {
+    return json({ error: 'boardSize and score (1..boardSize) are required.' }, 400)
+  }
+
+  const { boardSize, score } = body
+  const windows: LeaderboardWindow[] = ['day', 'week', 'month', 'all']
+  const thresholds = await Promise.all(windows.map(window => tenthPlaceScore(env, boardSize, window)))
+  const qualifying = windows.filter((_, i) => thresholds[i] === null || score >= (thresholds[i] as number))
+
+  return json({ windows: qualifying })
+}
+
+interface ScoreSubmitBody {
+  boardSize: number
+  name: string
+  score: number
+}
+
+const NAME_PATTERN = /^[A-Za-z0-9 ]+$/
+
+function isValidScoreSubmit(body: unknown): body is ScoreSubmitBody {
+  if (!body || typeof body !== 'object') return false
+  const { boardSize, name, score } = body as Record<string, unknown>
+  if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
+  if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > boardSize) return false
+  if (typeof name !== 'string') return false
+  const trimmed = name.trim()
+  return trimmed.length >= 1 && trimmed.length <= 8 && NAME_PATTERN.test(trimmed)
+}
+
+async function handleScoreSubmit(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  if (!isValidScoreSubmit(body)) {
+    return json({ error: 'boardSize, name (1-8 letters/digits/spaces), and score (1..boardSize) are required.' }, 400)
+  }
+
+  const { boardSize, name, score } = body
+  const cleanName = name.trim().toUpperCase()
+
+  await env.DB.prepare('INSERT INTO scores (board_size, name, score, created_at) VALUES (?1, ?2, ?3, ?4)')
+    .bind(boardSize, cleanName, score, new Date().toISOString())
+    .run()
+
+  return new Response(null, { status: 204, headers: corsHeaders() })
+}
+
+async function handleLeaderboard(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const boardSizeParam = url.searchParams.get('boardSize')
+  const boardSize = boardSizeParam ? Number(boardSizeParam) : 20
+  const windowParam = url.searchParams.get('window') ?? 'all'
+
+  if (!VALID_BOARD_SIZES.has(boardSize)) {
+    return json({ error: 'Unknown boardSize.' }, 400)
+  }
+  if (!LEADERBOARD_WINDOWS.has(windowParam)) {
+    return json({ error: 'Unknown window.' }, 400)
+  }
+
+  const window = windowParam as LeaderboardWindow
+  const cutoff = windowCutoff(window)
+  const query = cutoff
+    ? env.DB.prepare('SELECT name, score FROM scores WHERE board_size = ?1 AND created_at >= ?2 ORDER BY score DESC, created_at ASC LIMIT 10').bind(
+        boardSize,
+        cutoff,
+      )
+    : env.DB.prepare('SELECT name, score FROM scores WHERE board_size = ?1 ORDER BY score DESC, created_at ASC LIMIT 10').bind(boardSize)
+
+  const { results } = await query.all<{ name: string; score: number }>()
+  return json({ boardSize, window, entries: results })
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') {
@@ -118,6 +260,18 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/placements/summary') {
       return handleSummary(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/scores/check') {
+      return handleScoreCheck(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/scores') {
+      return handleScoreSubmit(request, env)
+    }
+
+    if (request.method === 'GET' && url.pathname === '/scores/leaderboard') {
+      return handleLeaderboard(request, env)
     }
 
     return json({ error: 'Not found.' }, 404)
