@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { getLocalDateString } from './game/daily'
 import { STATS_STORAGE_KEY } from './hooks/useGameStats'
 import { APP_VERSION } from './version'
 
@@ -172,5 +173,45 @@ describe('leaderboard name prompt', () => {
 
     await screen.findByRole('heading', { name: 'Game over' })
     expect(screen.queryByLabelText('Name for the leaderboard')).not.toBeInTheDocument()
+  })
+})
+
+describe('insights leaderboard activity', () => {
+  it("logs every completed game's qualifying windows, not just the ones that made a board", async () => {
+    mockLeaderboardApi({ checkWindows: [] })
+    mockRollSequence([64, 75, 63])
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    await screen.findByRole('heading', { name: 'Game over' })
+
+    await vi.waitFor(() => {
+      const log: unknown = JSON.parse(localStorage.getItem('order20-leaderboard-activity') ?? '[]')
+      expect(log).toEqual([{ date: getLocalDateString(), windows: [] }])
+    })
+  })
+
+  it('shows a Leaderboard reach card summarizing today\'s qualifying games', async () => {
+    seedPlayedStats()
+    mockLeaderboardApi()
+    const today = getLocalDateString()
+    localStorage.setItem(
+      'order20-leaderboard-activity',
+      JSON.stringify([
+        { date: today, windows: ['day'] },
+        { date: today, windows: [] },
+        { date: today, windows: ['week', 'all'] },
+      ]),
+    )
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Insights/ }))
+
+    expect(await screen.findByText('Leaderboard reach')).toBeInTheDocument()
+    expect(
+      screen.getByText("3 games played today. 1 made today's board, 1 made this week's, and 1 made the all-time board."),
+    ).toBeInTheDocument()
   })
 })

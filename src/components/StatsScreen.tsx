@@ -23,6 +23,7 @@ import {
 } from '../game/stats'
 import { BOARD_SIZE } from '../game/types'
 import { isStreakActive, type StreakData } from '../game/daily'
+import { describeLeaderboardReach, summarizeActivity, type LeaderboardActivityEntry } from '../game/leaderboardActivity'
 import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
 
@@ -37,6 +38,7 @@ interface StatsScreenProps {
   bestScore: number
   unlockedAchievementCount: number
   totalAchievementCount: number
+  leaderboardActivity: LeaderboardActivityEntry[]
   onClose: () => void
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
@@ -79,6 +81,7 @@ export function StatsScreen({
   bestScore,
   unlockedAchievementCount,
   totalAchievementCount,
+  leaderboardActivity,
   onClose,
   onOpenHowToPlay,
   onOpenAchievements,
@@ -102,7 +105,10 @@ export function StatsScreen({
   const hardRate = hardModeWinRate(stats)
   const scoreMax = Math.max(...stats.scoreDistribution, 1)
   const currentDailyStreak = isStreakActive(streak, today) ? streak.count : 0
+  const activitySummary = summarizeActivity(leaderboardActivity, today)
+  const leaderboardReachText = describeLeaderboardReach(activitySummary)
   const insightCount = [
+    leaderboardReachText !== null,
     bestRange !== null,
     lossBucket !== null,
     bestPosition !== null,
@@ -238,67 +244,24 @@ export function StatsScreen({
                   <p className="stats-hero-strip__label">best score</p>
                 </div>
                 <div className="stats-hero-strip__card">
-                  <p className="stats-hero-strip__value">{rate}%</p>
-                  <p className="stats-hero-strip__label">win rate</p>
+                  <p className="stats-hero-strip__value">{avgTurns?.toFixed(1) ?? '—'}</p>
+                  <p className="stats-hero-strip__label">avg. score</p>
                 </div>
                 <div className="stats-hero-strip__card">
-                  <p className="stats-hero-strip__value">{stats.currentWinStreak}</p>
-                  <p className="stats-hero-strip__label">win streak</p>
+                  <p className="stats-hero-strip__value">{activitySummary.gamesToday}</p>
+                  <p className="stats-hero-strip__label">games today</p>
                 </div>
               </div>
 
               <div className="insights-list">
-              {bestRange !== null && (
-                <div className="insight-card insight-card--best">
+              {leaderboardReachText !== null && (
+                <div className="insight-card insight-card--leaderboard">
                   <span className="insight-card__icon" aria-hidden="true">
-                    🎯
+                    🏆
                   </span>
                   <div>
-                    <p className="insight-card__title">Best range</p>
-                    <p className="insight-card__desc">
-                      {bucketLabel(bestRange.bucket)} is your strongest range: {bestRange.winRatePercent}% of placements there end in a win.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {bestPosition !== null && (
-                <div className="insight-card insight-card--best">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    🧭
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Best position</p>
-                    <p className="insight-card__desc">
-                      Position {bestPosition.position + 1} has your best record: {bestPosition.winRatePercent}% of placements there end in a win.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {lossBucket !== null && (
-                <div className="insight-card insight-card--worst">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    ⚠️
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Toughest range</p>
-                    <p className="insight-card__desc">Most losses happen when rolling in the {bucketLabel(lossBucket)} range.</p>
-                  </div>
-                </div>
-              )}
-
-              {boardHalf !== null && (
-                <div className="insight-card insight-card--boardhalf">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    ⚖️
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Board half</p>
-                    <p className="insight-card__desc">
-                      Numbers you place in the {boardHalf.strongerHalf} half of the board win more often ({boardHalf.strongerWinRatePercent}% vs{' '}
-                      {boardHalf.weakerWinRatePercent}%).
-                    </p>
+                    <p className="insight-card__title">Leaderboard reach</p>
+                    <p className="insight-card__desc">{leaderboardReachText}</p>
                   </div>
                 </div>
               )}
@@ -317,6 +280,57 @@ export function StatsScreen({
                 </div>
               )}
 
+              {insight && (
+                <div className="insight-card insight-card--neutral">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🔄
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Last game</p>
+                    <p className="insight-card__desc">{describeInsight(insight)}</p>
+                  </div>
+                </div>
+              )}
+
+              {bestRange !== null && (
+                <div className="insight-card insight-card--best">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🎯
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Best range</p>
+                    <p className="insight-card__desc">{bucketLabel(bestRange.bucket)} is the range you handle best.</p>
+                  </div>
+                </div>
+              )}
+
+              {bestPosition !== null && (
+                <div className="insight-card insight-card--best">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🧭
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Best position</p>
+                    <p className="insight-card__desc">Position {bestPosition.position + 1} is where you have your best record.</p>
+                  </div>
+                </div>
+              )}
+
+              {boardHalf !== null && (
+                <div className="insight-card insight-card--boardhalf">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    ⚖️
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Board half</p>
+                    <p className="insight-card__desc">
+                      Numbers you place in the {boardHalf.strongerHalf} half of the board tend to work out better than the{' '}
+                      {boardHalf.strongerHalf === 'top' ? 'bottom' : 'top'} half.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {hardRate !== null && (
                 <div className="insight-card insight-card--hardmode">
                   <span className="insight-card__icon" aria-hidden="true">
@@ -325,7 +339,9 @@ export function StatsScreen({
                   <div>
                     <p className="insight-card__title">Hard mode</p>
                     <p className="insight-card__desc">
-                      {hardRate}% win rate with hard mode on, vs {rate}% overall.
+                      {hardRate >= (rate ?? 0)
+                        ? "Hard mode hasn't slowed you down. You do just as well without the hints."
+                        : 'Hard mode is tougher for you than playing with hints on, which tracks.'}
                     </p>
                   </div>
                 </div>
@@ -347,14 +363,14 @@ export function StatsScreen({
                 </div>
               )}
 
-              {insight && (
-                <div className="insight-card insight-card--neutral">
+              {lossBucket !== null && (
+                <div className="insight-card insight-card--worst">
                   <span className="insight-card__icon" aria-hidden="true">
-                    🔄
+                    ⚠️
                   </span>
                   <div>
-                    <p className="insight-card__title">Last game</p>
-                    <p className="insight-card__desc">{describeInsight(insight)}</p>
+                    <p className="insight-card__title">Toughest range</p>
+                    <p className="insight-card__desc">Most losses happen when rolling in the {bucketLabel(lossBucket)} range.</p>
                   </div>
                 </div>
               )}

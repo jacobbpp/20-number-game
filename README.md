@@ -25,7 +25,7 @@ One shared puzzle a day, same rolls for everyone. Board size shifts daily (10, 1
 
 ## Stats
 
-Heatmap, win rate, streak, average score, and Insights, each its own screen. Insights opens with a best score / win rate / streak strip, then patterns as they earn enough games behind them: best range, best position, toughest range, board half, signature position, hard mode win rate, streak momentum, last game.
+Heatmap, win rate, streak, average score, and Insights, each its own screen. Insights opens with a best score / average score / games-today strip, since winning outright is rare and score says more than win rate does. Below that: leaderboard reach (how many of today's games made a board), then patterns as they earn enough games behind them: best range, best position, toughest range, board half, signature position, hard mode, streak momentum, last game.
 
 Achievements sit behind the trophy pill: a milestone for every free-play score, 1 through 20, plus named ones for streaks, games played, and hard mode wins.
 

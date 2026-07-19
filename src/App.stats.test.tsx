@@ -285,7 +285,7 @@ describe('insights section', () => {
     await openSection('Insights')
 
     expect(await screen.findByText('Best range')).toBeInTheDocument()
-    expect(screen.getByText(/201–300 is your strongest range: 80% of placements there end in a win/)).toBeInTheDocument()
+    expect(screen.getByText('201–300 is the range you handle best.')).toBeInTheDocument()
   })
 
   it('shows a signature-position card once there are enough games', async () => {
@@ -304,7 +304,7 @@ describe('insights section', () => {
     expect(screen.getByText(/Position 4 is your most-used slot, filled 5 times/)).toBeInTheDocument()
   })
 
-  it('shows a hard-mode win-rate card once there are enough hard-mode games', async () => {
+  it('shows a hard-mode card once there are enough hard-mode games', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
@@ -323,10 +323,10 @@ describe('insights section', () => {
     await openSection('Insights')
 
     expect(await screen.findByText('Hard mode')).toBeInTheDocument()
-    expect(screen.getByText('75% win rate with hard mode on, vs 50% overall.')).toBeInTheDocument()
+    expect(screen.getByText("Hard mode hasn't slowed you down. You do just as well without the hints.")).toBeInTheDocument()
   })
 
-  it('shows a hero strip of best score, win rate, and win streak', async () => {
+  it('shows a hero strip of best score, average score, and games played today', async () => {
     localStorage.setItem('order20-best-score', '14')
     localStorage.setItem(
       STATS_STORAGE_KEY,
@@ -340,15 +340,26 @@ describe('insights section', () => {
         lastGame: null,
       }),
     )
+    const today = getLocalDateString()
+    localStorage.setItem(
+      'order20-leaderboard-activity',
+      JSON.stringify([
+        { date: today, windows: [] },
+        { date: today, windows: ['day'] },
+        { date: '2000-01-01', windows: ['day', 'week', 'month', 'all'] },
+      ]),
+    )
 
     render(<App />)
     await openSection('Insights')
 
-    expect(await screen.findByText('14')).toBeInTheDocument()
-    expect(screen.getByText('best score')).toBeInTheDocument()
-    expect(screen.getByText('50%')).toBeInTheDocument()
-    expect(screen.getByText('win rate')).toBeInTheDocument()
-    expect(screen.getByText('win streak')).toBeInTheDocument()
+    const heroStrip = (await screen.findByText('best score')).closest('.stats-hero-strip') as HTMLElement
+    expect(within(heroStrip).getByText('14')).toBeInTheDocument()
+    expect(within(heroStrip).getByText('4.0')).toBeInTheDocument()
+    expect(within(heroStrip).getByText('avg. score')).toBeInTheDocument()
+    expect(within(heroStrip).getByText('games today')).toBeInTheDocument()
+    // Only today's two logged games count, not the one from 2000-01-01.
+    expect(within(heroStrip).getByText('2')).toBeInTheDocument()
   })
 
   it('shows a best-position card once a position has enough win-associated signal', async () => {
@@ -375,7 +386,7 @@ describe('insights section', () => {
     await openSection('Insights')
 
     expect(await screen.findByText('Best position')).toBeInTheDocument()
-    expect(screen.getByText(/Position 4 has your best record: 100% of placements there end in a win/)).toBeInTheDocument()
+    expect(screen.getByText('Position 4 is where you have your best record.')).toBeInTheDocument()
   })
 
   it('shows a board-half card once both halves have enough signal', async () => {
@@ -404,7 +415,7 @@ describe('insights section', () => {
     await openSection('Insights')
 
     expect(await screen.findByText('Board half')).toBeInTheDocument()
-    expect(screen.getByText(/Numbers you place in the top half of the board win more often \(80% vs 20%\)/)).toBeInTheDocument()
+    expect(screen.getByText('Numbers you place in the top half of the board tend to work out better than the bottom half.')).toBeInTheDocument()
   })
 
   it('shows a streak-momentum card while chasing a past record', async () => {

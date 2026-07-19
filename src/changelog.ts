@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.29.0',
+    date: '2026-07-19',
+    title: 'Insights, reimagined',
+    description: 'Insights now leads with score and leaderboard reach instead of win rate, since winning outright is rare. A new Leaderboard reach card tracks how many of today\'s games made a board, and the other patterns lean less on raw win percentages.',
+  },
+  {
     version: '1.28.0',
     date: '2026-07-19',
     title: 'A leaderboard, arcade-style',

@@ -55,7 +55,8 @@ function App() {
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
   const { matrix: communityMatrix, reportPlacements } = useCommunityStats()
-  const { name: leaderboardName, checkQualifies, submitScore, fetchLeaderboard } = useLeaderboard()
+  const { name: leaderboardName, activityLog: leaderboardActivity, checkQualifies, submitScore, fetchLeaderboard, logActivity } =
+    useLeaderboard()
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
@@ -156,6 +157,9 @@ function App() {
     const requestedGameId = gameIdRef.current
     checkQualifies(state.positions.length, state.placedCount).then(windows => {
       if (gameIdRef.current !== requestedGameId) return
+      // Logged regardless of whether it qualified — Insights needs the full
+      // count of today's games as the denominator, not just the hits.
+      logActivity(dailyDate, windows)
       if (windows.length > 0) setLeaderboardWindows(windows)
     })
   }, [
@@ -170,6 +174,8 @@ function App() {
     reportPlacements,
     setHasRecorded,
     checkQualifies,
+    logActivity,
+    dailyDate,
   ])
 
   useEffect(() => {
@@ -312,6 +318,7 @@ function App() {
           today={dailyDate}
           theme={theme}
           bestScore={bestScore}
+          leaderboardActivity={leaderboardActivity}
           unlockedAchievementCount={Object.keys(unlockedAchievements).length}
           totalAchievementCount={ACHIEVEMENTS.length}
           onClose={() => setIsStatsOpen(false)}

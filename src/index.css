@@ -1100,6 +1100,14 @@ button:focus-visible {
   line-height: 1.4;
 }
 
+.insight-card--leaderboard {
+  background: rgba(207, 143, 95, 0.12);
+}
+
+.insight-card--leaderboard .insight-card__title {
+  color: var(--cta);
+}
+
 .insight-card--best {
   background: rgba(126, 217, 168, 0.12);
 }

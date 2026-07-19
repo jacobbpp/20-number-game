@@ -26,17 +26,22 @@ const STATS_ENTRIES: Entry[] = [
     term: 'Average score',
     desc: 'Average number of positions filled per game, overall and in wins only, plus a chart of how far your runs usually get.',
   },
+  {
+    term: 'Leaderboard',
+    desc: 'Top 10 free-play scores by day, week, month, and all time.',
+  },
 ]
 
 const INSIGHT_ENTRIES: Entry[] = [
-  { term: 'Best range', desc: 'The value range with the highest share of placements ending in a win.' },
-  { term: 'Best position', desc: 'The board position with the best win record behind it.' },
-  { term: 'Toughest range', desc: 'The value range most often rolled right before a loss.' },
-  { term: 'Board half', desc: 'Whether the top or bottom half of the board treats you better.' },
+  { term: 'Leaderboard reach', desc: "How many of today's games made a leaderboard, and which ones." },
   { term: 'Signature position', desc: 'Your single most-used board position, across every game.' },
-  { term: 'Hard mode', desc: 'Your win rate with hard mode on, compared with your overall win rate.' },
-  { term: 'Streak momentum', desc: 'How close an active win streak is to your all-time best.' },
   { term: 'Last game', desc: 'Whether your last game matched or broke your usual placement pattern.' },
+  { term: 'Best range', desc: 'The value range you handle best.' },
+  { term: 'Best position', desc: 'The board position with your best record behind it.' },
+  { term: 'Board half', desc: 'Whether the top or bottom half of the board treats you better.' },
+  { term: 'Hard mode', desc: 'Whether hard mode has slowed your results down or not.' },
+  { term: 'Streak momentum', desc: 'How close an active win streak is to your all-time best.' },
+  { term: 'Toughest range', desc: 'The value range most often rolled right before a loss.' },
 ]
 
 const ACHIEVEMENTS_ENTRY: Entry = {
@@ -95,8 +100,8 @@ export function GuideScreen({ onClose }: GuideScreenProps) {
           <div className="guide-entry">
             <p className="guide-entry__term">Insights</p>
             <p className="guide-entry__desc">
-              A best score, win rate, and streak strip, followed by pattern cards that appear once there's enough
-              data behind them.
+              A best score, average score, and games-today strip, followed by pattern cards that appear once
+              there's enough data behind them.
             </p>
             <button
               type="button"
