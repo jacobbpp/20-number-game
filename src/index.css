@@ -619,14 +619,17 @@ button:focus-visible {
   border-bottom: none;
 }
 
-.daily-history__row.leaderboard-row--you:first-child {
+/* :first-child/:last-child target the li wrapper, not the row itself — a
+   row's button is the only child of its own li, so it would otherwise
+   always match both regardless of its actual position in the list. */
+.daily-history__list > li:first-child .daily-history__row.leaderboard-row--you {
   margin-top: -4px;
   padding-top: 14px;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
 }
 
-.daily-history__row.leaderboard-row--you:last-child {
+.daily-history__list > li:last-child .daily-history__row.leaderboard-row--you {
   margin-bottom: -4px;
   padding-bottom: 14px;
   border-bottom-left-radius: 16px;
