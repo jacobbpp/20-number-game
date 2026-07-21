@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS scores (
   board_size INTEGER NOT NULL,
   name TEXT NOT NULL,
   score INTEGER NOT NULL,
+  board TEXT,
   created_at TEXT NOT NULL
 );
 

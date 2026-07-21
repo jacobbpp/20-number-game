@@ -569,6 +569,16 @@ button:focus-visible {
   text-align: center;
 }
 
+.leaderboard-row {
+  background: none;
+  border: none;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
 .leaderboard-row__rank {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

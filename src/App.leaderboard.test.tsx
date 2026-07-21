@@ -50,7 +50,9 @@ function seedPlayedStats() {
 
 // A URL-aware fetch stub covering every endpoint the app calls, so a single
 // mock can drive both the community-dot fetch and the leaderboard flow.
-function mockLeaderboardApi(options: { checkWindows?: string[]; entries?: { name: string; score: number }[] } = {}) {
+function mockLeaderboardApi(
+  options: { checkWindows?: string[]; entries?: { id: number; name: string; score: number; board: (number | null)[] | null }[] } = {},
+) {
   const { checkWindows = [], entries = [] } = options
   const fetchMock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
     const url = urlOf(input)
@@ -85,7 +87,7 @@ afterEach(() => {
 describe('leaderboard screen', () => {
   it('opens from the stats menu, fetches the default Day tab, and switches windows on tap', async () => {
     seedPlayedStats()
-    const fetchMock = mockLeaderboardApi({ entries: [{ name: 'TOM', score: 18 }] })
+    const fetchMock = mockLeaderboardApi({ entries: [{ id: 1, name: 'TOM', score: 18, board: null }] })
     render(<App />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
@@ -122,6 +124,72 @@ describe('leaderboard screen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Back to stats' }))
 
     expect(await screen.findByRole('button', { name: /Leaderboard/ })).toBeInTheDocument()
+  })
+
+  it('shows the same player at multiple ranks when they have several qualifying games', async () => {
+    seedPlayedStats()
+    mockLeaderboardApi({
+      entries: [
+        { id: 1, name: 'JRC', score: 16, board: null },
+        { id: 2, name: 'JRC', score: 15, board: null },
+        { id: 3, name: 'REILLY', score: 9, board: null },
+      ],
+    })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+
+    expect(await screen.findAllByText('JRC')).toHaveLength(2)
+    expect(screen.getByText('16/20')).toBeInTheDocument()
+    expect(screen.getByText('15/20')).toBeInTheDocument()
+  })
+
+  it('opens a board view of that specific game when a leaderboard row is tapped', async () => {
+    seedPlayedStats()
+    const board = [100, null, 250]
+    mockLeaderboardApi({ entries: [{ id: 5, name: 'TOM', score: 2, board }] })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /TOM/ }))
+
+    expect(await screen.findByRole('heading', { name: '#1 TOM' })).toBeInTheDocument()
+    expect(screen.getByText('2 of 3 placed')).toBeInTheDocument()
+    expect(screen.getByText('100')).toBeInTheDocument()
+    expect(screen.getByText('250')).toBeInTheDocument()
+  })
+
+  it("shows a fallback message for a score saved before boards were recorded", async () => {
+    seedPlayedStats()
+    mockLeaderboardApi({ entries: [{ id: 6, name: 'OLD', score: 4, board: null }] })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /OLD/ }))
+
+    expect(await screen.findByRole('heading', { name: '#1 OLD' })).toBeInTheDocument()
+    expect(screen.getByText("This score was saved before boards were recorded, so there's nothing to show here.")).toBeInTheDocument()
+  })
+
+  it('submits the finished board alongside the score', async () => {
+    const fetchMock = mockLeaderboardApi({ checkWindows: ['day'] })
+    mockRollSequence([64, 75, 63])
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+
+    await screen.findByText(/Top 10 today!/)
+    fireEvent.change(screen.getByLabelText('Name for the leaderboard'), { target: { value: 'zee' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save score' }))
+
+    const submitCall = fetchMock.mock.calls.find(call => urlOf(call[0]).endsWith('/scores') && call[1]?.method === 'POST')
+    const body = JSON.parse(String(submitCall?.[1]?.body)) as { board?: unknown }
+    expect(Array.isArray(body.board)).toBe(true)
+    expect((body.board as unknown[]).length).toBe(20)
   })
 })
 

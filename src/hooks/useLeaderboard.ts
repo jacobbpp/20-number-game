@@ -6,8 +6,10 @@ import type { LeaderboardWindow } from '../game/leaderboardActivity'
 export type { LeaderboardWindow }
 
 export interface LeaderboardEntry {
+  id: number
   name: string
   score: number
+  board: (number | null)[] | null
 }
 
 const NAME_KEY = 'order20-leaderboard-name'
@@ -19,6 +21,12 @@ interface CheckResponse {
 
 interface LeaderboardResponse {
   entries?: LeaderboardEntry[]
+}
+
+function isLeaderboardEntry(value: unknown): value is LeaderboardEntry {
+  if (!value || typeof value !== 'object') return false
+  const { id, name, score, board } = value as Record<string, unknown>
+  return typeof id === 'number' && typeof name === 'string' && typeof score === 'number' && (board === null || Array.isArray(board))
 }
 
 function isDailyActivityLog(value: unknown): value is DailyActivityLog {
@@ -69,13 +77,13 @@ export function useLeaderboard() {
     }
   }, [])
 
-  const submitScore = useCallback((boardSize: number, playerName: string, score: number) => {
+  const submitScore = useCallback((boardSize: number, playerName: string, score: number, board: (number | null)[]) => {
     localStorage.setItem(NAME_KEY, playerName)
     setName(playerName)
     fetch(`${API_BASE}/scores`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ boardSize, name: playerName, score }),
+      body: JSON.stringify({ boardSize, name: playerName, score, board }),
     }).catch(() => {
       // Best-effort — a failed submission never blocks starting a new game.
     })
@@ -86,7 +94,7 @@ export function useLeaderboard() {
       const response = await fetch(`${API_BASE}/scores/leaderboard?boardSize=${boardSize}&window=${window}`)
       if (!response.ok) return []
       const data = (await response.json()) as LeaderboardResponse
-      return Array.isArray(data.entries) ? data.entries : []
+      return Array.isArray(data.entries) ? data.entries.filter(isLeaderboardEntry) : []
     } catch {
       return []
     }

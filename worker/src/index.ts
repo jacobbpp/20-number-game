@@ -7,6 +7,9 @@ export interface Env {
 // ever produce.
 const VALUE_BUCKETS = 10
 const VALID_BOARD_SIZES = new Set([10, 15, 20, 25, 30])
+// Mirrors src/game/types.ts: the range every rolled number falls in.
+const MIN_VALUE = 1
+const MAX_VALUE = 1000
 
 const ALLOWED_ORIGIN = 'https://jacobbpp.github.io'
 
@@ -126,18 +129,17 @@ function windowCutoff(window: LeaderboardWindow): string | null {
 }
 
 // The score sitting in 10th place for a window — null means fewer than 10
-// distinct players exist yet, so any score clears the bar. Grouped by name
-// so a player who has saved several qualifying games in the same window
-// only occupies one of the ten spots, at their own best.
+// games exist yet, so any score clears the bar. One row per game, not per
+// player: a player with several genuinely good games can hold more than
+// one of the ten spots, same as the leaderboard itself.
 async function tenthPlaceScore(env: Env, boardSize: number, window: LeaderboardWindow): Promise<number | null> {
   const cutoff = windowCutoff(window)
   const query = cutoff
-    ? env.DB.prepare(
-        'SELECT MAX(score) AS score FROM scores WHERE board_size = ?1 AND created_at >= ?2 GROUP BY name ORDER BY score DESC LIMIT 1 OFFSET 9',
-      ).bind(boardSize, cutoff)
-    : env.DB.prepare('SELECT MAX(score) AS score FROM scores WHERE board_size = ?1 GROUP BY name ORDER BY score DESC LIMIT 1 OFFSET 9').bind(
+    ? env.DB.prepare('SELECT score FROM scores WHERE board_size = ?1 AND created_at >= ?2 ORDER BY score DESC LIMIT 1 OFFSET 9').bind(
         boardSize,
+        cutoff,
       )
+    : env.DB.prepare('SELECT score FROM scores WHERE board_size = ?1 ORDER BY score DESC LIMIT 1 OFFSET 9').bind(boardSize)
   const row = await query.first<{ score: number }>()
   return row ? row.score : null
 }
@@ -187,18 +189,29 @@ interface ScoreSubmitBody {
   boardSize: number
   name: string
   score: number
+  board?: (number | null)[] | null
 }
 
 const NAME_PATTERN = /^[A-Za-z0-9 ]+$/
 
+// Exact board a game finished with — index is the board position, value is
+// the number placed there (or null if it was never filled). Optional so
+// older cached clients that haven't picked up this change yet can still
+// submit a score without one; it just won't have a board to show later.
+function isValidBoard(board: unknown, boardSize: number): board is (number | null)[] {
+  if (!Array.isArray(board) || board.length !== boardSize) return false
+  return board.every(v => v === null || (typeof v === 'number' && Number.isInteger(v) && v >= MIN_VALUE && v <= MAX_VALUE))
+}
+
 function isValidScoreSubmit(body: unknown): body is ScoreSubmitBody {
   if (!body || typeof body !== 'object') return false
-  const { boardSize, name, score } = body as Record<string, unknown>
+  const { boardSize, name, score, board } = body as Record<string, unknown>
   if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > boardSize) return false
   if (typeof name !== 'string') return false
   const trimmed = name.trim()
-  return trimmed.length >= 1 && trimmed.length <= 8 && NAME_PATTERN.test(trimmed)
+  if (trimmed.length < 1 || trimmed.length > 8 || !NAME_PATTERN.test(trimmed)) return false
+  return board === undefined || board === null || isValidBoard(board, boardSize)
 }
 
 async function handleScoreSubmit(request: Request, env: Env): Promise<Response> {
@@ -210,14 +223,15 @@ async function handleScoreSubmit(request: Request, env: Env): Promise<Response> 
   }
 
   if (!isValidScoreSubmit(body)) {
-    return json({ error: 'boardSize, name (1-8 letters/digits/spaces), and score (1..boardSize) are required.' }, 400)
+    return json({ error: 'boardSize, name (1-8 letters/digits/spaces), score (1..boardSize), and an optional matching board are required.' }, 400)
   }
 
-  const { boardSize, name, score } = body
+  const { boardSize, name, score, board } = body
   const cleanName = name.trim().toUpperCase()
+  const boardJson = Array.isArray(board) ? JSON.stringify(board) : null
 
-  await env.DB.prepare('INSERT INTO scores (board_size, name, score, created_at) VALUES (?1, ?2, ?3, ?4)')
-    .bind(boardSize, cleanName, score, new Date().toISOString())
+  await env.DB.prepare('INSERT INTO scores (board_size, name, score, board, created_at) VALUES (?1, ?2, ?3, ?4, ?5)')
+    .bind(boardSize, cleanName, score, boardJson, new Date().toISOString())
     .run()
 
   return new Response(null, { status: 204, headers: corsHeaders() })
@@ -238,23 +252,33 @@ async function handleLeaderboard(request: Request, env: Env): Promise<Response> 
 
   const window = windowParam as LeaderboardWindow
   const cutoff = windowCutoff(window)
-  // Grouped by name so a player who has saved several qualifying games in
-  // the same window shows once, at their own best, rather than crowding
-  // the board with every individual save.
+  // One row per game, not per player — a player with several genuinely
+  // good games can hold more than one of the ten spots.
   const query = cutoff
     ? env.DB.prepare(
-        `SELECT name, MAX(score) AS score, MIN(created_at) AS created_at FROM scores
+        `SELECT id, name, score, board FROM scores
          WHERE board_size = ?1 AND created_at >= ?2
-         GROUP BY name ORDER BY score DESC, created_at ASC LIMIT 10`,
+         ORDER BY score DESC, created_at ASC LIMIT 10`,
       ).bind(boardSize, cutoff)
     : env.DB.prepare(
-        `SELECT name, MAX(score) AS score, MIN(created_at) AS created_at FROM scores
+        `SELECT id, name, score, board FROM scores
          WHERE board_size = ?1
-         GROUP BY name ORDER BY score DESC, created_at ASC LIMIT 10`,
+         ORDER BY score DESC, created_at ASC LIMIT 10`,
       ).bind(boardSize)
 
-  const { results } = await query.all<{ name: string; score: number }>()
-  return json({ boardSize, window, entries: results.map(({ name, score }) => ({ name, score })) })
+  const { results } = await query.all<{ id: number; name: string; score: number; board: string | null }>()
+  const entries = results.map(({ id, name, score, board }) => ({ id, name, score, board: parseBoard(board) }))
+  return json({ boardSize, window, entries })
+}
+
+function parseBoard(boardJson: string | null): (number | null)[] | null {
+  if (!boardJson) return null
+  try {
+    const parsed: unknown = JSON.parse(boardJson)
+    return Array.isArray(parsed) ? (parsed as (number | null)[]) : null
+  } catch {
+    return null
+  }
 }
 
 export default {

@@ -406,7 +406,7 @@ function App() {
           leaderboardWindows={leaderboardWindows}
           rememberedName={leaderboardName}
           onSaveScore={name => {
-            submitScore(state.positions.length, name, state.placedCount)
+            submitScore(state.positions.length, name, state.placedCount, state.positions)
             setLeaderboardWindows(null)
           }}
           onSkipScore={() => setLeaderboardWindows(null)}
@@ -419,7 +419,7 @@ function App() {
           leaderboardWindows={leaderboardWindows}
           rememberedName={leaderboardName}
           onSaveScore={name => {
-            submitScore(state.positions.length, name, state.placedCount)
+            submitScore(state.positions.length, name, state.placedCount, state.positions)
             setLeaderboardWindows(null)
           }}
           onSkipScore={() => setLeaderboardWindows(null)}

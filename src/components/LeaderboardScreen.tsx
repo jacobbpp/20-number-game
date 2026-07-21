@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { LeaderboardEntry, LeaderboardWindow } from '../hooks/useLeaderboard'
 import { BOARD_SIZE } from '../game/types'
+import { LeaderboardEntryScreen } from './LeaderboardEntryScreen'
 
 const WINDOWS: { key: LeaderboardWindow; label: string }[] = [
   { key: 'day', label: 'Day' },
@@ -25,6 +26,7 @@ interface LeaderboardScreenProps {
 export function LeaderboardScreen({ rememberedName, fetchLeaderboard, onClose }: LeaderboardScreenProps) {
   const [window, setWindow] = useState<LeaderboardWindow>('day')
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null)
+  const [selected, setSelected] = useState<{ entry: LeaderboardEntry; rank: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -70,18 +72,23 @@ export function LeaderboardScreen({ rememberedName, fetchLeaderboard, onClose }:
         ) : (
           <ol className="daily-history__list">
             {entries.map((entry, index) => (
-              <li
-                key={`${entry.name}-${index}`}
-                className={entry.name === rememberedName ? 'daily-history__row leaderboard-row leaderboard-row--you' : 'daily-history__row leaderboard-row'}
-              >
-                <span className="leaderboard-row__rank">{index + 1}</span>
-                <span className="leaderboard-row__name">
-                  {entry.name}
-                  {entry.name === rememberedName ? ' · you' : ''}
-                </span>
-                <span className="leaderboard-row__score">
-                  {entry.score}/{BOARD_SIZE}
-                </span>
+              <li key={entry.id}>
+                <button
+                  type="button"
+                  className={
+                    entry.name === rememberedName ? 'daily-history__row leaderboard-row leaderboard-row--you' : 'daily-history__row leaderboard-row'
+                  }
+                  onClick={() => setSelected({ entry, rank: index + 1 })}
+                >
+                  <span className="leaderboard-row__rank">{index + 1}</span>
+                  <span className="leaderboard-row__name">
+                    {entry.name}
+                    {entry.name === rememberedName ? ' · you' : ''}
+                  </span>
+                  <span className="leaderboard-row__score">
+                    {entry.score}/{BOARD_SIZE}
+                  </span>
+                </button>
               </li>
             ))}
           </ol>
@@ -90,6 +97,8 @@ export function LeaderboardScreen({ rememberedName, fetchLeaderboard, onClose }:
           {WINDOW_CAPTION[window]} · top {entries?.length ?? 10}
         </p>
       </div>
+
+      {selected && <LeaderboardEntryScreen entry={selected.entry} rank={selected.rank} onClose={() => setSelected(null)} />}
     </div>
   )
 }
