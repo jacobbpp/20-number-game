@@ -50,7 +50,7 @@ export function LeaderboardScreen({ rememberedName, fetchLeaderboard, onClose }:
         <span className="stats-screen__title">Leaderboard</span>
       </div>
 
-      <div className="heatmap-toggle" role="group" aria-label="Leaderboard time range">
+      <div className="heatmap-toggle leaderboard-toggle" role="group" aria-label="Leaderboard time range">
         {WINDOWS.map(w => (
           <button
             key={w.key}
@@ -70,7 +70,7 @@ export function LeaderboardScreen({ rememberedName, fetchLeaderboard, onClose }:
         ) : entries.length === 0 ? (
           <p className="stats-screen__empty">No scores yet. Be the first.</p>
         ) : (
-          <ol className="daily-history__list">
+          <ol className="daily-history__list leaderboard-list">
             {entries.map((entry, index) => (
               <li key={entry.id}>
                 <button
