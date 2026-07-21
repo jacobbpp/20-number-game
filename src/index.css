@@ -614,6 +614,12 @@ button:focus-visible {
 }
 
 .daily-history__row.leaderboard-row--you {
+  /* An explicit width plus explicit left/right margins is normally an
+     over-constrained box (the browser silently drops margin-right to
+     make the numbers add up) — sizing this to exactly offset both
+     margins keeps the equation self-consistent so both sides bleed
+     evenly instead of only the left one. */
+  width: calc(100% + 32px);
   margin: 0 -16px;
   padding: 10px 16px;
   border-bottom: none;
