@@ -56,7 +56,18 @@ function App() {
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
   const { matrix: communityMatrix, reportPlacements } = useCommunityStats()
-  const { name: leaderboardName, dailyActivity, checkQualifies, submitScore, fetchLeaderboard, recordActivity } = useLeaderboard()
+  const {
+    name: leaderboardName,
+    dailyActivity,
+    checkQualifies,
+    submitScore,
+    fetchLeaderboard,
+    recordActivity,
+    checkDailyQualifies,
+    submitDailyScore,
+    fetchDailyLeaderboard,
+  } = useLeaderboard()
+  const [dailyLeaderboardQualifies, setDailyLeaderboardQualifies] = useState(false)
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
@@ -207,6 +218,9 @@ function App() {
       lossReason: dailyState.lossReason,
       usedNumbers: dailyState.usedNumbers,
     })
+    checkDailyQualifies(dailyBoardSize, dailyDate, dailyState.placedCount).then(qualifies => {
+      if (qualifies) setDailyLeaderboardQualifies(true)
+    })
   }, [
     dailyState.status,
     dailyState.positions,
@@ -215,6 +229,9 @@ function App() {
     dailyState.usedNumbers,
     todayResult,
     recordDailyResult,
+    checkDailyQualifies,
+    dailyBoardSize,
+    dailyDate,
   ])
 
   useEffect(() => {
@@ -319,6 +336,20 @@ function App() {
           hardMode={hardMode}
           onSelect={handleDailySelect}
           onClose={() => setIsDailyOpen(false)}
+          dailyLeaderboardQualifies={dailyLeaderboardQualifies}
+          rememberedName={leaderboardName}
+          onSaveDailyScore={name => {
+            submitDailyScore(
+              dailyBoardSize,
+              dailyDate,
+              name,
+              dailyState.placedCount,
+              dailyState.positions,
+              dailyState.status === 'lost' ? dailyState.currentRoll : null,
+            )
+            setDailyLeaderboardQualifies(false)
+          }}
+          onSkipDailyScore={() => setDailyLeaderboardQualifies(false)}
         />
       ) : isStatsOpen ? (
         <StatsScreen
@@ -368,6 +399,9 @@ function App() {
         <LeaderboardScreen
           rememberedName={leaderboardName}
           fetchLeaderboard={fetchLeaderboard}
+          fetchDailyLeaderboard={fetchDailyLeaderboard}
+          dailyBoardSize={dailyBoardSize}
+          dailyDate={dailyDate}
           backLabel={leaderboardReturnsToStats ? 'Back to stats' : 'Back to game'}
           onClose={() => {
             setIsLeaderboardOpen(false)
@@ -413,7 +447,7 @@ function App() {
           leaderboardWindows={leaderboardWindows}
           rememberedName={leaderboardName}
           onSaveScore={name => {
-            submitScore(state.positions.length, name, state.placedCount, state.positions)
+            submitScore(state.positions.length, name, state.placedCount, state.positions, state.currentRoll)
             setLeaderboardWindows(null)
           }}
           onSkipScore={() => setLeaderboardWindows(null)}
@@ -426,7 +460,7 @@ function App() {
           leaderboardWindows={leaderboardWindows}
           rememberedName={leaderboardName}
           onSaveScore={name => {
-            submitScore(state.positions.length, name, state.placedCount, state.positions)
+            submitScore(state.positions.length, name, state.placedCount, state.positions, null)
             setLeaderboardWindows(null)
           }}
           onSkipScore={() => setLeaderboardWindows(null)}

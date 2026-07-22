@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Board } from './Board'
+import { LeaderboardPrompt } from './LeaderboardPrompt'
 import { ResultGrid } from './ResultGrid'
 import { RollDisplay } from './RollDisplay'
 import { ShareButton } from './ShareButton'
@@ -21,6 +22,10 @@ interface DailyChallengeScreenProps {
   hardMode: boolean
   onSelect: (index: number) => void
   onClose: () => void
+  dailyLeaderboardQualifies: boolean
+  rememberedName: string
+  onSaveDailyScore: (name: string) => void
+  onSkipDailyScore: () => void
 }
 
 export function DailyChallengeScreen({
@@ -32,6 +37,10 @@ export function DailyChallengeScreen({
   hardMode,
   onSelect,
   onClose,
+  dailyLeaderboardQualifies,
+  rememberedName,
+  onSaveDailyScore,
+  onSkipDailyScore,
 }: DailyChallengeScreenProps) {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const { copied: streakCopied, copy: copyStreak } = useCopyFeedback()
@@ -94,6 +103,14 @@ export function DailyChallengeScreen({
                     ))}
                   </ul>
                 </div>
+              )}
+              {dailyLeaderboardQualifies && (
+                <LeaderboardPrompt
+                  headline="Top 10 in today's daily challenge!"
+                  rememberedName={rememberedName}
+                  onSave={onSaveDailyScore}
+                  onSkip={onSkipDailyScore}
+                />
               )}
               {active && streak.count >= 2 && (
                 <button type="button" className="daily-screen__streak" onClick={handleShareStreak}>

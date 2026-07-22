@@ -48,19 +48,37 @@ function seedPlayedStats() {
   )
 }
 
+interface MockLeaderboardEntry {
+  id: number
+  name: string
+  score: number
+  board: (number | null)[] | null
+  endingRoll?: number | null
+}
+
 // A URL-aware fetch stub covering every endpoint the app calls, so a single
 // mock can drive both the community-dot fetch and the leaderboard flow.
 function mockLeaderboardApi(
-  options: { checkWindows?: string[]; entries?: { id: number; name: string; score: number; board: (number | null)[] | null }[] } = {},
+  options: { checkWindows?: string[]; entries?: MockLeaderboardEntry[]; dailyQualifies?: boolean; dailyEntries?: MockLeaderboardEntry[] } = {},
 ) {
-  const { checkWindows = [], entries = [] } = options
+  const { checkWindows = [], entries = [], dailyQualifies = false, dailyEntries = [] } = options
+  const withEndingRoll = (list: MockLeaderboardEntry[]) => list.map(entry => ({ endingRoll: null, ...entry }))
   const fetchMock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
     const url = urlOf(input)
     if (url.includes('/scores/check')) {
       return Promise.resolve(new Response(JSON.stringify({ windows: checkWindows }), { status: 200 }))
     }
     if (url.includes('/scores/leaderboard')) {
-      return Promise.resolve(new Response(JSON.stringify({ entries }), { status: 200 }))
+      return Promise.resolve(new Response(JSON.stringify({ entries: withEndingRoll(entries) }), { status: 200 }))
+    }
+    if (url.includes('/daily-scores/check')) {
+      return Promise.resolve(new Response(JSON.stringify({ qualifies: dailyQualifies }), { status: 200 }))
+    }
+    if (url.includes('/daily-scores/leaderboard')) {
+      return Promise.resolve(new Response(JSON.stringify({ entries: withEndingRoll(dailyEntries) }), { status: 200 }))
+    }
+    if (url.includes('/daily-scores')) {
+      return Promise.resolve(new Response(null, { status: 204 }))
     }
     if (url.includes('/scores')) {
       return Promise.resolve(new Response(null, { status: 204 }))
@@ -172,6 +190,38 @@ describe('leaderboard screen', () => {
     expect(screen.getByText('2 of 3 placed')).toBeInTheDocument()
     expect(screen.getByText('100')).toBeInTheDocument()
     expect(screen.getByText('250')).toBeInTheDocument()
+  })
+
+  it('shows which number ended the run alongside the board', async () => {
+    seedPlayedStats()
+    const board = [100, null, 250]
+    mockLeaderboardApi({ entries: [{ id: 5, name: 'TOM', score: 2, board, endingRoll: 552 }] })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /TOM/ }))
+
+    expect(await screen.findByText('2 of 3 placed · 552 had nowhere to go')).toBeInTheDocument()
+  })
+
+  it('switches to the daily leaderboard and fetches today\'s challenge instead', async () => {
+    seedPlayedStats()
+    const fetchMock = mockLeaderboardApi({
+      entries: [{ id: 1, name: 'TOM', score: 18, board: null }],
+      dailyEntries: [{ id: 9, name: 'ZEE', score: 8, board: null, endingRoll: 300 }],
+    })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+    expect(await screen.findByText('TOM')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Daily' }))
+
+    expect(await screen.findByText('ZEE')).toBeInTheDocument()
+    expect(screen.getByText("Today's challenge · top 1")).toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(call => urlOf(call[0]).includes('/daily-scores/leaderboard'))).toBe(true)
   })
 
   it("shows a fallback message for a score saved before boards were recorded", async () => {

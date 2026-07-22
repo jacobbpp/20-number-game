@@ -7,6 +7,33 @@ import { place, roll } from './game/engine'
 import { createInitialState, type GameState } from './game/types'
 import { APP_VERSION } from './version'
 
+function urlOf(input: RequestInfo | URL): string {
+  return typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+}
+
+function mockDailyLeaderboardApi(options: { qualifies?: boolean } = {}) {
+  const { qualifies = false } = options
+  const fetchMock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
+    const url = urlOf(input)
+    if (url.includes('/daily-scores/check')) {
+      return Promise.resolve(new Response(JSON.stringify({ qualifies }), { status: 200 }))
+    }
+    if (url.includes('/daily-scores')) {
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    if (url.includes('/scores/check')) {
+      return Promise.resolve(new Response(JSON.stringify({ windows: [] }), { status: 200 }))
+    }
+    if (url.includes('/scores')) {
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    const emptyMatrix = Array.from({ length: 20 }, () => Array(10).fill(0))
+    return Promise.resolve(new Response(JSON.stringify({ boardSize: 20, matrix: emptyMatrix }), { status: 200 }))
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
 // Mirrors App.tsx's handleDailySelect exactly (place at the rolled number's
 // first valid position, then roll again unless the game just ended) so the
 // click sequence below drives the DOM through the identical path the real
@@ -43,6 +70,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   vi.useRealTimers()
   cleanup()
 })
@@ -193,5 +221,52 @@ describe('App daily challenge', () => {
 
     expect(await screen.findByText('99 cannot legally be placed in any remaining position.')).toBeInTheDocument()
     expect(screen.queryByText('What came next')).not.toBeInTheDocument()
+  })
+
+  it('shows the daily leaderboard prompt on a qualifying result and submits the ending roll', async () => {
+    vi.setSystemTime(new Date(2026, 6, 19, 12, 0, 0))
+    const today = getLocalDateString()
+    const boardSize = getDailyBoardSize(today)
+    const rng = createDailyRng(today)
+    const { clicks, finalState } = simulateDailyGame(boardSize, rng)
+    expect(finalState.status).toBe('lost')
+    const fetchMock = mockDailyLeaderboardApi({ qualifies: true })
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`Today's ${boardSize}-slot challenge`) }))
+    for (const position of clicks) {
+      fireEvent.click(await screen.findByRole('button', { name: `Position ${position + 1}, empty, valid placement` }))
+    }
+
+    expect(await screen.findByText(/Top 10 in today's daily challenge!/)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Name for the leaderboard'), { target: { value: 'zee' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save score' }))
+
+    expect(screen.queryByText(/Top 10 in today's daily challenge!/)).not.toBeInTheDocument()
+    const submitCall = fetchMock.mock.calls.find(call => urlOf(call[0]).endsWith('/daily-scores') && call[1]?.method === 'POST')
+    const body = JSON.parse(String(submitCall?.[1]?.body)) as { boardSize?: unknown; date?: unknown; name?: unknown; endingRoll?: unknown }
+    expect(body).toMatchObject({ boardSize, date: today, name: 'ZEE', endingRoll: finalState.currentRoll })
+  })
+
+  it('does not show the daily leaderboard prompt when the result does not qualify', async () => {
+    const today = getLocalDateString()
+    const boardSize = getDailyBoardSize(today)
+    const rng = createDailyRng(today)
+    const { clicks, finalState } = simulateDailyGame(boardSize, rng)
+    mockDailyLeaderboardApi({ qualifies: false })
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`Today's ${boardSize}-slot challenge`) }))
+    for (const position of clicks) {
+      fireEvent.click(await screen.findByRole('button', { name: `Position ${position + 1}, empty, valid placement` }))
+    }
+
+    if (finalState.status === 'won') {
+      await screen.findByText(`Perfect ${boardSize}/${boardSize} today!`)
+    } else {
+      await screen.findByText(`${finalState.placedCount} of ${boardSize} today`)
+    }
+    expect(screen.queryByText(/Top 10 in today's daily challenge!/)).not.toBeInTheDocument()
   })
 })

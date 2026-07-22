@@ -22,6 +22,7 @@ export function LeaderboardEntryScreen({ entry, rank, onClose }: LeaderboardEntr
           <>
             <p className="overlay__reason">
               {entry.score} of {entry.board.length} placed
+              {entry.endingRoll !== null && ` · ${entry.endingRoll} had nowhere to go`}
             </p>
             <ResultGrid positions={entry.board} />
           </>

@@ -18,19 +18,21 @@ function headlineFor(windows: LeaderboardWindow[]): string {
 }
 
 interface LeaderboardPromptProps {
-  windows: LeaderboardWindow[]
+  windows?: LeaderboardWindow[]
+  headline?: string
   rememberedName: string
   onSave: (name: string) => void
   onSkip: () => void
 }
 
-export function LeaderboardPrompt({ windows, rememberedName, onSave, onSkip }: LeaderboardPromptProps) {
+export function LeaderboardPrompt({ windows, headline, rememberedName, onSave, onSkip }: LeaderboardPromptProps) {
   const [name, setName] = useState(rememberedName)
   const trimmed = name.trim()
+  const text = headline ?? (windows ? headlineFor(windows) : 'Top 10!')
 
   return (
     <div className="leaderboard-prompt">
-      <p className="leaderboard-prompt__text">{headlineFor(windows)} Enter a name for the board.</p>
+      <p className="leaderboard-prompt__text">{text} Enter a name for the board.</p>
       <input
         className="leaderboard-prompt__input"
         value={name}

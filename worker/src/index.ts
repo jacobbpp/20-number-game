@@ -190,6 +190,7 @@ interface ScoreSubmitBody {
   name: string
   score: number
   board?: (number | null)[] | null
+  endingRoll?: number | null
 }
 
 const NAME_PATTERN = /^[A-Za-z0-9 ]+$/
@@ -203,15 +204,22 @@ function isValidBoard(board: unknown, boardSize: number): board is (number | nul
   return board.every(v => v === null || (typeof v === 'number' && Number.isInteger(v) && v >= MIN_VALUE && v <= MAX_VALUE))
 }
 
+// The roll that had nowhere to go and ended the game — null for a win, or
+// for a score submitted before this field existed.
+function isValidEndingRoll(endingRoll: unknown): endingRoll is number | null {
+  return endingRoll === null || (typeof endingRoll === 'number' && Number.isInteger(endingRoll) && endingRoll >= MIN_VALUE && endingRoll <= MAX_VALUE)
+}
+
 function isValidScoreSubmit(body: unknown): body is ScoreSubmitBody {
   if (!body || typeof body !== 'object') return false
-  const { boardSize, name, score, board } = body as Record<string, unknown>
+  const { boardSize, name, score, board, endingRoll } = body as Record<string, unknown>
   if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > boardSize) return false
   if (typeof name !== 'string') return false
   const trimmed = name.trim()
   if (trimmed.length < 1 || trimmed.length > 8 || !NAME_PATTERN.test(trimmed)) return false
-  return board === undefined || board === null || isValidBoard(board, boardSize)
+  if (!(board === undefined || board === null || isValidBoard(board, boardSize))) return false
+  return endingRoll === undefined || isValidEndingRoll(endingRoll)
 }
 
 async function handleScoreSubmit(request: Request, env: Env): Promise<Response> {
@@ -223,15 +231,18 @@ async function handleScoreSubmit(request: Request, env: Env): Promise<Response> 
   }
 
   if (!isValidScoreSubmit(body)) {
-    return json({ error: 'boardSize, name (1-8 letters/digits/spaces), score (1..boardSize), and an optional matching board are required.' }, 400)
+    return json(
+      { error: 'boardSize, name (1-8 letters/digits/spaces), score (1..boardSize), and an optional matching board/endingRoll are required.' },
+      400,
+    )
   }
 
-  const { boardSize, name, score, board } = body
+  const { boardSize, name, score, board, endingRoll } = body
   const cleanName = name.trim().toUpperCase()
   const boardJson = Array.isArray(board) ? JSON.stringify(board) : null
 
-  await env.DB.prepare('INSERT INTO scores (board_size, name, score, board, created_at) VALUES (?1, ?2, ?3, ?4, ?5)')
-    .bind(boardSize, cleanName, score, boardJson, new Date().toISOString())
+  await env.DB.prepare('INSERT INTO scores (board_size, name, score, board, ending_roll, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)')
+    .bind(boardSize, cleanName, score, boardJson, endingRoll ?? null, new Date().toISOString())
     .run()
 
   return new Response(null, { status: 204, headers: corsHeaders() })
@@ -256,18 +267,18 @@ async function handleLeaderboard(request: Request, env: Env): Promise<Response> 
   // good games can hold more than one of the ten spots.
   const query = cutoff
     ? env.DB.prepare(
-        `SELECT id, name, score, board FROM scores
+        `SELECT id, name, score, board, ending_roll FROM scores
          WHERE board_size = ?1 AND created_at >= ?2
          ORDER BY score DESC, created_at ASC LIMIT 10`,
       ).bind(boardSize, cutoff)
     : env.DB.prepare(
-        `SELECT id, name, score, board FROM scores
+        `SELECT id, name, score, board, ending_roll FROM scores
          WHERE board_size = ?1
          ORDER BY score DESC, created_at ASC LIMIT 10`,
       ).bind(boardSize)
 
-  const { results } = await query.all<{ id: number; name: string; score: number; board: string | null }>()
-  const entries = results.map(({ id, name, score, board }) => ({ id, name, score, board: parseBoard(board) }))
+  const { results } = await query.all<{ id: number; name: string; score: number; board: string | null; ending_roll: number | null }>()
+  const entries = results.map(({ id, name, score, board, ending_roll }) => ({ id, name, score, board: parseBoard(board), endingRoll: ending_roll }))
   return json({ boardSize, window, entries })
 }
 
@@ -279,6 +290,133 @@ function parseBoard(boardJson: string | null): (number | null)[] | null {
   } catch {
     return null
   }
+}
+
+// Daily challenge leaderboard — unlike free play there's no day/week/month/
+// all-time window: the board size changes every day, so only players who
+// played the exact same challenge are comparable. Everyone gets one row per
+// calendar date, so there's also no need to group/dedup by player the way
+// free play's GROUP BY-removal fix cared about.
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+async function dailyTenthPlaceScore(env: Env, boardSize: number, date: string): Promise<number | null> {
+  const row = await env.DB.prepare('SELECT score FROM daily_scores WHERE board_size = ?1 AND challenge_date = ?2 ORDER BY score DESC LIMIT 1 OFFSET 9')
+    .bind(boardSize, date)
+    .first<{ score: number }>()
+  return row ? row.score : null
+}
+
+interface DailyScoreCheckBody {
+  boardSize: number
+  date: string
+  score: number
+}
+
+function isValidDailyScoreCheck(body: unknown): body is DailyScoreCheckBody {
+  if (!body || typeof body !== 'object') return false
+  const { boardSize, date, score } = body as Record<string, unknown>
+  return (
+    typeof boardSize === 'number' &&
+    VALID_BOARD_SIZES.has(boardSize) &&
+    typeof date === 'string' &&
+    DATE_PATTERN.test(date) &&
+    typeof score === 'number' &&
+    Number.isInteger(score) &&
+    score >= 1 &&
+    score <= boardSize
+  )
+}
+
+async function handleDailyScoreCheck(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  if (!isValidDailyScoreCheck(body)) {
+    return json({ error: 'boardSize, date (YYYY-MM-DD), and score (1..boardSize) are required.' }, 400)
+  }
+
+  const { boardSize, date, score } = body
+  const threshold = await dailyTenthPlaceScore(env, boardSize, date)
+  return json({ qualifies: threshold === null || score >= threshold })
+}
+
+interface DailyScoreSubmitBody {
+  boardSize: number
+  date: string
+  name: string
+  score: number
+  board?: (number | null)[] | null
+  endingRoll?: number | null
+}
+
+function isValidDailyScoreSubmit(body: unknown): body is DailyScoreSubmitBody {
+  if (!body || typeof body !== 'object') return false
+  const { boardSize, date, name, score, board, endingRoll } = body as Record<string, unknown>
+  if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
+  if (typeof date !== 'string' || !DATE_PATTERN.test(date)) return false
+  if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > boardSize) return false
+  if (typeof name !== 'string') return false
+  const trimmed = name.trim()
+  if (trimmed.length < 1 || trimmed.length > 8 || !NAME_PATTERN.test(trimmed)) return false
+  if (!(board === undefined || board === null || isValidBoard(board, boardSize))) return false
+  return endingRoll === undefined || isValidEndingRoll(endingRoll)
+}
+
+async function handleDailyScoreSubmit(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  if (!isValidDailyScoreSubmit(body)) {
+    return json(
+      { error: 'boardSize, date (YYYY-MM-DD), name (1-8 letters/digits/spaces), score (1..boardSize), and an optional matching board/endingRoll are required.' },
+      400,
+    )
+  }
+
+  const { boardSize, date, name, score, board, endingRoll } = body
+  const cleanName = name.trim().toUpperCase()
+  const boardJson = Array.isArray(board) ? JSON.stringify(board) : null
+
+  await env.DB.prepare(
+    'INSERT INTO daily_scores (board_size, challenge_date, name, score, board, ending_roll, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)',
+  )
+    .bind(boardSize, date, cleanName, score, boardJson, endingRoll ?? null, new Date().toISOString())
+    .run()
+
+  return new Response(null, { status: 204, headers: corsHeaders() })
+}
+
+async function handleDailyLeaderboard(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const boardSizeParam = url.searchParams.get('boardSize')
+  const boardSize = boardSizeParam ? Number(boardSizeParam) : 20
+  const date = url.searchParams.get('date') ?? ''
+
+  if (!VALID_BOARD_SIZES.has(boardSize)) {
+    return json({ error: 'Unknown boardSize.' }, 400)
+  }
+  if (!DATE_PATTERN.test(date)) {
+    return json({ error: 'date (YYYY-MM-DD) is required.' }, 400)
+  }
+
+  const { results } = await env.DB.prepare(
+    `SELECT id, name, score, board, ending_roll FROM daily_scores
+     WHERE board_size = ?1 AND challenge_date = ?2
+     ORDER BY score DESC, created_at ASC LIMIT 10`,
+  )
+    .bind(boardSize, date)
+    .all<{ id: number; name: string; score: number; board: string | null; ending_roll: number | null }>()
+
+  const entries = results.map(({ id, name, score, board, ending_roll }) => ({ id, name, score, board: parseBoard(board), endingRoll: ending_roll }))
+  return json({ boardSize, date, entries })
 }
 
 export default {
@@ -307,6 +445,18 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/scores/leaderboard') {
       return handleLeaderboard(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/daily-scores/check') {
+      return handleDailyScoreCheck(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/daily-scores') {
+      return handleDailyScoreSubmit(request, env)
+    }
+
+    if (request.method === 'GET' && url.pathname === '/daily-scores/leaderboard') {
+      return handleDailyLeaderboard(request, env)
     }
 
     return json({ error: 'Not found.' }, 404)

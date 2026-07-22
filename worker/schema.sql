@@ -12,7 +12,21 @@ CREATE TABLE IF NOT EXISTS scores (
   name TEXT NOT NULL,
   score INTEGER NOT NULL,
   board TEXT,
+  ending_roll INTEGER,
   created_at TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_scores_board_created ON scores (board_size, created_at);
+
+CREATE TABLE IF NOT EXISTS daily_scores (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  board_size INTEGER NOT NULL,
+  challenge_date TEXT NOT NULL,
+  name TEXT NOT NULL,
+  score INTEGER NOT NULL,
+  board TEXT,
+  ending_roll INTEGER,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_scores_date ON daily_scores (challenge_date);

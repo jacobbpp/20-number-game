@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.34.0',
+    date: '2026-07-22',
+    title: 'Which number ended it, and a daily leaderboard',
+    description: 'Any leaderboard entry now shows which number had nowhere to go. The leaderboard also gets a Daily mode, a top 10 for today\'s specific challenge, since the board size changes every day.',
+  },
+  {
     version: '1.33.0',
     date: '2026-07-21',
     title: 'One tap to the leaderboard',

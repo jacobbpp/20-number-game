@@ -10,6 +10,7 @@ export interface LeaderboardEntry {
   name: string
   score: number
   board: (number | null)[] | null
+  endingRoll: number | null
 }
 
 const NAME_KEY = 'order20-leaderboard-name'
@@ -19,14 +20,24 @@ interface CheckResponse {
   windows?: string[]
 }
 
+interface DailyCheckResponse {
+  qualifies?: boolean
+}
+
 interface LeaderboardResponse {
   entries?: LeaderboardEntry[]
 }
 
 function isLeaderboardEntry(value: unknown): value is LeaderboardEntry {
   if (!value || typeof value !== 'object') return false
-  const { id, name, score, board } = value as Record<string, unknown>
-  return typeof id === 'number' && typeof name === 'string' && typeof score === 'number' && (board === null || Array.isArray(board))
+  const { id, name, score, board, endingRoll } = value as Record<string, unknown>
+  return (
+    typeof id === 'number' &&
+    typeof name === 'string' &&
+    typeof score === 'number' &&
+    (board === null || Array.isArray(board)) &&
+    (endingRoll === null || typeof endingRoll === 'number')
+  )
 }
 
 function isDailyActivityLog(value: unknown): value is DailyActivityLog {
@@ -77,21 +88,68 @@ export function useLeaderboard() {
     }
   }, [])
 
-  const submitScore = useCallback((boardSize: number, playerName: string, score: number, board: (number | null)[]) => {
-    localStorage.setItem(NAME_KEY, playerName)
-    setName(playerName)
-    fetch(`${API_BASE}/scores`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ boardSize, name: playerName, score, board }),
-    }).catch(() => {
-      // Best-effort — a failed submission never blocks starting a new game.
-    })
-  }, [])
+  const submitScore = useCallback(
+    (boardSize: number, playerName: string, score: number, board: (number | null)[], endingRoll: number | null) => {
+      localStorage.setItem(NAME_KEY, playerName)
+      setName(playerName)
+      fetch(`${API_BASE}/scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boardSize, name: playerName, score, board, endingRoll }),
+      }).catch(() => {
+        // Best-effort — a failed submission never blocks starting a new game.
+      })
+    },
+    [],
+  )
 
   const fetchLeaderboard = useCallback(async (boardSize: number, window: LeaderboardWindow): Promise<LeaderboardEntry[]> => {
     try {
       const response = await fetch(`${API_BASE}/scores/leaderboard?boardSize=${boardSize}&window=${window}`)
+      if (!response.ok) return []
+      const data = (await response.json()) as LeaderboardResponse
+      return Array.isArray(data.entries) ? data.entries.filter(isLeaderboardEntry) : []
+    } catch {
+      return []
+    }
+  }, [])
+
+  // Daily challenge leaderboard — scoped to a single calendar date rather
+  // than day/week/month/all-time, since the board size changes every day
+  // and only players who played the exact same challenge are comparable.
+  const checkDailyQualifies = useCallback(async (boardSize: number, date: string, score: number): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE}/daily-scores/check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boardSize, date, score }),
+      })
+      if (!response.ok) return false
+      const data = (await response.json()) as DailyCheckResponse
+      return data.qualifies === true
+    } catch {
+      return false
+    }
+  }, [])
+
+  const submitDailyScore = useCallback(
+    (boardSize: number, date: string, playerName: string, score: number, board: (number | null)[], endingRoll: number | null) => {
+      localStorage.setItem(NAME_KEY, playerName)
+      setName(playerName)
+      fetch(`${API_BASE}/daily-scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boardSize, date, name: playerName, score, board, endingRoll }),
+      }).catch(() => {
+        // Best-effort — a failed submission never blocks closing the recap.
+      })
+    },
+    [],
+  )
+
+  const fetchDailyLeaderboard = useCallback(async (boardSize: number, date: string): Promise<LeaderboardEntry[]> => {
+    try {
+      const response = await fetch(`${API_BASE}/daily-scores/leaderboard?boardSize=${boardSize}&date=${date}`)
       if (!response.ok) return []
       const data = (await response.json()) as LeaderboardResponse
       return Array.isArray(data.entries) ? data.entries.filter(isLeaderboardEntry) : []
@@ -112,5 +170,15 @@ export function useLeaderboard() {
     })
   }, [])
 
-  return { name, dailyActivity, checkQualifies, submitScore, fetchLeaderboard, recordActivity }
+  return {
+    name,
+    dailyActivity,
+    checkQualifies,
+    submitScore,
+    fetchLeaderboard,
+    recordActivity,
+    checkDailyQualifies,
+    submitDailyScore,
+    fetchDailyLeaderboard,
+  }
 }
