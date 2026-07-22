@@ -2,7 +2,38 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { BEST_SCORE_STORAGE_KEY } from './hooks/useBestScore'
+import { STATS_STORAGE_KEY } from './hooks/useGameStats'
 import { APP_VERSION } from './version'
+
+function emptyMatrix() {
+  return Array.from({ length: 20 }, () => Array(10).fill(0))
+}
+
+// Bucket 4 (values 401-500) is the only range with enough signal (3+
+// placements), so allValueRangeStats picks it as both best and worst —
+// non-null either way, which is all the "Practice this range" button
+// presence check actually needs.
+function seedWorstRangeStats() {
+  const winMatrix = emptyMatrix()
+  const lossMatrix = emptyMatrix()
+  winMatrix[0][4] = 1
+  lossMatrix[0][4] = 2
+  localStorage.setItem(
+    STATS_STORAGE_KEY,
+    JSON.stringify({
+      totalGames: 3,
+      totalWins: 1,
+      totalTurns: 6,
+      currentWinStreak: 0,
+      matrix: emptyMatrix(),
+      winMatrix,
+      lossMatrix,
+      scoreDistribution: [1, 1, 1, 0],
+      lossBucketCounts: Array(10).fill(0),
+      lastGame: null,
+    }),
+  )
+}
 
 // engine.rollNumber computes floor(rng() * 1000) + 1, so (n - 1) / 1000
 // deterministically produces roll n — same convention as engine.test.ts.
@@ -79,6 +110,24 @@ describe('App', () => {
 
     expect(await screen.findByText(/new best!/)).toBeInTheDocument()
     expect(screen.queryByText(/away from your record/)).not.toBeInTheDocument()
+  })
+
+  it('starts a practice run from Insights, restarting the board and labelling the weak range', async () => {
+    seedWorstRangeStats()
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Insights/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Practice 401–500' }))
+
+    // Closing Insights returns straight to the board, now labelled as a
+    // practice run rather than sitting behind another confirmation step.
+    expect(screen.queryByRole('heading', { name: 'Stats' })).not.toBeInTheDocument()
+    expect(await screen.findByText('Practicing 401–500')).toBeInTheDocument()
+    expect(screen.getByText(/0 of 20 placed/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }))
+    expect(screen.queryByText('Practicing 401–500')).not.toBeInTheDocument()
   })
 
   it('records a completed game into stats exactly once, not zero and not twice', async () => {

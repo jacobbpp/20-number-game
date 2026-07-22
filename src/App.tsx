@@ -19,7 +19,8 @@ import { CHANGELOG } from './changelog'
 import { ACHIEVEMENTS } from './game/achievements'
 import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
 import { place, roll } from './game/engine'
-import { extractPlacements, suggestedPosition } from './game/stats'
+import { createBiasedRng } from './game/practice'
+import { bucketLabel, extractPlacements, suggestedPosition } from './game/stats'
 import { createInitialState, type ResultBadge } from './game/types'
 import { useAchievements } from './hooks/useAchievements'
 import { useBestScore } from './hooks/useBestScore'
@@ -52,6 +53,7 @@ function App() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
   const [leaderboardReturnsToStats, setLeaderboardReturnsToStats] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
+  const [practiceBucket, setPracticeBucket] = useState<number | null>(null)
   const [leaderboardWindows, setLeaderboardWindows] = useState<LeaderboardWindow[] | null>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
@@ -246,9 +248,21 @@ function App() {
     setState(prev => {
       const placed = place(prev, index)
       if (placed === prev || placed.status !== 'idle') return placed
-      return roll(placed)
+      return roll(placed, practiceBucket !== null ? createBiasedRng(Math.random, practiceBucket) : undefined)
     })
   }
+
+  // A one-shot practice run: weights rolls toward the range that's actually
+  // giving trouble, but still counts normally (it's real gameplay, just
+  // with a nudged rng) and clears back to a normal game on the next restart
+  // rather than silently persisting past the run the player asked for it on.
+  const handlePracticeRange = (bucket: number) => {
+    handleRestart()
+    setPracticeBucket(bucket)
+    setIsStatsOpen(false)
+  }
+
+  const handleStopPractice = () => setPracticeBucket(null)
 
   const handleDailySelect = (index: number) => {
     setDailyState(prev => {
@@ -263,6 +277,7 @@ function App() {
     setGameId(id => id + 1)
     setResultBadge(null)
     setLeaderboardWindows(null)
+    setPracticeBucket(null)
   }
 
   const handleCloseHowToPlay = () => {
@@ -369,6 +384,7 @@ function App() {
             setLeaderboardReturnsToStats(true)
             setIsLeaderboardOpen(true)
           }}
+          onPracticeRange={handlePracticeRange}
         />
       ) : isSettingsOpen ? (
         <SettingsScreen
@@ -426,6 +442,14 @@ function App() {
               setIsLeaderboardOpen(true)
             }}
           />
+          {practiceBucket !== null && (
+            <div className="practice-banner">
+              <span>Practicing {bucketLabel(practiceBucket)}</span>
+              <button type="button" className="practice-banner__stop" onClick={handleStopPractice}>
+                Stop
+              </button>
+            </div>
+          )}
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={state.positions.length} />
           <Board
             key={gameId}

@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.36.0',
+    date: '2026-07-22',
+    title: 'Practice your toughest range',
+    description: 'Insights\' "Performance by range" chart now has a Practice button once a clear toughest range shows up. It starts a free-play game with rolls weighted toward that range — still a real game, and it counts toward your stats like any other.',
+  },
+  {
     version: '1.35.0',
     date: '2026-07-22',
     title: 'How far off your record',

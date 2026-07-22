@@ -35,7 +35,10 @@ const STATS_ENTRIES: Entry[] = [
 const INSIGHT_ENTRIES: Entry[] = [
   { term: 'Best, average, and games today', desc: 'Your best-ever score, average score with a trend arrow against last week, and games played today with a 7-day sparkline.' },
   { term: 'Last 30 days', desc: 'A calendar of games played each day, with your busiest day ever highlighted.' },
-  { term: 'Performance by range', desc: 'A bar for every value range, showing which you handle best and which trips you up most.' },
+  {
+    term: 'Performance by range',
+    desc: 'A bar for every value range, showing which you handle best and which trips you up most. Once there\'s a clear toughest range, a "Practice" button starts a free-play game weighted toward it — still a real game, and it counts toward your stats like any other.',
+  },
   { term: 'Leaderboard reach', desc: "How many of today's games made the day, week, month, and all-time leaderboards." },
   { term: 'Best score over time', desc: 'A line chart of your personal best climbing as you set new records.' },
   { term: 'Closest calls', desc: 'How many games have ended exactly one placement short of your best.' },

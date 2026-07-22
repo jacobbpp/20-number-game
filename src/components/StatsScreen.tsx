@@ -55,6 +55,7 @@ interface StatsScreenProps {
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
   onOpenLeaderboard: () => void
+  onPracticeRange: (bucket: number) => void
 }
 
 // Shorter than the menu row titles on purpose — the header has less room
@@ -98,6 +99,7 @@ export function StatsScreen({
   onOpenHowToPlay,
   onOpenAchievements,
   onOpenLeaderboard,
+  onPracticeRange,
 }: StatsScreenProps) {
   const { totalGames, lastGame } = stats
   const [section, setSection] = useState<StatsSection>('menu')
@@ -395,6 +397,11 @@ export function StatsScreen({
                     )
                   })}
                 </div>
+                {worstRangeStat !== null && (
+                  <button type="button" className="insight-panel__action" onClick={() => onPracticeRange(worstRangeStat.bucket)}>
+                    Practice {bucketLabel(worstRangeStat.bucket)}
+                  </button>
+                )}
               </div>
 
               {reach.gamesToday > 0 && (
