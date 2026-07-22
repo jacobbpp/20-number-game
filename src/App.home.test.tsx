@@ -56,7 +56,7 @@ describe('home screen', () => {
     render(<App />)
 
     await screen.findByRole('heading', { name: 'Ready to play?' })
-    expect(screen.getByText('Today')).toBeInTheDocument()
+    expect(screen.getByText('Not played yet')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Play daily board' })).toBeInTheDocument()
   })
 

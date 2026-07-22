@@ -55,7 +55,7 @@ export function HomeScreen({
         <div className="home-daily-card__row">
           <span className="home-daily-card__eyebrow">Daily challenge</span>
           <span className={todayResult ? 'home-daily-card__badge home-daily-card__badge--done' : 'home-daily-card__badge'}>
-            {todayResult ? 'Done' : 'Today'}
+            {todayResult ? 'Done' : 'Not played yet'}
           </span>
         </div>
         <p className="home-daily-card__desc">
