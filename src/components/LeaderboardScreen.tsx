@@ -21,9 +21,10 @@ interface LeaderboardScreenProps {
   rememberedName: string
   fetchLeaderboard: (boardSize: number, window: LeaderboardWindow) => Promise<LeaderboardEntry[]>
   onClose: () => void
+  backLabel?: string
 }
 
-export function LeaderboardScreen({ rememberedName, fetchLeaderboard, onClose }: LeaderboardScreenProps) {
+export function LeaderboardScreen({ rememberedName, fetchLeaderboard, onClose, backLabel = 'Back to game' }: LeaderboardScreenProps) {
   const [window, setWindow] = useState<LeaderboardWindow>('day')
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null)
   const [selected, setSelected] = useState<{ entry: LeaderboardEntry; rank: number } | null>(null)
@@ -42,7 +43,7 @@ export function LeaderboardScreen({ rememberedName, fetchLeaderboard, onClose }:
   return (
     <div className="stats-screen">
       <div className="stats-screen__header">
-        <button type="button" className="icon-btn" onClick={onClose} aria-label="Back to stats">
+        <button type="button" className="icon-btn" onClick={onClose} aria-label={backLabel}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" />
           </svg>

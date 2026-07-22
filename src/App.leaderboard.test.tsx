@@ -126,6 +126,19 @@ describe('leaderboard screen', () => {
     expect(await screen.findByRole('button', { name: /Leaderboard/ })).toBeInTheDocument()
   })
 
+  it('opens directly from its own header icon, in one tap, and returns to the board when closed', async () => {
+    mockLeaderboardApi({ entries: [{ id: 1, name: 'TOM', score: 18, board: null }] })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Leaderboard' }))
+
+    expect(await screen.findByText('TOM')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to game' }))
+
+    expect(await screen.findByRole('button', { name: 'Leaderboard' })).toBeInTheDocument()
+  })
+
   it('shows the same player at multiple ranks when they have several qualifying games', async () => {
     seedPlayedStats()
     mockLeaderboardApi({

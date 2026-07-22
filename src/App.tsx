@@ -50,6 +50,7 @@ function App() {
   const [isGuideOpen, setIsGuideOpen] = useState(false)
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false)
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
+  const [leaderboardReturnsToStats, setLeaderboardReturnsToStats] = useState(false)
   const [resultBadge, setResultBadge] = useState<ResultBadge>(null)
   const [leaderboardWindows, setLeaderboardWindows] = useState<LeaderboardWindow[] | null>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
@@ -334,6 +335,7 @@ function App() {
           onOpenAchievements={() => setIsAchievementsOpen(true)}
           onOpenLeaderboard={() => {
             setIsStatsOpen(false)
+            setLeaderboardReturnsToStats(true)
             setIsLeaderboardOpen(true)
           }}
         />
@@ -366,9 +368,10 @@ function App() {
         <LeaderboardScreen
           rememberedName={leaderboardName}
           fetchLeaderboard={fetchLeaderboard}
+          backLabel={leaderboardReturnsToStats ? 'Back to stats' : 'Back to game'}
           onClose={() => {
             setIsLeaderboardOpen(false)
-            setIsStatsOpen(true)
+            if (leaderboardReturnsToStats) setIsStatsOpen(true)
           }}
         />
       ) : (
@@ -383,6 +386,10 @@ function App() {
             onOpenDaily={openDaily}
             onOpenSettings={openSettings}
             onOpenBestRun={() => setIsBestRunOpen(true)}
+            onOpenLeaderboard={() => {
+              setLeaderboardReturnsToStats(false)
+              setIsLeaderboardOpen(true)
+            }}
           />
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={state.positions.length} />
           <Board
