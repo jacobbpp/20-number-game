@@ -90,6 +90,9 @@ export function DailyChallengeScreen({
               {peeks.length > 0 && (
                 <div className="daily-peek">
                   <p className="daily-peek__label">What came next</p>
+                  <p className="daily-peek__caption">
+                    The challenge already ended above — these are just the next rolls in today's sequence, for curiosity.
+                  </p>
                   <ul className="daily-peek__list">
                     {peeks.map((peek, index) => (
                       <li key={index} className="daily-peek__row">
