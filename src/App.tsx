@@ -442,6 +442,7 @@ function App() {
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
+          bestScore={bestScore}
           resultBadge={resultBadge}
           positions={state.positions}
           onNewGame={handleRestart}

@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.35.0',
+    date: '2026-07-22',
+    title: 'How far off your record',
+    description: 'A free-play loss that isn\'t a new best now shows how many placements short of your record it fell, right alongside the score.',
+  },
+  {
     version: '1.34.0',
     date: '2026-07-22',
     title: 'Which number ended it, and a daily leaderboard',

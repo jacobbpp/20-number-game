@@ -8,6 +8,7 @@ import type { LeaderboardWindow } from '../hooks/useLeaderboard'
 interface GameOverScreenProps {
   reason: string
   placedCount: number
+  bestScore: number
   resultBadge: ResultBadge
   positions: (number | null)[]
   onNewGame: () => void
@@ -20,6 +21,7 @@ interface GameOverScreenProps {
 export function GameOverScreen({
   reason,
   placedCount,
+  bestScore,
   resultBadge,
   positions,
   onNewGame,
@@ -42,6 +44,7 @@ export function GameOverScreen({
           {placedCount} of {positions.length} placed
           {resultBadge === 'new-best' && ' · new best!'}
           {resultBadge === 'tied-best' && ' · matched your best!'}
+          {resultBadge === null && bestScore > placedCount && ` · ${bestScore - placedCount} away from your record`}
         </p>
         {leaderboardWindows && (
           <LeaderboardPrompt windows={leaderboardWindows} rememberedName={rememberedName} onSave={onSaveScore} onSkip={onSkipScore} />
