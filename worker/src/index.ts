@@ -419,6 +419,89 @@ async function handleDailyLeaderboard(request: Request, env: Env): Promise<Respo
   return json({ boardSize, date, entries })
 }
 
+// A "current active streak" leaderboard is one evolving row per player,
+// unlike scores/daily-scores which are an append-only log of independent
+// games. Names alone aren't a safe upsert key — two different devices can
+// both pick "TOM" — so the client generates and keeps its own random
+// deviceId (order20-device-id in localStorage) purely to key this table;
+// it's never shown anywhere and carries no other identity.
+const DEVICE_ID_PATTERN = /^[A-Za-z0-9-]{8,64}$/
+
+function yesterday(date: string): string {
+  const [year, month, day] = date.split('-').map(Number)
+  const d = new Date(Date.UTC(year, month - 1, day))
+  d.setUTCDate(d.getUTCDate() - 1)
+  return d.toISOString().slice(0, 10)
+}
+
+interface StreakSubmitBody {
+  deviceId: string
+  name: string
+  streakCount: number
+  lastPlayedDate: string
+}
+
+function isValidStreakSubmit(body: unknown): body is StreakSubmitBody {
+  if (!body || typeof body !== 'object') return false
+  const { deviceId, name, streakCount, lastPlayedDate } = body as Record<string, unknown>
+  if (typeof deviceId !== 'string' || !DEVICE_ID_PATTERN.test(deviceId)) return false
+  if (typeof name !== 'string') return false
+  const trimmed = name.trim()
+  if (trimmed.length < 1 || trimmed.length > 8 || !NAME_PATTERN.test(trimmed)) return false
+  if (typeof streakCount !== 'number' || !Number.isInteger(streakCount) || streakCount < 1) return false
+  return typeof lastPlayedDate === 'string' && DATE_PATTERN.test(lastPlayedDate)
+}
+
+async function handleStreakSubmit(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  if (!isValidStreakSubmit(body)) {
+    return json({ error: 'deviceId, name (1-8 letters/digits/spaces), streakCount (>=1), and lastPlayedDate (YYYY-MM-DD) are required.' }, 400)
+  }
+
+  const { deviceId, name, streakCount, lastPlayedDate } = body
+  const cleanName = name.trim().toUpperCase()
+
+  await env.DB.prepare(
+    `INSERT INTO streaks (device_id, name, streak_count, last_played_date, updated_at)
+     VALUES (?1, ?2, ?3, ?4, ?5)
+     ON CONFLICT (device_id) DO UPDATE SET name = ?2, streak_count = ?3, last_played_date = ?4, updated_at = ?5`,
+  )
+    .bind(deviceId, cleanName, streakCount, lastPlayedDate, new Date().toISOString())
+    .run()
+
+  return new Response(null, { status: 204, headers: corsHeaders() })
+}
+
+async function handleStreakLeaderboard(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const today = url.searchParams.get('today') ?? ''
+
+  if (!DATE_PATTERN.test(today)) {
+    return json({ error: 'today (YYYY-MM-DD) is required.' }, 400)
+  }
+
+  // A streak counts as still active if it was last played today or
+  // yesterday, mirroring src/game/daily.ts's isStreakActive exactly — a
+  // streak that lapsed further back than that just falls out of the
+  // ranking on its own with no separate cleanup step needed.
+  const { results } = await env.DB.prepare(
+    `SELECT name, streak_count FROM streaks
+     WHERE last_played_date = ?1 OR last_played_date = ?2
+     ORDER BY streak_count DESC LIMIT 10`,
+  )
+    .bind(today, yesterday(today))
+    .all<{ name: string; streak_count: number }>()
+
+  const entries = results.map(({ name, streak_count }) => ({ name, streakCount: streak_count }))
+  return json({ today, entries })
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') {
@@ -457,6 +540,14 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/daily-scores/leaderboard') {
       return handleDailyLeaderboard(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/streaks') {
+      return handleStreakSubmit(request, env)
+    }
+
+    if (request.method === 'GET' && url.pathname === '/streaks/leaderboard') {
+      return handleStreakLeaderboard(request, env)
     }
 
     return json({ error: 'Not found.' }, 404)

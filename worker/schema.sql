@@ -30,3 +30,13 @@ CREATE TABLE IF NOT EXISTS daily_scores (
 );
 
 CREATE INDEX IF NOT EXISTS idx_daily_scores_date ON daily_scores (challenge_date);
+
+CREATE TABLE IF NOT EXISTS streaks (
+  device_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  streak_count INTEGER NOT NULL,
+  last_played_date TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_streaks_last_played ON streaks (last_played_date);

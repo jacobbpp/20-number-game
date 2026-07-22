@@ -28,7 +28,7 @@ const STATS_ENTRIES: Entry[] = [
   },
   {
     term: 'Leaderboard',
-    desc: "Top 10 free-play games by day, week, month, and all time — the ten best games, so one player can hold more than one spot. A Daily mode covers today's specific challenge only, since the board size changes every day. Tap an entry to see the board it was set on, including which number ended the run — for Daily entries, that's only revealed once you've finished today's own attempt, since everyone gets the same rolls.",
+    desc: "Top 10 free-play games by day, week, month, and all time — the ten best games, so one player can hold more than one spot. A Daily mode covers today's specific challenge only, since the board size changes every day. Tap an entry to see the board it was set on, including which number ended the run — for Daily entries, that's only revealed once you've finished today's own attempt, since everyone gets the same rolls. A Streaks mode ranks the longest currently active daily streaks — a single list, since a streak doesn't reset by time window the way a score does.",
   },
 ]
 

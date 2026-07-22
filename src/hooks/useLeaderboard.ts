@@ -15,6 +15,12 @@ export interface LeaderboardEntry {
 
 const NAME_KEY = 'order20-leaderboard-name'
 const ACTIVITY_KEY = 'order20-daily-activity'
+const DEVICE_ID_KEY = 'order20-device-id'
+
+export interface StreakEntry {
+  name: string
+  streakCount: number
+}
 
 interface CheckResponse {
   windows?: string[]
@@ -26,6 +32,34 @@ interface DailyCheckResponse {
 
 interface LeaderboardResponse {
   entries?: LeaderboardEntry[]
+}
+
+interface StreakLeaderboardResponse {
+  entries?: StreakEntry[]
+}
+
+function isStreakEntry(value: unknown): value is StreakEntry {
+  if (!value || typeof value !== 'object') return false
+  const { name, streakCount } = value as Record<string, unknown>
+  return typeof name === 'string' && typeof streakCount === 'number'
+}
+
+// A random id purely for keying the streak leaderboard's one-row-per-player
+// upsert — arcade-style names collide across devices, so the display name
+// alone can't safely identify "this player" the way it can for the
+// append-only scores tables. Never shown anywhere, carries no other
+// identity, and is generated lazily so a player who never reaches a streak
+// worth submitting never gets one written to storage.
+function getOrCreateDeviceId(): string {
+  try {
+    const existing = window.localStorage.getItem(DEVICE_ID_KEY)
+    if (existing) return existing
+    const created = crypto.randomUUID()
+    window.localStorage.setItem(DEVICE_ID_KEY, created)
+    return created
+  } catch {
+    return crypto.randomUUID()
+  }
 }
 
 function isLeaderboardEntry(value: unknown): value is LeaderboardEntry {
@@ -158,6 +192,37 @@ export function useLeaderboard() {
     }
   }, [])
 
+  // Silently keeps this device's row on the streak leaderboard current.
+  // Only fires once a name has actually been chosen (via a free-play or
+  // daily score submission) — an unnamed streak has nothing meaningful to
+  // display, so it just doesn't appear until the player has a name.
+  const submitStreak = useCallback(
+    (streakCount: number, lastPlayedDate: string) => {
+      if (!name) return
+      const deviceId = getOrCreateDeviceId()
+      fetch(`${API_BASE}/streaks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId, name, streakCount, lastPlayedDate }),
+      }).catch(() => {
+        // Best-effort — a failed submission just means this device's streak
+        // rank goes stale until the next day it's played.
+      })
+    },
+    [name],
+  )
+
+  const fetchStreakLeaderboard = useCallback(async (today: string): Promise<StreakEntry[]> => {
+    try {
+      const response = await fetch(`${API_BASE}/streaks/leaderboard?today=${today}`)
+      if (!response.ok) return []
+      const data = (await response.json()) as StreakLeaderboardResponse
+      return Array.isArray(data.entries) ? data.entries.filter(isStreakEntry) : []
+    } catch {
+      return []
+    }
+  }, [])
+
   const recordActivity = useCallback((date: string, score: number, windows: LeaderboardWindow[]) => {
     setDailyActivity(prev => {
       const next = recordGameResult(prev, date, score, windows)
@@ -180,5 +245,7 @@ export function useLeaderboard() {
     checkDailyQualifies,
     submitDailyScore,
     fetchDailyLeaderboard,
+    submitStreak,
+    fetchStreakLeaderboard,
   }
 }

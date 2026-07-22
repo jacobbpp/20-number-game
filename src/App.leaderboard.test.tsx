@@ -56,12 +56,23 @@ interface MockLeaderboardEntry {
   endingRoll?: number | null
 }
 
+interface MockStreakEntry {
+  name: string
+  streakCount: number
+}
+
 // A URL-aware fetch stub covering every endpoint the app calls, so a single
 // mock can drive both the community-dot fetch and the leaderboard flow.
 function mockLeaderboardApi(
-  options: { checkWindows?: string[]; entries?: MockLeaderboardEntry[]; dailyQualifies?: boolean; dailyEntries?: MockLeaderboardEntry[] } = {},
+  options: {
+    checkWindows?: string[]
+    entries?: MockLeaderboardEntry[]
+    dailyQualifies?: boolean
+    dailyEntries?: MockLeaderboardEntry[]
+    streakEntries?: MockStreakEntry[]
+  } = {},
 ) {
-  const { checkWindows = [], entries = [], dailyQualifies = false, dailyEntries = [] } = options
+  const { checkWindows = [], entries = [], dailyQualifies = false, dailyEntries = [], streakEntries = [] } = options
   const withEndingRoll = (list: MockLeaderboardEntry[]) => list.map(entry => ({ endingRoll: null, ...entry }))
   const fetchMock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
     const url = urlOf(input)
@@ -81,6 +92,12 @@ function mockLeaderboardApi(
       return Promise.resolve(new Response(null, { status: 204 }))
     }
     if (url.includes('/scores')) {
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    if (url.includes('/streaks/leaderboard')) {
+      return Promise.resolve(new Response(JSON.stringify({ entries: streakEntries }), { status: 200 }))
+    }
+    if (url.includes('/streaks')) {
       return Promise.resolve(new Response(null, { status: 204 }))
     }
     return Promise.resolve(new Response(JSON.stringify({ boardSize: 20, matrix: emptyMatrix() }), { status: 200 }))
@@ -222,6 +239,35 @@ describe('leaderboard screen', () => {
     expect(await screen.findByText('ZEE')).toBeInTheDocument()
     expect(screen.getByText("Today's challenge · top 1")).toBeInTheDocument()
     expect(fetchMock.mock.calls.some(call => urlOf(call[0]).includes('/daily-scores/leaderboard'))).toBe(true)
+  })
+
+  it('switches to the Streaks tab and fetches current active streaks, with no time-window tabs', async () => {
+    seedPlayedStats()
+    const fetchMock = mockLeaderboardApi({
+      entries: [{ id: 1, name: 'TOM', score: 18, board: null }],
+      streakEntries: [
+        { name: 'ZEE', streakCount: 12 },
+        { name: 'ALR', streakCount: 1 },
+      ],
+    })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+    expect(await screen.findByText('TOM')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Streaks' }))
+
+    expect(await screen.findByText('ZEE')).toBeInTheDocument()
+    expect(screen.getByText('12 days')).toBeInTheDocument()
+    expect(screen.getByText('1 day')).toBeInTheDocument()
+    expect(screen.getByText('Currently active · top 2')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Week' })).not.toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(call => urlOf(call[0]).includes('/streaks/leaderboard'))).toBe(true)
+
+    // Streak rows have no board to reveal — a genuine game result exists
+    // per free-play/daily entry, but a streak count alone isn't one.
+    expect(screen.queryByRole('button', { name: /ZEE/ })).not.toBeInTheDocument()
   })
 
   it("does not let a daily entry be tapped open before today's challenge is completed", async () => {

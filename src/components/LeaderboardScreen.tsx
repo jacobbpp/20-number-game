@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { LeaderboardEntry, LeaderboardWindow } from '../hooks/useLeaderboard'
+import type { LeaderboardEntry, LeaderboardWindow, StreakEntry } from '../hooks/useLeaderboard'
 import { BOARD_SIZE } from '../game/types'
 import { LeaderboardEntryScreen } from './LeaderboardEntryScreen'
 
@@ -17,12 +17,13 @@ const WINDOW_CAPTION: Record<LeaderboardWindow, string> = {
   all: 'All time',
 }
 
-type Mode = 'freeplay' | 'daily'
+type Mode = 'freeplay' | 'daily' | 'streaks'
 
 interface LeaderboardScreenProps {
   rememberedName: string
   fetchLeaderboard: (boardSize: number, window: LeaderboardWindow) => Promise<LeaderboardEntry[]>
   fetchDailyLeaderboard: (boardSize: number, date: string) => Promise<LeaderboardEntry[]>
+  fetchStreakLeaderboard: (today: string) => Promise<StreakEntry[]>
   dailyBoardSize: number
   dailyDate: string
   // Today's daily rolls are the same for everyone, so a board that hasn't
@@ -37,6 +38,7 @@ export function LeaderboardScreen({
   rememberedName,
   fetchLeaderboard,
   fetchDailyLeaderboard,
+  fetchStreakLeaderboard,
   dailyBoardSize,
   dailyDate,
   dailyCompleted,
@@ -46,10 +48,12 @@ export function LeaderboardScreen({
   const [mode, setMode] = useState<Mode>('freeplay')
   const [window, setWindow] = useState<LeaderboardWindow>('day')
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null)
+  const [streakEntries, setStreakEntries] = useState<StreakEntry[] | null>(null)
   const [selected, setSelected] = useState<{ entry: LeaderboardEntry; rank: number } | null>(null)
   const boardSize = mode === 'daily' ? dailyBoardSize : BOARD_SIZE
 
   useEffect(() => {
+    if (mode === 'streaks') return
     let cancelled = false
     setEntries(null)
     const request = mode === 'daily' ? fetchDailyLeaderboard(dailyBoardSize, dailyDate) : fetchLeaderboard(BOARD_SIZE, window)
@@ -60,6 +64,18 @@ export function LeaderboardScreen({
       cancelled = true
     }
   }, [mode, window, fetchLeaderboard, fetchDailyLeaderboard, dailyBoardSize, dailyDate])
+
+  useEffect(() => {
+    if (mode !== 'streaks') return
+    let cancelled = false
+    setStreakEntries(null)
+    fetchStreakLeaderboard(dailyDate).then(result => {
+      if (!cancelled) setStreakEntries(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [mode, fetchStreakLeaderboard, dailyDate])
 
   return (
     <div className="stats-screen">
@@ -89,6 +105,14 @@ export function LeaderboardScreen({
         >
           Daily
         </button>
+        <button
+          type="button"
+          className={`heatmap-toggle__option${mode === 'streaks' ? ' heatmap-toggle__option--active' : ''}`}
+          aria-pressed={mode === 'streaks'}
+          onClick={() => setMode('streaks')}
+        >
+          Streaks
+        </button>
       </div>
 
       {mode === 'freeplay' && (
@@ -108,7 +132,39 @@ export function LeaderboardScreen({
       )}
 
       <div className="stats-screen__body">
-        {entries === null ? (
+        {mode === 'streaks' ? (
+          <>
+            {streakEntries === null ? (
+              <p className="stats-screen__empty">Loading leaderboard.</p>
+            ) : streakEntries.length === 0 ? (
+              <p className="stats-screen__empty">No active streaks yet. Be the first.</p>
+            ) : (
+              <ol className="daily-history__list leaderboard-list">
+                {streakEntries.map((entry, index) => {
+                  const isYou = entry.name === rememberedName
+                  const rowClassName = isYou ? 'daily-history__row leaderboard-row leaderboard-row--you' : 'daily-history__row leaderboard-row'
+                  return (
+                    <li key={`${entry.name}-${index}`}>
+                      <div className={rowClassName}>
+                        <span className="leaderboard-row__rank">{index + 1}</span>
+                        <span className="leaderboard-row__name">
+                          {entry.name}
+                          {isYou ? ' · you' : ''}
+                        </span>
+                        <span className="leaderboard-row__score">
+                          {entry.streakCount} day{entry.streakCount === 1 ? '' : 's'}
+                        </span>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
+            <p className="stats-screen__caption" style={{ textAlign: 'center' }}>
+              Currently active · top {streakEntries?.length ?? 10}
+            </p>
+          </>
+        ) : entries === null ? (
           <p className="stats-screen__empty">Loading leaderboard.</p>
         ) : entries.length === 0 ? (
           <p className="stats-screen__empty">No scores yet. Be the first.</p>
@@ -145,9 +201,11 @@ export function LeaderboardScreen({
             })}
           </ol>
         )}
-        <p className="stats-screen__caption" style={{ textAlign: 'center' }}>
-          {mode === 'daily' ? "Today's challenge" : WINDOW_CAPTION[window]} · top {entries?.length ?? 10}
-        </p>
+        {mode !== 'streaks' && (
+          <p className="stats-screen__caption" style={{ textAlign: 'center' }}>
+            {mode === 'daily' ? "Today's challenge" : WINDOW_CAPTION[window]} · top {entries?.length ?? 10}
+          </p>
+        )}
         {mode === 'daily' && !dailyCompleted && entries !== null && entries.length > 0 && (
           <p className="stats-screen__caption" style={{ textAlign: 'center' }}>
             Finish today's challenge to see how each board played out.

@@ -27,6 +27,9 @@ function mockDailyLeaderboardApi(options: { qualifies?: boolean } = {}) {
     if (url.includes('/scores')) {
       return Promise.resolve(new Response(null, { status: 204 }))
     }
+    if (url.includes('/streaks')) {
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
     const emptyMatrix = Array.from({ length: 20 }, () => Array(10).fill(0))
     return Promise.resolve(new Response(JSON.stringify({ boardSize: 20, matrix: emptyMatrix }), { status: 200 }))
   })
@@ -113,6 +116,45 @@ describe('App daily challenge', () => {
 
     const storedStreak: unknown = JSON.parse(localStorage.getItem('order20-daily-streak') ?? 'null')
     expect(storedStreak).toEqual({ count: 1, lastPlayedDate: today, bestStreak: 1 })
+  })
+
+  it('submits the streak leaderboard entry once a name is already remembered', async () => {
+    localStorage.setItem('order20-leaderboard-name', 'JRC')
+    const today = getLocalDateString()
+    const boardSize = getDailyBoardSize(today)
+    const rng = createDailyRng(today)
+    const { clicks } = simulateDailyGame(boardSize, rng)
+    const fetchMock = mockDailyLeaderboardApi()
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`Today's ${boardSize}-slot challenge`) }))
+    for (const position of clicks) {
+      fireEvent.click(await screen.findByRole('button', { name: `Position ${position + 1}, empty, valid placement` }))
+    }
+    await screen.findByText('Come back tomorrow for the next one.')
+
+    const submitCall = fetchMock.mock.calls.find(call => urlOf(call[0]).endsWith('/streaks') && call[1]?.method === 'POST')
+    expect(submitCall).toBeDefined()
+    const body = JSON.parse(String(submitCall?.[1]?.body)) as { name?: unknown; streakCount?: unknown; lastPlayedDate?: unknown; deviceId?: unknown }
+    expect(body).toMatchObject({ name: 'JRC', streakCount: 1, lastPlayedDate: today })
+    expect(typeof body.deviceId).toBe('string')
+  })
+
+  it('does not submit a streak leaderboard entry when no name has been remembered yet', async () => {
+    const today = getLocalDateString()
+    const boardSize = getDailyBoardSize(today)
+    const rng = createDailyRng(today)
+    const { clicks } = simulateDailyGame(boardSize, rng)
+    const fetchMock = mockDailyLeaderboardApi()
+
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`Today's ${boardSize}-slot challenge`) }))
+    for (const position of clicks) {
+      fireEvent.click(await screen.findByRole('button', { name: `Position ${position + 1}, empty, valid placement` }))
+    }
+    await screen.findByText('Come back tomorrow for the next one.')
+
+    expect(fetchMock.mock.calls.some(call => urlOf(call[0]).endsWith('/streaks') && call[1]?.method === 'POST')).toBe(false)
   })
 
   it('streak pill copies a share message and shows "Copied!" when tapped', async () => {

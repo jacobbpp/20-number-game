@@ -17,7 +17,7 @@ import { WhatsNewScreen } from './components/WhatsNewScreen'
 import { WinScreen } from './components/WinScreen'
 import { CHANGELOG } from './changelog'
 import { ACHIEVEMENTS } from './game/achievements'
-import { createDailyRng, getDailyBoardSize, getLocalDateString } from './game/daily'
+import { createDailyRng, getDailyBoardSize, getLocalDateString, recordDailyStreak } from './game/daily'
 import { place, roll } from './game/engine'
 import { createBiasedRng } from './game/practice'
 import { bucketLabel, extractPlacements, suggestedPosition } from './game/stats'
@@ -68,6 +68,8 @@ function App() {
     checkDailyQualifies,
     submitDailyScore,
     fetchDailyLeaderboard,
+    submitStreak,
+    fetchStreakLeaderboard,
   } = useLeaderboard()
   const [dailyLeaderboardQualifies, setDailyLeaderboardQualifies] = useState(false)
   const { hasSeenOnboarding, markSeen } = useOnboarding()
@@ -223,6 +225,11 @@ function App() {
     checkDailyQualifies(dailyBoardSize, dailyDate, dailyState.placedCount).then(qualifies => {
       if (qualifies) setDailyLeaderboardQualifies(true)
     })
+    // recordDailyStreak is pure (no side effect on the streak hook's own
+    // state) — calling it again here just to read the count this attempt
+    // produces, so it can be submitted without threading a return value
+    // out of useDailyChallenge's own internal recording call.
+    submitStreak(recordDailyStreak(streak, dailyDate).count, dailyDate)
   }, [
     dailyState.status,
     dailyState.positions,
@@ -234,6 +241,8 @@ function App() {
     checkDailyQualifies,
     dailyBoardSize,
     dailyDate,
+    streak,
+    submitStreak,
   ])
 
   useEffect(() => {
@@ -416,6 +425,7 @@ function App() {
           rememberedName={leaderboardName}
           fetchLeaderboard={fetchLeaderboard}
           fetchDailyLeaderboard={fetchDailyLeaderboard}
+          fetchStreakLeaderboard={fetchStreakLeaderboard}
           dailyBoardSize={dailyBoardSize}
           dailyDate={dailyDate}
           dailyCompleted={todayResult !== null}
