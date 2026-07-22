@@ -25,6 +25,10 @@ interface LeaderboardScreenProps {
   fetchDailyLeaderboard: (boardSize: number, date: string) => Promise<LeaderboardEntry[]>
   dailyBoardSize: number
   dailyDate: string
+  // Today's daily rolls are the same for everyone, so a board that hasn't
+  // been played yet is a spoiler — only reveal daily boards to someone who
+  // has already finished today's attempt themselves.
+  dailyCompleted: boolean
   onClose: () => void
   backLabel?: string
 }
@@ -35,6 +39,7 @@ export function LeaderboardScreen({
   fetchDailyLeaderboard,
   dailyBoardSize,
   dailyDate,
+  dailyCompleted,
   onClose,
   backLabel = 'Back to game',
 }: LeaderboardScreenProps) {
@@ -109,31 +114,45 @@ export function LeaderboardScreen({
           <p className="stats-screen__empty">No scores yet. Be the first.</p>
         ) : (
           <ol className="daily-history__list leaderboard-list">
-            {entries.map((entry, index) => (
-              <li key={entry.id}>
-                <button
-                  type="button"
-                  className={
-                    entry.name === rememberedName ? 'daily-history__row leaderboard-row leaderboard-row--you' : 'daily-history__row leaderboard-row'
-                  }
-                  onClick={() => setSelected({ entry, rank: index + 1 })}
-                >
+            {entries.map((entry, index) => {
+              const isYou = entry.name === rememberedName
+              const rowClassName = isYou ? 'daily-history__row leaderboard-row leaderboard-row--you' : 'daily-history__row leaderboard-row'
+              const rowContent = (
+                <>
                   <span className="leaderboard-row__rank">{index + 1}</span>
                   <span className="leaderboard-row__name">
                     {entry.name}
-                    {entry.name === rememberedName ? ' · you' : ''}
+                    {isYou ? ' · you' : ''}
                   </span>
                   <span className="leaderboard-row__score">
                     {entry.score}/{boardSize}
                   </span>
-                </button>
-              </li>
-            ))}
+                </>
+              )
+              const canReveal = mode === 'freeplay' || dailyCompleted
+
+              return (
+                <li key={entry.id}>
+                  {canReveal ? (
+                    <button type="button" className={rowClassName} onClick={() => setSelected({ entry, rank: index + 1 })}>
+                      {rowContent}
+                    </button>
+                  ) : (
+                    <div className={rowClassName}>{rowContent}</div>
+                  )}
+                </li>
+              )
+            })}
           </ol>
         )}
         <p className="stats-screen__caption" style={{ textAlign: 'center' }}>
           {mode === 'daily' ? "Today's challenge" : WINDOW_CAPTION[window]} · top {entries?.length ?? 10}
         </p>
+        {mode === 'daily' && !dailyCompleted && entries !== null && entries.length > 0 && (
+          <p className="stats-screen__caption" style={{ textAlign: 'center' }}>
+            Finish today's challenge to see how each board played out.
+          </p>
+        )}
       </div>
 
       {selected && <LeaderboardEntryScreen entry={selected.entry} rank={selected.rank} onClose={() => setSelected(null)} />}

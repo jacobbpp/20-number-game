@@ -12,7 +12,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '1.34.0',
     date: '2026-07-22',
     title: 'Which number ended it, and a daily leaderboard',
-    description: 'Any leaderboard entry now shows which number had nowhere to go. The leaderboard also gets a Daily mode, a top 10 for today\'s specific challenge, since the board size changes every day.',
+    description: 'Any leaderboard entry now shows which number had nowhere to go. The leaderboard also gets a Daily mode, a top 10 for today\'s specific challenge, since the board size changes every day. Daily boards stay hidden until you\'ve finished today\'s attempt yourself, since the rolls are the same for everyone.',
   },
   {
     version: '1.33.0',

@@ -402,6 +402,7 @@ function App() {
           fetchDailyLeaderboard={fetchDailyLeaderboard}
           dailyBoardSize={dailyBoardSize}
           dailyDate={dailyDate}
+          dailyCompleted={todayResult !== null}
           backLabel={leaderboardReturnsToStats ? 'Back to stats' : 'Back to game'}
           onClose={() => {
             setIsLeaderboardOpen(false)

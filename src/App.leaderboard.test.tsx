@@ -224,6 +224,44 @@ describe('leaderboard screen', () => {
     expect(fetchMock.mock.calls.some(call => urlOf(call[0]).includes('/daily-scores/leaderboard'))).toBe(true)
   })
 
+  it("does not let a daily entry be tapped open before today's challenge is completed", async () => {
+    seedPlayedStats()
+    mockLeaderboardApi({
+      entries: [{ id: 1, name: 'TOM', score: 18, board: null }],
+      dailyEntries: [{ id: 9, name: 'ZEE', score: 8, board: [100, null], endingRoll: 300 }],
+    })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Daily' }))
+
+    expect(await screen.findByText('ZEE')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /ZEE/ })).not.toBeInTheDocument()
+    expect(screen.getByText("Finish today's challenge to see how each board played out.")).toBeInTheDocument()
+  })
+
+  it('lets a daily entry be tapped open once today\'s challenge is already completed', async () => {
+    seedPlayedStats()
+    const today = getLocalDateString()
+    localStorage.setItem(
+      'order20-daily-result',
+      JSON.stringify({ date: today, positions: [64, 75], placedCount: 2, status: 'lost', lossReason: null }),
+    )
+    mockLeaderboardApi({
+      entries: [{ id: 1, name: 'TOM', score: 18, board: null }],
+      dailyEntries: [{ id: 9, name: 'ZEE', score: 8, board: [100, null], endingRoll: 300 }],
+    })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Daily' }))
+
+    fireEvent.click(await screen.findByRole('button', { name: /ZEE/ }))
+    expect(await screen.findByText('300 had nowhere to go', { exact: false })).toBeInTheDocument()
+  })
+
   it("shows a fallback message for a score saved before boards were recorded", async () => {
     seedPlayedStats()
     mockLeaderboardApi({ entries: [{ id: 6, name: 'OLD', score: 4, board: null }] })
