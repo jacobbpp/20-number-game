@@ -30,6 +30,29 @@ const STATS_ENTRIES: Entry[] = [
     term: 'Leaderboard',
     desc: "Top 10 free-play games by day, week, month, and all time — the ten best games, so one player can hold more than one spot. A Daily mode covers today's specific challenge only, since the board size changes every day. Tap an entry to see the board it was set on, including which number ended the run — for Daily entries, that's only revealed once you've finished today's own attempt, since everyone gets the same rolls. A Streaks mode ranks the longest currently active daily streaks — a single list, since a streak doesn't reset by time window the way a score does.",
   },
+  {
+    term: 'Best run',
+    desc: "Tap \"Best\" in the header to see the actual board from your highest-scoring free-play game, not just the number.",
+  },
+]
+
+const DAILY_ENTRIES: Entry[] = [
+  {
+    term: "Today's challenge",
+    desc: 'One shared puzzle a day: the exact same rolls, in the same order, for everyone who plays. Board size changes daily (10, 15, 25, or 30 — never 20, so it\'s never mistaken for free play).',
+  },
+  {
+    term: 'Streak',
+    desc: 'Counts consecutive days played, whether you win or lose — only missing a full day breaks it. Playing today, or having played yesterday, keeps it alive.',
+  },
+  {
+    term: 'History',
+    desc: "The last 30 days of attempts, with the date, board size, and score for each. Open it from \"View history\" on the recap screen.",
+  },
+  {
+    term: 'What came next',
+    desc: "After a loss, shows the next few rolls in that day's sequence and where (if anywhere) they'd have fit. Since the rolls are the same for everyone, it's a real answer, not a guess — but it's shown for curiosity only and doesn't change your score.",
+  },
 ]
 
 const INSIGHT_ENTRIES: Entry[] = [
@@ -37,7 +60,7 @@ const INSIGHT_ENTRIES: Entry[] = [
   { term: 'Last 30 days', desc: 'A calendar of games played each day, with your busiest day ever highlighted.' },
   {
     term: 'Performance by range',
-    desc: 'A bar for every value range, showing which you handle best and which trips you up most. Once there\'s a clear toughest range, a "Practice" button starts a free-play game weighted toward it — still a real game, and it counts toward your stats like any other.',
+    desc: 'A bar for every value range, showing which you handle best and which trips you up most. Once there\'s a clear toughest range, a "Practice" button starts a free-play game weighted toward it — still a real game, and it counts toward your stats like any other. A "Practicing X–Y" banner shows during that game, with a Stop link to end it early and go back to a normal roll without losing your board progress.',
   },
   { term: 'Leaderboard reach', desc: "How many of today's games made the day, week, month, and all-time leaderboards." },
   { term: 'Best score over time', desc: 'A line chart of your personal best climbing as you set new records.' },
@@ -142,6 +165,13 @@ export function GuideScreen({ onClose }: GuideScreenProps) {
           </div>
 
           <GuideEntry {...ACHIEVEMENTS_ENTRY} />
+        </div>
+
+        <p className="guide-section__label">Daily Challenge</p>
+        <div className="guide-list">
+          {DAILY_ENTRIES.map(entry => (
+            <GuideEntry key={entry.term} {...entry} />
+          ))}
         </div>
 
         <p className="guide-section__label">Settings</p>
