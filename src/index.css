@@ -1772,6 +1772,23 @@ button:focus-visible {
   }
 }
 
+.locked-toast {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 5;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--purple-pill-bg);
+  color: var(--purple-pill-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(10, 6, 20, 0.35);
+  animation: toast-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 .achievement-toast__btn {
   width: 100%;
   display: flex;

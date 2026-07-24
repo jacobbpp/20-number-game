@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { LeaderboardEntry, LeaderboardWindow, StreakEntry } from '../hooks/useLeaderboard'
 import { BOARD_SIZE } from '../game/types'
 import { LeaderboardEntryScreen } from './LeaderboardEntryScreen'
@@ -50,7 +50,24 @@ export function LeaderboardScreen({
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null)
   const [streakEntries, setStreakEntries] = useState<StreakEntry[] | null>(null)
   const [selected, setSelected] = useState<{ entry: LeaderboardEntry; rank: number } | null>(null)
+  const [showLockedToast, setShowLockedToast] = useState(false)
+  const lockedToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const boardSize = mode === 'daily' ? dailyBoardSize : BOARD_SIZE
+
+  // Tapping a locked daily entry used to just do nothing — no affordance,
+  // no feedback. This gives it a real (if cheeky) response instead, without
+  // ever touching setSelected, so the actual board stays hidden either way.
+  const handleLockedTap = () => {
+    setShowLockedToast(true)
+    if (lockedToastTimeoutRef.current) clearTimeout(lockedToastTimeoutRef.current)
+    lockedToastTimeoutRef.current = setTimeout(() => setShowLockedToast(false), 2500)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (lockedToastTimeoutRef.current) clearTimeout(lockedToastTimeoutRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (mode === 'streaks') return
@@ -189,13 +206,13 @@ export function LeaderboardScreen({
 
               return (
                 <li key={entry.id}>
-                  {canReveal ? (
-                    <button type="button" className={rowClassName} onClick={() => setSelected({ entry, rank: index + 1 })}>
-                      {rowContent}
-                    </button>
-                  ) : (
-                    <div className={rowClassName}>{rowContent}</div>
-                  )}
+                  <button
+                    type="button"
+                    className={rowClassName}
+                    onClick={() => (canReveal ? setSelected({ entry, rank: index + 1 }) : handleLockedTap())}
+                  >
+                    {rowContent}
+                  </button>
                 </li>
               )
             })}
@@ -214,6 +231,12 @@ export function LeaderboardScreen({
       </div>
 
       {selected && <LeaderboardEntryScreen entry={selected.entry} rank={selected.rank} onClose={() => setSelected(null)} />}
+
+      {showLockedToast && (
+        <div className="locked-toast" role="status">
+          Nosey! Finish today's challenge first, then come compare notes.
+        </div>
+      )}
     </div>
   )
 }

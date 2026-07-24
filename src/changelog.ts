@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.38.0',
+    date: '2026-07-23',
+    title: 'A cheeky "not yet" for locked daily boards',
+    description: 'Tapping a locked Daily leaderboard entry used to do nothing at all. Now it pops up a short reminder to finish today\'s challenge first, then come back and compare.',
+  },
+  {
     version: '1.37.0',
     date: '2026-07-22',
     title: 'A leaderboard for streaks',
