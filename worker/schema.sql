@@ -40,3 +40,13 @@ CREATE TABLE IF NOT EXISTS streaks (
 );
 
 CREATE INDEX IF NOT EXISTS idx_streaks_last_played ON streaks (last_played_date);
+
+CREATE TABLE IF NOT EXISTS activity (
+  date TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  board_size INTEGER NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (date, mode, board_size)
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_date ON activity (date);

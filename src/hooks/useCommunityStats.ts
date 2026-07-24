@@ -43,5 +43,20 @@ export function useCommunityStats() {
     })
   }, [])
 
-  return { matrix, reportPlacements }
+  // A bare (date, mode, boardSize) counter, separate from placements/scores
+  // on purpose — neither of those can answer "how many games happened on a
+  // given day," since placements only covers free play with no date at all,
+  // and scores/daily_scores only capture top-10 saves. One call per
+  // completed game, win or lose, both modes.
+  const reportActivity = useCallback((date: string, mode: 'freeplay' | 'daily', boardSize: number) => {
+    fetch(`${API_BASE}/activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, mode, boardSize }),
+    }).catch(() => {
+      // Best-effort — a failed report never affects gameplay.
+    })
+  }, [])
+
+  return { matrix, reportPlacements, reportActivity }
 }

@@ -502,6 +502,53 @@ async function handleStreakLeaderboard(request: Request, env: Env): Promise<Resp
   return json({ today, entries })
 }
 
+// A bare (date, mode, boardSize) counter, decoupled from placements/scores
+// on purpose — those only capture free play's shared 20-slot grid and
+// top-10 saves respectively, neither of which can answer "how many games
+// happened on a given day." One row per completed game, win or lose, both
+// modes, purely so a future report can show real games-played and popular
+// days instead of guessing from unrelated metrics.
+const MODE_PATTERN = /^(freeplay|daily)$/
+
+interface ActivitySubmitBody {
+  date: string
+  mode: string
+  boardSize: number
+}
+
+function isValidActivitySubmit(body: unknown): body is ActivitySubmitBody {
+  if (!body || typeof body !== 'object') return false
+  const { date, mode, boardSize } = body as Record<string, unknown>
+  if (typeof date !== 'string' || !DATE_PATTERN.test(date)) return false
+  if (typeof mode !== 'string' || !MODE_PATTERN.test(mode)) return false
+  return typeof boardSize === 'number' && VALID_BOARD_SIZES.has(boardSize)
+}
+
+async function handleActivitySubmit(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  if (!isValidActivitySubmit(body)) {
+    return json({ error: 'date (YYYY-MM-DD), mode (freeplay|daily), and boardSize are required.' }, 400)
+  }
+
+  const { date, mode, boardSize } = body
+
+  await env.DB.prepare(
+    `INSERT INTO activity (date, mode, board_size, count)
+     VALUES (?1, ?2, ?3, 1)
+     ON CONFLICT (date, mode, board_size) DO UPDATE SET count = count + 1`,
+  )
+    .bind(date, mode, boardSize)
+    .run()
+
+  return new Response(null, { status: 204, headers: corsHeaders() })
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') {
@@ -548,6 +595,10 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/streaks/leaderboard') {
       return handleStreakLeaderboard(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/activity') {
+      return handleActivitySubmit(request, env)
     }
 
     return json({ error: 'Not found.' }, 404)
