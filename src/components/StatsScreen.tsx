@@ -21,12 +21,13 @@ import {
   type StatsData,
 } from '../game/stats'
 import { BOARD_SIZE } from '../game/types'
-import { isStreakActive, type StreakData } from '../game/daily'
+import { addDays, isStreakActive, type StreakData } from '../game/daily'
 import {
   activityWindow,
   bestScoreTrend,
   busiestDay,
   closestCalls,
+  gamesPlayed,
   shortGamesCount,
   todayReach,
   weeklyAverageDelta,
@@ -131,6 +132,10 @@ export function StatsScreen({
   const closeCalls = closestCalls(dailyActivity, bestScore)
   const weeklyDelta = weeklyAverageDelta(dailyActivity, today)
   const shortToday = shortGamesCount(todayEntry, SHORT_GAME_THRESHOLD)
+  const passedToday = reach.gamesToday - shortToday
+  const yesterdayEntry = dailyActivity[addDays(today, -1)]
+  const yesterdayGames = gamesPlayed(yesterdayEntry)
+  const yesterdayPassed = yesterdayGames - shortGamesCount(yesterdayEntry, SHORT_GAME_THRESHOLD)
 
   const signalRanges = rangeStats.filter(stat => stat.hasSignal)
   const bestRangeStat = signalRanges.length > 0 ? signalRanges.reduce((a, b) => (b.winRate > a.winRate ? b : a)) : null
@@ -341,6 +346,17 @@ export function StatsScreen({
               {reach.gamesToday > 0 && shortToday > 0 && (
                 <p className="stats-screen__caption" style={{ textAlign: 'center', margin: '-6px 0 0' }}>
                   {shortToday} of {reach.gamesToday} games today ended before move {SHORT_GAME_THRESHOLD}.
+                  {yesterdayGames > 0 && (
+                    <>
+                      {' '}
+                      {passedToday} made it further,{' '}
+                      {passedToday > yesterdayPassed
+                        ? `better than yesterday's ${yesterdayPassed}.`
+                        : passedToday < yesterdayPassed
+                          ? `yesterday had ${yesterdayPassed}.`
+                          : 'same as yesterday.'}
+                    </>
+                  )}
                 </p>
               )}
 
