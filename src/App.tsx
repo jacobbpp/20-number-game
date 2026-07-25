@@ -57,7 +57,7 @@ function App() {
   const [leaderboardWindows, setLeaderboardWindows] = useState<LeaderboardWindow[] | null>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
-  const { matrix: communityMatrix, reportPlacements, reportActivity } = useCommunityStats()
+  const { matrix: communityMatrix, reportPlacements, reportGame } = useCommunityStats()
   const {
     name: leaderboardName,
     dailyActivity,
@@ -165,7 +165,7 @@ function App() {
       hardMode,
     )
     reportPlacements(extractPlacements(state.positions))
-    reportActivity(dailyDate, 'freeplay', state.positions.length)
+    reportGame(leaderboardName, dailyDate, 'freeplay', state.positions.length, state.placedCount)
     setHasRecorded(true)
 
     // Free play only (fixed board size 20) — daily board sizes vary, so a
@@ -188,7 +188,8 @@ function App() {
     reportScore,
     recordCompletedGame,
     reportPlacements,
-    reportActivity,
+    reportGame,
+    leaderboardName,
     setHasRecorded,
     checkQualifies,
     recordActivity,
@@ -224,7 +225,7 @@ function App() {
       lossReason: dailyState.lossReason,
       usedNumbers: dailyState.usedNumbers,
     })
-    reportActivity(dailyDate, 'daily', dailyBoardSize)
+    reportGame(leaderboardName, dailyDate, 'daily', dailyBoardSize, dailyState.placedCount)
     checkDailyQualifies(dailyBoardSize, dailyDate, dailyState.placedCount).then(qualifies => {
       if (qualifies) setDailyLeaderboardQualifies(true)
     })
@@ -241,7 +242,8 @@ function App() {
     dailyState.usedNumbers,
     todayResult,
     recordDailyResult,
-    reportActivity,
+    reportGame,
+    leaderboardName,
     checkDailyQualifies,
     dailyBoardSize,
     dailyDate,

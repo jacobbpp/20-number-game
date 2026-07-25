@@ -44,13 +44,12 @@ function isStreakEntry(value: unknown): value is StreakEntry {
   return typeof name === 'string' && typeof streakCount === 'number'
 }
 
-// A random id purely for keying the streak leaderboard's one-row-per-player
-// upsert — arcade-style names collide across devices, so the display name
-// alone can't safely identify "this player" the way it can for the
-// append-only scores tables. Never shown anywhere, carries no other
-// identity, and is generated lazily so a player who never reaches a streak
-// worth submitting never gets one written to storage.
-function getOrCreateDeviceId(): string {
+// A random id for keying the streak leaderboard's one-row-per-player upsert
+// and the per-device game log — arcade-style names collide across devices,
+// so the display name alone can't safely identify "this player" the way it
+// can for the append-only scores tables. Never shown anywhere and carries
+// no other identity.
+export function getOrCreateDeviceId(): string {
   try {
     const existing = window.localStorage.getItem(DEVICE_ID_KEY)
     if (existing) return existing

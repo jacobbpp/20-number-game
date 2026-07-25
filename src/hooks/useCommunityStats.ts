@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { API_BASE } from '../api'
 import { bucketForValue, createEmptyMatrix, type Placement } from '../game/stats'
 import { BOARD_SIZE } from '../game/types'
+import { getOrCreateDeviceId } from './useLeaderboard'
 
 interface SummaryResponse {
   matrix?: number[][]
@@ -43,20 +44,21 @@ export function useCommunityStats() {
     })
   }, [])
 
-  // A bare (date, mode, boardSize) counter, separate from placements/scores
-  // on purpose — neither of those can answer "how many games happened on a
-  // given day," since placements only covers free play with no date at all,
-  // and scores/daily_scores only capture top-10 saves. One call per
-  // completed game, win or lose, both modes.
-  const reportActivity = useCallback((date: string, mode: 'freeplay' | 'daily', boardSize: number) => {
-    fetch(`${API_BASE}/activity`, {
+  // One row per completed game, win or lose, both modes — tied to this
+  // device's id (shared with the streak leaderboard) so a per-device
+  // breakdown (games today, how far they got, vs. yesterday) can be built
+  // later. Neither placements nor scores/daily_scores can answer that:
+  // placements has no date, and scores only capture qualifying top-10 saves.
+  const reportGame = useCallback((name: string, date: string, mode: 'freeplay' | 'daily', boardSize: number, placedCount: number) => {
+    const deviceId = getOrCreateDeviceId()
+    fetch(`${API_BASE}/games`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, mode, boardSize }),
+      body: JSON.stringify({ deviceId, name: name || null, date, mode, boardSize, placedCount }),
     }).catch(() => {
       // Best-effort — a failed report never affects gameplay.
     })
   }, [])
 
-  return { matrix, reportPlacements, reportActivity }
+  return { matrix, reportPlacements, reportGame }
 }

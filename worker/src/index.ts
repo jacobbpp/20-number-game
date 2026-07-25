@@ -502,29 +502,37 @@ async function handleStreakLeaderboard(request: Request, env: Env): Promise<Resp
   return json({ today, entries })
 }
 
-// A bare (date, mode, boardSize) counter, decoupled from placements/scores
-// on purpose — those only capture free play's shared 20-slot grid and
-// top-10 saves respectively, neither of which can answer "how many games
-// happened on a given day." One row per completed game, win or lose, both
-// modes, purely so a future report can show real games-played and popular
-// days instead of guessing from unrelated metrics.
+// One row per completed game, win or lose, both modes — keyed by this
+// device's local id (the same one streaks uses, never shown anywhere).
+// Lets a per-device breakdown ("22 games today, 3 past halfway, better
+// than yesterday's 1") be built later; the placements/scores tables can't
+// answer that, since placements has no date and scores/daily_scores only
+// capture qualifying top-10 saves. Name is optional and often absent — most
+// games are logged before a name is ever chosen, which only happens on a
+// qualifying score.
 const MODE_PATTERN = /^(freeplay|daily)$/
 
-interface ActivitySubmitBody {
+interface GameLogBody {
+  deviceId: string
+  name: string | null
   date: string
   mode: string
   boardSize: number
+  placedCount: number
 }
 
-function isValidActivitySubmit(body: unknown): body is ActivitySubmitBody {
+function isValidGameLog(body: unknown): body is GameLogBody {
   if (!body || typeof body !== 'object') return false
-  const { date, mode, boardSize } = body as Record<string, unknown>
+  const { deviceId, name, date, mode, boardSize, placedCount } = body as Record<string, unknown>
+  if (typeof deviceId !== 'string' || !DEVICE_ID_PATTERN.test(deviceId)) return false
+  if (name !== null && typeof name !== 'string') return false
   if (typeof date !== 'string' || !DATE_PATTERN.test(date)) return false
   if (typeof mode !== 'string' || !MODE_PATTERN.test(mode)) return false
-  return typeof boardSize === 'number' && VALID_BOARD_SIZES.has(boardSize)
+  if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
+  return typeof placedCount === 'number' && Number.isInteger(placedCount) && placedCount >= 0 && placedCount <= boardSize
 }
 
-async function handleActivitySubmit(request: Request, env: Env): Promise<Response> {
+async function handleGameLog(request: Request, env: Env): Promise<Response> {
   let body: unknown
   try {
     body = await request.json()
@@ -532,18 +540,21 @@ async function handleActivitySubmit(request: Request, env: Env): Promise<Respons
     return json({ error: 'Invalid JSON body.' }, 400)
   }
 
-  if (!isValidActivitySubmit(body)) {
-    return json({ error: 'date (YYYY-MM-DD), mode (freeplay|daily), and boardSize are required.' }, 400)
+  if (!isValidGameLog(body)) {
+    return json(
+      { error: 'deviceId, date (YYYY-MM-DD), mode (freeplay|daily), boardSize, and placedCount (0..boardSize) are required.' },
+      400,
+    )
   }
 
-  const { date, mode, boardSize } = body
+  const { deviceId, name, date, mode, boardSize, placedCount } = body
+  const cleanName = typeof name === 'string' && name.trim().length > 0 ? name.trim().toUpperCase().slice(0, 8) : null
 
   await env.DB.prepare(
-    `INSERT INTO activity (date, mode, board_size, count)
-     VALUES (?1, ?2, ?3, 1)
-     ON CONFLICT (date, mode, board_size) DO UPDATE SET count = count + 1`,
+    `INSERT INTO game_log (device_id, name, date, mode, board_size, placed_count, created_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
   )
-    .bind(date, mode, boardSize)
+    .bind(deviceId, cleanName, date, mode, boardSize, placedCount, new Date().toISOString())
     .run()
 
   return new Response(null, { status: 204, headers: corsHeaders() })
@@ -597,8 +608,8 @@ export default {
       return handleStreakLeaderboard(request, env)
     }
 
-    if (request.method === 'POST' && url.pathname === '/activity') {
-      return handleActivitySubmit(request, env)
+    if (request.method === 'POST' && url.pathname === '/games') {
+      return handleGameLog(request, env)
     }
 
     return json({ error: 'Not found.' }, 404)

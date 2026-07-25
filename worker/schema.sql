@@ -41,12 +41,16 @@ CREATE TABLE IF NOT EXISTS streaks (
 
 CREATE INDEX IF NOT EXISTS idx_streaks_last_played ON streaks (last_played_date);
 
-CREATE TABLE IF NOT EXISTS activity (
+CREATE TABLE IF NOT EXISTS game_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  device_id TEXT NOT NULL,
+  name TEXT,
   date TEXT NOT NULL,
   mode TEXT NOT NULL,
   board_size INTEGER NOT NULL,
-  count INTEGER NOT NULL DEFAULT 0,
-  PRIMARY KEY (date, mode, board_size)
+  placed_count INTEGER NOT NULL,
+  created_at TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_activity_date ON activity (date);
+CREATE INDEX IF NOT EXISTS idx_game_log_device_date ON game_log (device_id, date);
+CREATE INDEX IF NOT EXISTS idx_game_log_date ON game_log (date);
