@@ -31,7 +31,7 @@ afterEach(() => {
 })
 
 describe('stats menu', () => {
-  it('shows a live preview of each category on its menu row', async () => {
+  it('shows a live preview of the Insights row, and a plain daily-streak line above the menu', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
@@ -51,9 +51,7 @@ describe('stats menu', () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
 
-    expect(await screen.findByText('33% win rate · streak 0')).toBeInTheDocument()
-    expect(screen.getByText('4.5 avg. turns')).toBeInTheDocument()
-    expect(screen.getByText('No streak yet')).toBeInTheDocument()
+    expect(await screen.findByText('Daily streak: No streak yet')).toBeInTheDocument()
     expect(screen.getByText('Not enough data yet')).toBeInTheDocument()
   })
 
@@ -79,8 +77,8 @@ describe('stats menu', () => {
     )
 
     render(<App />)
-    await openSection('Win rate & streak')
-    expect(await screen.findByText('win rate')).toBeInTheDocument()
+    await openSection('Heatmap')
+    expect(await screen.findByText('Rarely lands here')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to stats menu' }))
     expect(await screen.findByRole('button', { name: /^Heatmap/ })).toBeInTheDocument()
@@ -90,74 +88,8 @@ describe('stats menu', () => {
   })
 })
 
-describe('win rate & streak section', () => {
-  it('shows win rate and current streak', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 6,
-        totalWins: 2,
-        totalTurns: 27,
-        currentWinStreak: 2,
-        matrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openSection('Win rate & streak')
-
-    expect(await screen.findByText('33%')).toBeInTheDocument()
-    expect(screen.getByText('2')).toBeInTheDocument()
-  })
-
-  it('shows a best-win-streak record only once one has been set', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 4,
-        totalWins: 1,
-        totalTurns: 20,
-        currentWinStreak: 1,
-        bestWinStreak: 4,
-        matrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openSection('Win rate & streak')
-
-    expect(await screen.findByText('Best: 4')).toBeInTheDocument()
-  })
-
-  it('hides the best-streak record when none has been set yet', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 2,
-        totalWins: 0,
-        totalTurns: 6,
-        currentWinStreak: 0,
-        bestWinStreak: 0,
-        matrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openSection('Win rate & streak')
-
-    await screen.findByText('win rate')
-    expect(screen.queryByText(/Best:/)).not.toBeInTheDocument()
-  })
-})
-
-describe('daily streak section', () => {
-  it('shows the current and best daily streak, sourced from the daily challenge streak', async () => {
+describe('daily streak line', () => {
+  it('shows the current and best daily streak as plain text on the menu, sourced from the daily challenge streak', async () => {
     vi.setSystemTime(new Date(2026, 0, 15, 12, 0, 0))
     const today = getLocalDateString()
     localStorage.setItem('order20-daily-streak', JSON.stringify({ count: 3, lastPlayedDate: today, bestStreak: 6 }))
@@ -174,108 +106,15 @@ describe('daily streak section', () => {
     )
 
     render(<App />)
-    await openSection('Daily streak')
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
 
-    expect(await screen.findByText('3')).toBeInTheDocument()
-    expect(screen.getByText('Best: 6')).toBeInTheDocument()
+    expect(await screen.findByText('Daily streak: 3 day streak')).toBeInTheDocument()
 
     vi.useRealTimers()
   })
 })
 
-describe('average score section', () => {
-  it('shows avg turns overall and in wins, and an accessible chart description', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 4,
-        totalWins: 1,
-        totalTurns: 20,
-        winTurns: 5,
-        currentWinStreak: 1,
-        bestWinStreak: 1,
-        scoreDistribution: [1, 2, 0, 1],
-        matrix: emptyMatrix(),
-        winMatrix: emptyMatrix(),
-        lossMatrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openSection('Average score')
-
-    expect(await screen.findByText('5.0')).toBeInTheDocument()
-    expect(screen.getByText('5.0 in wins')).toBeInTheDocument()
-
-    const chart = screen.getByRole('img', { name: /Average 5\.0 turns per game/ })
-    expect(chart).toHaveAccessibleName(
-      'Average 5.0 turns per game, 5.0 in wins: 1 game placed 0–5, 2 games placed 6–10, 0 games placed 11–15, 1 game placed 16–20',
-    )
-  })
-
-  it('omits the "in wins" clause when there are no wins yet', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 3,
-        totalWins: 0,
-        totalTurns: 9,
-        scoreDistribution: [3, 0, 0, 0],
-        matrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openSection('Average score')
-
-    expect(await screen.findByText('3.0')).toBeInTheDocument()
-    expect(screen.queryByText(/in wins/)).not.toBeInTheDocument()
-  })
-})
-
 describe('insights section', () => {
-  it('shows best and toughest range once a value range has enough signal', async () => {
-    const winMatrix = emptyMatrix()
-    winMatrix[0][2] = 4 // 201-300, clear win-rate winner
-    const lossMatrix = emptyMatrix()
-    lossMatrix[1][5] = 3 // 501-600, clear win-rate loser
-
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 7,
-        totalWins: 4,
-        totalTurns: 20,
-        matrix: emptyMatrix(),
-        winMatrix,
-        lossMatrix,
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openSection('Insights')
-
-    expect(await screen.findByRole('img', { name: 'Performance by value range. Best: 201–300. Toughest: 501–600.' })).toBeInTheDocument()
-  })
-
-  it('shows a not-enough-data message without enough signal in any range', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({ totalGames: 2, totalWins: 1, totalTurns: 10, matrix: emptyMatrix(), lossBucketCounts: Array(10).fill(0), lastGame: null }),
-    )
-
-    render(<App />)
-    await openSection('Insights')
-
-    expect(await screen.findByRole('img', { name: 'Not enough games yet to compare ranges.' })).toBeInTheDocument()
-  })
-
   it('shows a signature-position card once there are enough games', async () => {
     const matrix = emptyMatrix()
     matrix[3][0] = 5
@@ -316,13 +155,13 @@ describe('insights section', () => {
     expect(screen.getByText("Hard mode hasn't slowed you down. You do just as well without the hints.")).toBeInTheDocument()
   })
 
-  it('shows a hero strip of best score, average score, and games played today', async () => {
+  it('shows a hero strip of best score, average score, games played today, and total wins', async () => {
     localStorage.setItem('order20-best-score', '14')
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
         totalGames: 4,
-        totalWins: 2,
+        totalWins: 3,
         totalTurns: 16,
         currentWinStreak: 2,
         matrix: emptyMatrix(),
@@ -346,6 +185,8 @@ describe('insights section', () => {
     expect(within(heroStrip).getByText('games today')).toBeInTheDocument()
     // Only today's two logged games count, not the one from 2000-01-01.
     expect(within(heroStrip).getByText('2')).toBeInTheDocument()
+    expect(within(heroStrip).getByText('wins')).toBeInTheDocument()
+    expect(within(heroStrip).getByText('3')).toBeInTheDocument()
   })
 
   it('shows a best-position card once a position has enough win-associated signal', async () => {

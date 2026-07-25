@@ -15,16 +15,8 @@ const STATS_ENTRIES: Entry[] = [
     desc: "Where each value range has landed, by position, across every completed game. Darker cells mean it's landed there more often. Filter to wins only, losses only, or both; the outline marks where your last game's numbers went.",
   },
   {
-    term: 'Win rate and streak',
-    desc: "Percent of games won overall, your current win streak, and your best-ever streak once you've broken one.",
-  },
-  {
     term: 'Daily streak',
-    desc: "The same idea for the daily challenge: how many days in a row you've played, current and best.",
-  },
-  {
-    term: 'Average score',
-    desc: 'Average number of positions filled per game, overall and in wins only, plus a chart of how far your runs usually get.',
+    desc: "A plain line above the menu: how many days in a row you've played the daily challenge, current and best.",
   },
   {
     term: 'Leaderboard',
@@ -56,12 +48,11 @@ const DAILY_ENTRIES: Entry[] = [
 ]
 
 const INSIGHT_ENTRIES: Entry[] = [
-  { term: 'Best, average, and games today', desc: 'Your best-ever score, average score with a trend arrow against last week, and games played today with a 7-day sparkline.' },
-  { term: 'Last 30 days', desc: 'A calendar of games played each day, with your busiest day ever highlighted.' },
   {
-    term: 'Performance by range',
-    desc: 'A bar for every value range, showing which you handle best and which trips you up most. Once there\'s a clear toughest range, a "Practice" button starts a free-play game weighted toward it — still a real game, and it counts toward your stats like any other. A "Practicing X–Y" banner shows during that game, with a Stop link to end it early and go back to a normal roll without losing your board progress.',
+    term: 'Best, average, games today, and wins',
+    desc: 'Your best-ever score, average score with a trend arrow against last week, games played today with a 7-day sparkline, and total wins.',
   },
+  { term: 'Last 30 days', desc: 'A calendar of games played each day, with your busiest day ever highlighted.' },
   { term: 'Leaderboard reach', desc: "How many of today's games made the day, week, month, and all-time leaderboards." },
   { term: 'Best score over time', desc: 'A line chart of your personal best climbing as you set new records.' },
   { term: 'Closest calls', desc: 'How many games have ended exactly one placement short of your best.' },

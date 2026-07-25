@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.40.0',
+    date: '2026-07-25',
+    title: 'A simpler Stats screen',
+    description: 'Win rate, daily streak, and average score no longer sit behind their own pages. Daily streak is now a plain line above the menu, and wins joins best score, average score, and games today right on the Insights dashboard. The "Performance by range" chart and its practice button are gone too.',
+  },
+  {
     version: '1.39.0',
     date: '2026-07-25',
     title: 'How today stacks up against yesterday',

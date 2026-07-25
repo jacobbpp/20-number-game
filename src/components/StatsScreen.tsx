@@ -2,25 +2,19 @@ import { Fragment, useState } from 'react'
 import {
   BUCKET_SIZE,
   VALUE_BUCKETS,
-  allValueRangeStats,
   averageTurns,
-  averageTurnsInWins,
   bestPositionInsight,
   boardHalfComparison,
   bucketForValue,
-  bucketLabel,
   computeInsight,
   describeInsight,
-  describeScoreDistribution,
   hardModeWinRate,
   maxCount,
-  scoreBucketLabel,
   signaturePosition,
   streakMomentum,
   winRate,
   type StatsData,
 } from '../game/stats'
-import { BOARD_SIZE } from '../game/types'
 import { addDays, isStreakActive, type StreakData } from '../game/daily'
 import {
   activityWindow,
@@ -38,7 +32,7 @@ import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
 
 type HeatmapView = 'all' | 'wins' | 'losses'
-type StatsSection = 'menu' | 'heatmap' | 'wins' | 'daily' | 'average' | 'insights'
+type StatsSection = 'menu' | 'heatmap' | 'insights'
 type InsightsTab = 'dashboard' | 'patterns'
 
 const SHORT_GAME_THRESHOLD = 10
@@ -56,17 +50,13 @@ interface StatsScreenProps {
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
   onOpenLeaderboard: () => void
-  onPracticeRange: (bucket: number) => void
 }
 
-// Shorter than the menu row titles on purpose — the header has less room
-// to work with, and the section's own content spells things out again
-// right underneath (e.g. "win rate" / "average turns per game").
+// Shorter than the menu row title on purpose — the header has less room to
+// work with, and the section's own content spells things out again right
+// underneath.
 const SECTION_TITLES: Record<Exclude<StatsSection, 'menu'>, string> = {
   heatmap: 'Heatmap',
-  wins: 'Wins',
-  daily: 'Daily',
-  average: 'Average',
   insights: 'Insights',
 }
 
@@ -100,7 +90,6 @@ export function StatsScreen({
   onOpenHowToPlay,
   onOpenAchievements,
   onOpenLeaderboard,
-  onPracticeRange,
 }: StatsScreenProps) {
   const { totalGames, lastGame } = stats
   const [section, setSection] = useState<StatsSection>('menu')
@@ -111,16 +100,19 @@ export function StatsScreen({
   const insight = computeInsight(stats)
   const rate = winRate(stats)
   const avgTurns = averageTurns(stats)
-  const avgTurnsWins = averageTurnsInWins(stats)
   const bestPosition = bestPositionInsight(stats)
   const boardHalf = boardHalfComparison(stats)
   const momentum = streakMomentum(stats)
   const signature = signaturePosition(stats)
   const hardRate = hardModeWinRate(stats)
-  const scoreMax = Math.max(...stats.scoreDistribution, 1)
   const currentDailyStreak = isStreakActive(streak, today) ? streak.count : 0
+  const dailyStreakText =
+    currentDailyStreak > 0
+      ? `${currentDailyStreak} day streak`
+      : streak.bestStreak > 0
+        ? `Best: ${streak.bestStreak} days`
+        : 'No streak yet'
 
-  const rangeStats = allValueRangeStats(stats)
   const todayEntry = dailyActivity[today]
   const reach = todayReach(dailyActivity, today)
   const busiest = busiestDay(dailyActivity)
@@ -136,14 +128,6 @@ export function StatsScreen({
   const yesterdayEntry = dailyActivity[addDays(today, -1)]
   const yesterdayGames = gamesPlayed(yesterdayEntry)
   const yesterdayPassed = yesterdayGames - shortGamesCount(yesterdayEntry, SHORT_GAME_THRESHOLD)
-
-  const signalRanges = rangeStats.filter(stat => stat.hasSignal)
-  const bestRangeStat = signalRanges.length > 0 ? signalRanges.reduce((a, b) => (b.winRate > a.winRate ? b : a)) : null
-  const worstRangeStat = signalRanges.length > 0 ? signalRanges.reduce((a, b) => (b.winRate < a.winRate ? b : a)) : null
-  const rangeChartLabel =
-    bestRangeStat === null || worstRangeStat === null
-      ? 'Not enough games yet to compare ranges.'
-      : `Performance by value range. Best: ${bucketLabel(bestRangeStat.bucket)}. Toughest: ${bucketLabel(worstRangeStat.bucket)}.`
 
   const trendMin = trend.length > 0 ? trend[0].score : 0
   const trendMax = trend.length > 0 ? trend[trend.length - 1].score : 0
@@ -167,21 +151,10 @@ export function StatsScreen({
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
 
-  const winsPreview = `${rate}% win rate · streak ${stats.currentWinStreak}`
-  const dailyPreview =
-    currentDailyStreak > 0
-      ? `${currentDailyStreak} day streak`
-      : streak.bestStreak > 0
-        ? `Best: ${streak.bestStreak} days`
-        : 'No streak yet'
-  const averagePreview = `${avgTurns?.toFixed(1)} avg. turns`
   const insightsPreview = insightCount > 0 ? `${insightCount} pattern${insightCount === 1 ? '' : 's'} found` : 'Not enough data yet'
 
   const menuItems: { key: Exclude<StatsSection, 'menu'>; title: string; preview: string }[] = [
     { key: 'heatmap', title: 'Heatmap', preview: 'Where each value range lands' },
-    { key: 'wins', title: 'Win rate & streak', preview: winsPreview },
-    { key: 'daily', title: 'Daily streak', preview: dailyPreview },
-    { key: 'average', title: 'Average score', preview: averagePreview },
     { key: 'insights', title: 'Insights', preview: insightsPreview },
   ]
 
@@ -189,8 +162,6 @@ export function StatsScreen({
     if (section === 'menu') onClose()
     else setSection('menu')
   }
-
-  const scoreChartLabel = `Average ${avgTurns?.toFixed(1)} turns per game${avgTurnsWins !== null ? `, ${avgTurnsWins.toFixed(1)} in wins` : ''}: ${describeScoreDistribution(stats.scoreDistribution, BOARD_SIZE)}`
 
   return (
     <div className="stats-screen">
@@ -219,6 +190,9 @@ export function StatsScreen({
         <p className="stats-screen__empty">Play a full game to start building your stats.</p>
       ) : section === 'menu' ? (
         <div className="stats-screen__body stats-menu">
+          <p className="stats-screen__caption" style={{ textAlign: 'center', margin: '0 0 4px' }}>
+            Daily streak: {dailyStreakText}
+          </p>
           {menuItems.map(item => (
             <button key={item.key} type="button" className="stats-menu__row" onClick={() => setSection(item.key)}>
               <span className="stats-menu__row-text">
@@ -238,49 +212,6 @@ export function StatsScreen({
         </div>
       ) : (
         <div className="stats-screen__body">
-          {section === 'wins' && (
-            <div className="stats-hero-row">
-              <div className="stats-hero">
-                <span className="stats-hero__value">{rate}%</span>
-                <span className="stats-hero__label">win rate</span>
-              </div>
-              <div className="stats-hero">
-                <span className="stats-hero__value">{stats.currentWinStreak}</span>
-                <span className="stats-hero__label">win streak</span>
-                {stats.bestWinStreak > 0 && <span className="stats-hero__sublabel">Best: {stats.bestWinStreak}</span>}
-              </div>
-            </div>
-          )}
-
-          {section === 'daily' && (
-            <div className="stats-hero">
-              <span className="stats-hero__value">{currentDailyStreak}</span>
-              <span className="stats-hero__label">day streak</span>
-              {streak.bestStreak > 0 && <span className="stats-hero__sublabel">Best: {streak.bestStreak}</span>}
-            </div>
-          )}
-
-          {section === 'average' && (
-            <div className="score-distribution">
-              <div className="stats-hero">
-                <span className="stats-hero__value">{avgTurns?.toFixed(1)}</span>
-                <span className="stats-hero__label">average turns per game</span>
-                {avgTurnsWins !== null && <span className="stats-hero__sublabel">{avgTurnsWins.toFixed(1)} in wins</span>}
-              </div>
-              <div className="score-distribution__bars" role="img" aria-label={scoreChartLabel}>
-                {stats.scoreDistribution.map((count, bucket) => (
-                  <div key={bucket} className="score-distribution__col" aria-hidden="true">
-                    <div
-                      className="score-distribution__bar"
-                      style={{ height: `${(count / scoreMax) * 100}%`, backgroundColor: count === scoreMax && count > 0 ? 'var(--amber)' : 'var(--purple-pill-bg)' }}
-                    />
-                    <span className="score-distribution__label">{scoreBucketLabel(bucket, BOARD_SIZE)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {section === 'insights' && (
             <div className="insights-body">
               <div className="heatmap-toggle" role="group" aria-label="Insights view">
@@ -341,6 +272,10 @@ export function StatsScreen({
                     ))}
                   </div>
                 </div>
+                <div className="stats-hero-strip__card">
+                  <p className="stats-hero-strip__value">{stats.totalWins}</p>
+                  <p className="stats-hero-strip__label">wins</p>
+                </div>
               </div>
 
               {reach.gamesToday > 0 && shortToday > 0 && (
@@ -393,31 +328,6 @@ export function StatsScreen({
                       ? `Busiest day yet: ${busiest.games} game${busiest.games === 1 ? '' : 's'}, today.`
                       : `Busiest day: ${busiest.games} game${busiest.games === 1 ? '' : 's'}, on ${formatDailyDateLabel(busiest.date)}. Today: ${reach.gamesToday}.`}
                 </p>
-              </div>
-
-              <div className="insight-panel">
-                <p className="insight-panel__label">Performance by range</p>
-                <div className="range-bars" role="img" aria-label={rangeChartLabel}>
-                  {rangeStats.map(stat => {
-                    const isBest = bestRangeStat !== null && stat.bucket === bestRangeStat.bucket
-                    const isWorst = worstRangeStat !== null && stat.bucket === worstRangeStat.bucket && !isBest
-                    const color = !stat.hasSignal ? 'var(--text-disabled)' : isBest ? 'var(--win)' : isWorst ? 'var(--danger)' : 'var(--accent)'
-                    const width = stat.hasSignal ? `${Math.round(stat.winRate * 100)}%` : '8%'
-                    return (
-                      <div key={stat.bucket} className="range-bar-row" aria-hidden="true">
-                        <span className="range-bar-row__label">{bucketLabel(stat.bucket)}</span>
-                        <div className="range-bar-row__track">
-                          <div className="range-bar-row__fill" style={{ width, background: color, opacity: stat.hasSignal ? 1 : 0.4 }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                {worstRangeStat !== null && (
-                  <button type="button" className="insight-panel__action" onClick={() => onPracticeRange(worstRangeStat.bucket)}>
-                    Practice {bucketLabel(worstRangeStat.bucket)}
-                  </button>
-                )}
               </div>
 
               {reach.gamesToday > 0 && (
