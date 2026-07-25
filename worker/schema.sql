@@ -54,3 +54,14 @@ CREATE TABLE IF NOT EXISTS game_log (
 
 CREATE INDEX IF NOT EXISTS idx_game_log_device_date ON game_log (device_id, date);
 CREATE INDEX IF NOT EXISTS idx_game_log_date ON game_log (date);
+
+CREATE TABLE IF NOT EXISTS device_placements (
+  device_id TEXT NOT NULL,
+  board_size INTEGER NOT NULL,
+  position INTEGER NOT NULL,
+  value_bucket INTEGER NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (device_id, board_size, position, value_bucket)
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_placements_device ON device_placements (device_id);

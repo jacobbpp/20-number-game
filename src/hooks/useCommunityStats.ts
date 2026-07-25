@@ -32,12 +32,14 @@ export function useCommunityStats() {
 
   const reportPlacements = useCallback((placements: Placement[]) => {
     if (placements.length === 0) return
+    const deviceId = getOrCreateDeviceId()
     fetch(`${API_BASE}/placements`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         boardSize: BOARD_SIZE,
         placements: placements.map(p => ({ position: p.position, valueBucket: bucketForValue(p.value) })),
+        deviceId,
       }),
     }).catch(() => {
       // Best-effort — a failed report never affects gameplay.

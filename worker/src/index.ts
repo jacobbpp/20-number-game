@@ -13,6 +13,13 @@ const MAX_VALUE = 1000
 
 const ALLOWED_ORIGIN = 'https://jacobbpp.github.io'
 
+// Identifies a device across the streak leaderboard, the game log, and
+// per-device placements — never shown anywhere and carries no other
+// identity. Names alone aren't a safe key: two different devices can both
+// pick "TOM", so the client generates and keeps its own random deviceId
+// (order20-device-id in localStorage) instead.
+const DEVICE_ID_PATTERN = /^[A-Za-z0-9-]{8,64}$/
+
 function corsHeaders(): HeadersInit {
   return {
     'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
@@ -52,11 +59,12 @@ function isValidEntry(entry: unknown, boardSize: number): entry is PlacementEntr
 // has at most 30 positions, so that's also the request's natural cap.
 const MAX_PLACEMENTS_PER_REQUEST = 30
 
-function isValidBatch(body: unknown): body is { boardSize: number; placements: PlacementEntry[] } {
+function isValidBatch(body: unknown): body is { boardSize: number; placements: PlacementEntry[]; deviceId?: string } {
   if (!body || typeof body !== 'object') return false
-  const { boardSize, placements } = body as Record<string, unknown>
+  const { boardSize, placements, deviceId } = body as Record<string, unknown>
   if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
   if (!Array.isArray(placements) || placements.length === 0 || placements.length > MAX_PLACEMENTS_PER_REQUEST) return false
+  if (deviceId !== undefined && (typeof deviceId !== 'string' || !DEVICE_ID_PATTERN.test(deviceId))) return false
   return placements.every(entry => isValidEntry(entry, boardSize))
 }
 
@@ -72,14 +80,30 @@ async function handlePost(request: Request, env: Env): Promise<Response> {
     return json({ error: 'boardSize and placements (position, valueBucket, in range) are required.' }, 400)
   }
 
-  const { boardSize, placements } = body
+  const { boardSize, placements, deviceId } = body
   const statement = env.DB.prepare(
     `INSERT INTO placements (board_size, position, value_bucket, count)
      VALUES (?1, ?2, ?3, 1)
      ON CONFLICT (board_size, position, value_bucket)
      DO UPDATE SET count = count + 1`,
   )
-  await env.DB.batch(placements.map(entry => statement.bind(boardSize, entry.position, entry.valueBucket)))
+  const batch = placements.map(entry => statement.bind(boardSize, entry.position, entry.valueBucket))
+
+  // Mirrors the same rows into a per-device table so a favorite position
+  // ("most liked area") can be read back per player, not just as an
+  // anonymous community-wide total. Optional purely so an older cached
+  // client without a deviceId yet doesn't fail this request.
+  if (deviceId) {
+    const deviceStatement = env.DB.prepare(
+      `INSERT INTO device_placements (device_id, board_size, position, value_bucket, count)
+       VALUES (?1, ?2, ?3, ?4, 1)
+       ON CONFLICT (device_id, board_size, position, value_bucket)
+       DO UPDATE SET count = count + 1`,
+    )
+    batch.push(...placements.map(entry => deviceStatement.bind(deviceId, boardSize, entry.position, entry.valueBucket)))
+  }
+
+  await env.DB.batch(batch)
 
   return new Response(null, { status: 204, headers: corsHeaders() })
 }
@@ -418,14 +442,6 @@ async function handleDailyLeaderboard(request: Request, env: Env): Promise<Respo
   const entries = results.map(({ id, name, score, board, ending_roll }) => ({ id, name, score, board: parseBoard(board), endingRoll: ending_roll }))
   return json({ boardSize, date, entries })
 }
-
-// A "current active streak" leaderboard is one evolving row per player,
-// unlike scores/daily-scores which are an append-only log of independent
-// games. Names alone aren't a safe upsert key — two different devices can
-// both pick "TOM" — so the client generates and keeps its own random
-// deviceId (order20-device-id in localStorage) purely to key this table;
-// it's never shown anywhere and carries no other identity.
-const DEVICE_ID_PATTERN = /^[A-Za-z0-9-]{8,64}$/
 
 function yesterday(date: string): string {
   const [year, month, day] = date.split('-').map(Number)
