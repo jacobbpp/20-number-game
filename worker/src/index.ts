@@ -68,6 +68,33 @@ function isValidBatch(body: unknown): body is { boardSize: number; placements: P
   return placements.every(entry => isValidEntry(entry, boardSize))
 }
 
+// D1 caps bound parameters at 100 per query, and counts every statement in
+// a batch — not the batch itself — against the runtime's per-invocation
+// query limit (50 on the free plan, 1000 on paid; see
+// developers.cloudflare.com/d1/platform/limits). One INSERT per row would
+// have made a 30-position board (the largest any game produces) cost up to
+// 30 statements per table, so this builds one multi-row INSERT per chunk of
+// rows instead — a handful of statements per table regardless of board
+// size, and immune to which D1 plan the account happens to be on. Every row
+// here ends in a literal `1` for `count`, matching both callers' upsert
+// shape (start at 1, increment on conflict).
+function buildUpsertStatements(env: Env, insertPrefix: string, conflictSuffix: string, rows: (string | number)[][]): D1PreparedStatement[] {
+  if (rows.length === 0) return []
+  const columnsPerRow = rows[0].length
+  const rowsPerChunk = Math.floor(100 / columnsPerRow)
+  const statements: D1PreparedStatement[] = []
+
+  for (let start = 0; start < rows.length; start += rowsPerChunk) {
+    const chunk = rows.slice(start, start + rowsPerChunk)
+    const tuples = chunk
+      .map((_, i) => `(${Array.from({ length: columnsPerRow }, (_, c) => `?${i * columnsPerRow + c + 1}`).join(', ')}, 1)`)
+      .join(', ')
+    statements.push(env.DB.prepare(`${insertPrefix} VALUES ${tuples} ${conflictSuffix}`).bind(...chunk.flat()))
+  }
+
+  return statements
+}
+
 async function handlePost(request: Request, env: Env): Promise<Response> {
   let body: unknown
   try {
@@ -81,29 +108,29 @@ async function handlePost(request: Request, env: Env): Promise<Response> {
   }
 
   const { boardSize, placements, deviceId } = body
-  const statement = env.DB.prepare(
-    `INSERT INTO placements (board_size, position, value_bucket, count)
-     VALUES (?1, ?2, ?3, 1)
-     ON CONFLICT (board_size, position, value_bucket)
-     DO UPDATE SET count = count + 1`,
+  const statements = buildUpsertStatements(
+    env,
+    'INSERT INTO placements (board_size, position, value_bucket, count)',
+    'ON CONFLICT (board_size, position, value_bucket) DO UPDATE SET count = count + 1',
+    placements.map(entry => [boardSize, entry.position, entry.valueBucket]),
   )
-  const batch = placements.map(entry => statement.bind(boardSize, entry.position, entry.valueBucket))
 
   // Mirrors the same rows into a per-device table so a favorite position
   // ("most liked area") can be read back per player, not just as an
   // anonymous community-wide total. Optional purely so an older cached
   // client without a deviceId yet doesn't fail this request.
   if (deviceId) {
-    const deviceStatement = env.DB.prepare(
-      `INSERT INTO device_placements (device_id, board_size, position, value_bucket, count)
-       VALUES (?1, ?2, ?3, ?4, 1)
-       ON CONFLICT (device_id, board_size, position, value_bucket)
-       DO UPDATE SET count = count + 1`,
+    statements.push(
+      ...buildUpsertStatements(
+        env,
+        'INSERT INTO device_placements (device_id, board_size, position, value_bucket, count)',
+        'ON CONFLICT (device_id, board_size, position, value_bucket) DO UPDATE SET count = count + 1',
+        placements.map(entry => [deviceId, boardSize, entry.position, entry.valueBucket]),
+      ),
     )
-    batch.push(...placements.map(entry => deviceStatement.bind(deviceId, boardSize, entry.position, entry.valueBucket)))
   }
 
-  await env.DB.batch(batch)
+  await env.DB.batch(statements)
 
   return new Response(null, { status: 204, headers: corsHeaders() })
 }
