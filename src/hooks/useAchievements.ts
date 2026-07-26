@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ACHIEVEMENTS, unlockedAchievementIds, type Achievement, type AchievementContext } from '../game/achievements'
 import type { StreakData } from '../game/daily'
+import type { DailyActivityLog } from '../game/dailyActivity'
 import type { StatsData } from '../game/stats'
+import type { DailyResult } from './useDailyChallenge'
 
 const STORAGE_KEY = 'order20-achievements-unlocked'
 
@@ -48,14 +50,20 @@ function collapseMilestoneToasts(freshlyUnlocked: Achievement[]): Achievement[] 
   return freshlyUnlocked.filter((_, index) => !milestoneIndexes.includes(index) || index === keepIndex)
 }
 
-export function useAchievements(stats: StatsData, dailyStreak: StreakData, bestScore: number) {
+export function useAchievements(
+  stats: StatsData,
+  dailyStreak: StreakData,
+  bestScore: number,
+  dailyHistory: DailyResult[] = [],
+  dailyActivity: DailyActivityLog = {},
+) {
   const [unlockedAt, setUnlockedAt] = useState<Record<string, number>>(readStoredUnlockedAt)
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([])
   const isFirstSyncRef = useRef(true)
   const hadPriorHistoryRef = useRef(Object.keys(unlockedAt).length > 0)
 
   useEffect(() => {
-    const ctx: AchievementContext = { stats, dailyStreak, bestScore }
+    const ctx: AchievementContext = { stats, dailyStreak, bestScore, dailyHistory, dailyActivity }
     const currentlyUnlocked = unlockedAchievementIds(ctx)
     const freshIds = currentlyUnlocked.filter(id => !(id in unlockedAt))
     const isFirstSync = isFirstSyncRef.current
@@ -79,7 +87,7 @@ export function useAchievements(stats: StatsData, dailyStreak: StreakData, bestS
       const fresh = ACHIEVEMENTS.filter(achievement => freshIds.includes(achievement.id))
       setNewlyUnlocked(prev => [...prev, ...collapseMilestoneToasts(fresh)])
     }
-  }, [stats, dailyStreak, bestScore, unlockedAt])
+  }, [stats, dailyStreak, bestScore, dailyHistory, dailyActivity, unlockedAt])
 
   // Stable identity: App.tsx uses this in a timeout-reset effect keyed off
   // the newlyUnlocked queue, and a fresh function reference on every render

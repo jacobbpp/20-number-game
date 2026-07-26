@@ -150,3 +150,13 @@ export function todayReach(log: DailyActivityLog, today: string): { gamesToday: 
   const entry = log[today]
   return { gamesToday: gamesPlayed(entry), hits: entry?.leaderboardHits ?? { day: 0, week: 0, month: 0, all: 0 } }
 }
+
+// Whether any free-play game, on any day, has ever qualified for at least
+// one leaderboard window — a hit on "day" doesn't imply a hit on "all" (the
+// bars are independent), so every window on every day needs checking.
+export function hasEverQualifiedForLeaderboard(log: DailyActivityLog): boolean {
+  return Object.values(log).some(entry => {
+    const { day, week, month, all } = entry.leaderboardHits
+    return day > 0 || week > 0 || month > 0 || all > 0
+  })
+}

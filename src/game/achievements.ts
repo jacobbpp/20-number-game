@@ -1,11 +1,15 @@
 import type { StreakData } from './daily'
-import type { StatsData } from './stats'
-import { BOARD_SIZE } from './types'
+import { hasEverQualifiedForLeaderboard, type DailyActivityLog } from './dailyActivity'
+import { bucketForValue, type StatsData } from './stats'
+import { BOARD_SIZE, MAX_VALUE, MIN_VALUE } from './types'
+import type { DailyResult } from '../hooks/useDailyChallenge'
 
 export interface AchievementContext {
   stats: StatsData
   dailyStreak: StreakData
   bestScore: number
+  dailyHistory: DailyResult[]
+  dailyActivity: DailyActivityLog
 }
 
 export interface Achievement {
@@ -55,10 +59,55 @@ export const NAMED_ACHIEVEMENTS: Achievement[] = [
     isUnlocked: ({ dailyStreak }) => dailyStreak.bestStreak >= 7,
   },
   {
+    id: 'daily-win',
+    title: 'Perfect day',
+    description: 'Filled the whole board on a daily challenge.',
+    isUnlocked: ({ dailyHistory }) => dailyHistory.some(result => result.status === 'won'),
+  },
+  {
     id: 'century',
     title: 'Century',
     description: 'Play 100 games.',
     isUnlocked: ({ stats }) => stats.totalGames >= 100,
+  },
+  {
+    id: 'made-leaderboard',
+    title: 'On the board',
+    description: 'Had a free-play game good enough for the leaderboard.',
+    isUnlocked: ({ dailyActivity }) => hasEverQualifiedForLeaderboard(dailyActivity),
+  },
+  {
+    id: 'neighbours',
+    title: 'Neighbours',
+    description: 'Placed two rolls from neighbouring hundreds — like a 180 and a 240 — right next to each other on the board.',
+    isUnlocked: ({ stats }) => {
+      const placements = stats.lastGame?.placements ?? []
+      const valueByPosition = new Map(placements.map(p => [p.position, p.value]))
+      return placements.some(p => {
+        const next = valueByPosition.get(p.position + 1)
+        return next !== undefined && Math.abs(bucketForValue(p.value) - bucketForValue(next)) === 1
+      })
+    },
+  },
+  {
+    id: 'the-alexander',
+    title: 'The Alexander',
+    description: 'Placed a 1 or a 1000 anywhere except the very first or last spot.',
+    isUnlocked: ({ stats }) => {
+      const placements = stats.lastGame?.placements ?? []
+      return placements.some(
+        p => (p.value === MIN_VALUE && p.position !== 0) || (p.value === MAX_VALUE && p.position !== BOARD_SIZE - 1),
+      )
+    },
+  },
+  {
+    id: 'two-ends',
+    title: 'Two ends of the scale',
+    description: 'Placed a 1 and a 1000 in the same game.',
+    isUnlocked: ({ stats }) => {
+      const placements = stats.lastGame?.placements ?? []
+      return placements.some(p => p.value === MIN_VALUE) && placements.some(p => p.value === MAX_VALUE)
+    },
   },
 ]
 

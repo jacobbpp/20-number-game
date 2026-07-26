@@ -4,7 +4,7 @@ import { createEmptyStreak } from './daily'
 import { createEmptyStats } from './stats'
 
 function baseContext(): AchievementContext {
-  return { stats: createEmptyStats(), dailyStreak: createEmptyStreak(), bestScore: 0 }
+  return { stats: createEmptyStats(), dailyStreak: createEmptyStreak(), bestScore: 0, dailyHistory: [], dailyActivity: {} }
 }
 
 function find(id: string) {
@@ -66,6 +66,82 @@ describe('achievement unlock conditions', () => {
     expect(find('week-streak').isUnlocked(ctx)).toBe(false)
     ctx.dailyStreak.bestStreak = 7
     expect(find('week-streak').isUnlocked(ctx)).toBe(true)
+  })
+
+  it('daily-win unlocks once any recorded daily attempt has status won', () => {
+    const ctx = baseContext()
+    ctx.dailyHistory = [{ date: '2026-01-01', positions: [], placedCount: 10, status: 'lost', lossReason: 'no legal move' }]
+    expect(find('daily-win').isUnlocked(ctx)).toBe(false)
+
+    ctx.dailyHistory = [{ date: '2026-01-01', positions: [], placedCount: 10, status: 'won', lossReason: null }]
+    expect(find('daily-win').isUnlocked(ctx)).toBe(true)
+  })
+
+  it('made-leaderboard unlocks once any recorded day has a leaderboard hit in any window', () => {
+    const ctx = baseContext()
+    ctx.dailyActivity = {
+      '2026-01-01': { date: '2026-01-01', scoreHistogram: [], leaderboardHits: { day: 0, week: 0, month: 0, all: 0 } },
+    }
+    expect(find('made-leaderboard').isUnlocked(ctx)).toBe(false)
+
+    ctx.dailyActivity = {
+      '2026-01-01': { date: '2026-01-01', scoreHistogram: [], leaderboardHits: { day: 0, week: 1, month: 0, all: 0 } },
+    }
+    expect(find('made-leaderboard').isUnlocked(ctx)).toBe(true)
+  })
+
+  it('neighbours unlocks when two adjacent positions land in adjacent value buckets', () => {
+    const ctx = baseContext()
+    ctx.stats.lastGame = {
+      placements: [
+        { position: 0, value: 150 },
+        { position: 1, value: 550 },
+      ],
+      result: 'lost',
+      timestamp: 0,
+    }
+    expect(find('neighbours').isUnlocked(ctx)).toBe(false)
+
+    ctx.stats.lastGame = {
+      placements: [
+        { position: 0, value: 150 },
+        { position: 1, value: 250 },
+      ],
+      result: 'lost',
+      timestamp: 0,
+    }
+    expect(find('neighbours').isUnlocked(ctx)).toBe(true)
+  })
+
+  it('the-alexander unlocks when a 1 or 1000 lands away from the very first or last position', () => {
+    const ctx = baseContext()
+    ctx.stats.lastGame = { placements: [{ position: 0, value: 1 }], result: 'lost', timestamp: 0 }
+    expect(find('the-alexander').isUnlocked(ctx)).toBe(false)
+
+    ctx.stats.lastGame = { placements: [{ position: 1, value: 1 }], result: 'lost', timestamp: 0 }
+    expect(find('the-alexander').isUnlocked(ctx)).toBe(true)
+
+    ctx.stats.lastGame = { placements: [{ position: 19, value: 1000 }], result: 'lost', timestamp: 0 }
+    expect(find('the-alexander').isUnlocked(ctx)).toBe(false)
+
+    ctx.stats.lastGame = { placements: [{ position: 18, value: 1000 }], result: 'lost', timestamp: 0 }
+    expect(find('the-alexander').isUnlocked(ctx)).toBe(true)
+  })
+
+  it('two-ends requires both a 1 and a 1000 in the same game', () => {
+    const ctx = baseContext()
+    ctx.stats.lastGame = { placements: [{ position: 0, value: 1 }], result: 'lost', timestamp: 0 }
+    expect(find('two-ends').isUnlocked(ctx)).toBe(false)
+
+    ctx.stats.lastGame = {
+      placements: [
+        { position: 0, value: 1 },
+        { position: 19, value: 1000 },
+      ],
+      result: 'won',
+      timestamp: 0,
+    }
+    expect(find('two-ends').isUnlocked(ctx)).toBe(true)
   })
 })
 

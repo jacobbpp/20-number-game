@@ -94,7 +94,7 @@ function App() {
   }, [gameId])
 
   const { todayResult, streak, history, recordDailyResult } = useDailyChallenge(dailyDate)
-  const { unlockedAt: unlockedAchievements, newlyUnlocked, dismissNewlyUnlocked } = useAchievements(stats, streak, bestScore)
+  const { unlockedAt: unlockedAchievements, newlyUnlocked, dismissNewlyUnlocked } = useAchievements(stats, streak, bestScore, history, dailyActivity)
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
   const [showCoachMark, setShowCoachMark] = useState(false)
   const isFirstLaunchRef = useRef(!hasSeenOnboarding)

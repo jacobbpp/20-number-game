@@ -66,7 +66,7 @@ const INSIGHT_ENTRIES: Entry[] = [
 
 const ACHIEVEMENTS_ENTRY: Entry = {
   term: 'Trophy pill',
-  desc: 'Opens your achievements: a milestone badge for every free-play score from 1 to 20, plus named achievements for your first win, win streaks, games played, daily streaks, and winning with hard mode on.',
+  desc: "Opens your achievements: a milestone badge for every free-play score from 1 to 20, plus named achievements for your first win, win streaks, games played, daily streaks, winning a daily challenge outright, hard mode, the leaderboard, and a few odd ones for how your numbers actually landed.",
 }
 
 const SETTINGS_ENTRIES: Entry[] = [
