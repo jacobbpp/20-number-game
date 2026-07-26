@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.43.0',
+    date: '2026-07-26',
+    title: 'Full spectrum',
+    description: 'A new achievement for placing at least one number from every hundred, 1 to 1000, in a single game.',
+  },
+  {
     version: '1.42.0',
     date: '2026-07-26',
     title: 'Five new achievements',

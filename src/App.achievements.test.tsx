@@ -71,7 +71,7 @@ describe('achievements', () => {
     fireEvent.click(await screen.findByRole('button', { name: /🏆/ }))
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Achievements' })
-    expect(within(dialog).getByText('1 of 32 unlocked')).toBeInTheDocument()
+    expect(within(dialog).getByText('1 of 33 unlocked')).toBeInTheDocument()
     expect(within(dialog).getByText('First win')).toBeInTheDocument()
     expect(within(dialog).getByText('Century')).toBeInTheDocument()
   })
@@ -116,7 +116,7 @@ describe('achievements', () => {
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Achievements' })
     // A perfect 20/20 win unlocks first-win plus all 20 score milestones.
-    expect(within(dialog).getByText('21 of 32 unlocked')).toBeInTheDocument()
+    expect(within(dialog).getByText('21 of 33 unlocked')).toBeInTheDocument()
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 

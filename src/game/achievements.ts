@@ -1,6 +1,6 @@
 import type { StreakData } from './daily'
 import { hasEverQualifiedForLeaderboard, type DailyActivityLog } from './dailyActivity'
-import { bucketForValue, type StatsData } from './stats'
+import { bucketForValue, VALUE_BUCKETS, type StatsData } from './stats'
 import { BOARD_SIZE, MAX_VALUE, MIN_VALUE } from './types'
 import type { DailyResult } from '../hooks/useDailyChallenge'
 
@@ -107,6 +107,16 @@ export const NAMED_ACHIEVEMENTS: Achievement[] = [
     isUnlocked: ({ stats }) => {
       const placements = stats.lastGame?.placements ?? []
       return placements.some(p => p.value === MIN_VALUE) && placements.some(p => p.value === MAX_VALUE)
+    },
+  },
+  {
+    id: 'full-spectrum',
+    title: 'Full spectrum',
+    description: 'Placed at least one number from every hundred, 1 to 1000, in a single game.',
+    isUnlocked: ({ stats }) => {
+      const placements = stats.lastGame?.placements ?? []
+      const buckets = new Set(placements.map(p => bucketForValue(p.value)))
+      return buckets.size >= VALUE_BUCKETS
     },
   },
 ]

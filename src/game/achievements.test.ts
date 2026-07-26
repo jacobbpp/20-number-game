@@ -143,6 +143,17 @@ describe('achievement unlock conditions', () => {
     }
     expect(find('two-ends').isUnlocked(ctx)).toBe(true)
   })
+
+  it('full-spectrum requires a placement from every one of the 10 hundreds', () => {
+    const ctx = baseContext()
+    const nineBuckets = [50, 150, 250, 350, 450, 550, 650, 750, 850].map((value, position) => ({ position, value }))
+    ctx.stats.lastGame = { placements: nineBuckets, result: 'lost', timestamp: 0 }
+    expect(find('full-spectrum').isUnlocked(ctx)).toBe(false)
+
+    const allTenBuckets = [...nineBuckets, { position: 9, value: 950 }]
+    ctx.stats.lastGame = { placements: allTenBuckets, result: 'won', timestamp: 0 }
+    expect(find('full-spectrum').isUnlocked(ctx)).toBe(true)
+  })
 })
 
 describe('score milestones', () => {
