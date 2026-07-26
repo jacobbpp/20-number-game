@@ -68,6 +68,15 @@ describe('achievement unlock conditions', () => {
     expect(find('week-streak').isUnlocked(ctx)).toBe(true)
   })
 
+  it('near-perfect-day unlocks once any recorded daily attempt filled at least 90% of its board', () => {
+    const ctx = baseContext()
+    ctx.dailyHistory = [{ date: '2026-01-01', positions: Array(10).fill(null), placedCount: 8, status: 'lost', lossReason: 'no legal move' }]
+    expect(find('near-perfect-day').isUnlocked(ctx)).toBe(false)
+
+    ctx.dailyHistory = [{ date: '2026-01-01', positions: Array(10).fill(null), placedCount: 9, status: 'lost', lossReason: 'no legal move' }]
+    expect(find('near-perfect-day').isUnlocked(ctx)).toBe(true)
+  })
+
   it('daily-win unlocks once any recorded daily attempt has status won', () => {
     const ctx = baseContext()
     ctx.dailyHistory = [{ date: '2026-01-01', positions: [], placedCount: 10, status: 'lost', lossReason: 'no legal move' }]
@@ -90,12 +99,12 @@ describe('achievement unlock conditions', () => {
     expect(find('made-leaderboard').isUnlocked(ctx)).toBe(true)
   })
 
-  it('neighbours unlocks when two adjacent positions land in adjacent value buckets', () => {
+  it('neighbours unlocks when two adjacent positions hold consecutive values', () => {
     const ctx = baseContext()
     ctx.stats.lastGame = {
       placements: [
         { position: 0, value: 150 },
-        { position: 1, value: 550 },
+        { position: 1, value: 250 },
       ],
       result: 'lost',
       timestamp: 0,
@@ -104,8 +113,8 @@ describe('achievement unlock conditions', () => {
 
     ctx.stats.lastGame = {
       placements: [
-        { position: 0, value: 150 },
-        { position: 1, value: 250 },
+        { position: 0, value: 978 },
+        { position: 1, value: 979 },
       ],
       result: 'lost',
       timestamp: 0,
@@ -189,6 +198,6 @@ describe('unlockedAchievementIds', () => {
     ctx.stats.bestWinStreak = 5
     ctx.stats.totalGames = 100
 
-    expect(unlockedAchievementIds(ctx)).toEqual(['first-win', 'win-streak-3', 'win-streak-5', 'dedicated', 'century'])
+    expect(unlockedAchievementIds(ctx)).toEqual(['first-win', 'dedicated', 'century', 'win-streak-3', 'win-streak-5'])
   })
 })

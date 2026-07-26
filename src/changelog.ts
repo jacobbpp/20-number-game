@@ -9,6 +9,12 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.44.0',
+    date: '2026-07-26',
+    title: 'Near-perfect day, and a reordered ladder',
+    description: 'A new Near-perfect day achievement for filling at least 90% of a daily challenge board. Win streaks and Fearless moved to the end of the list, and Neighbours now means what it should have from the start: two consecutive numbers next to each other on the board, not just close ones.',
+  },
+  {
     version: '1.43.0',
     date: '2026-07-26',
     title: 'Full spectrum',

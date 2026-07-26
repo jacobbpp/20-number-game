@@ -33,15 +33,16 @@ function seedStats(overrides: Partial<Record<string, unknown>> = {}) {
 // A board one placement from winning: 19 of 20 slots filled in ascending
 // order, the last slot empty, and a roll already in hand that's the only
 // legal value for it — clicking it wins deterministically, no RNG involved.
-// Values 1-19 keep every filled position inside the same value bucket
-// (1-100), so this fixture doesn't incidentally also trip the "Neighbours"
-// achievement — it's meant to isolate first-win/milestone behavior only.
+// Values step by 10 (10, 20, 30, ...) so no two adjacent positions ever hold
+// consecutive values, keeping this fixture from incidentally also tripping
+// the "Neighbours" achievement — it's meant to isolate first-win/milestone
+// behavior only.
 function seedOneMoveFromWinning() {
   localStorage.setItem(
     'order20-current-game',
     JSON.stringify({
-      positions: Array.from({ length: 20 }, (_, i) => (i < 19 ? i + 1 : null)),
-      usedNumbers: Array.from({ length: 19 }, (_, i) => i + 1),
+      positions: Array.from({ length: 20 }, (_, i) => (i < 19 ? (i + 1) * 10 : null)),
+      usedNumbers: Array.from({ length: 19 }, (_, i) => (i + 1) * 10),
       currentRoll: 999,
       validPositions: [19],
       placedCount: 19,
@@ -71,7 +72,7 @@ describe('achievements', () => {
     fireEvent.click(await screen.findByRole('button', { name: /🏆/ }))
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Achievements' })
-    expect(within(dialog).getByText('1 of 33 unlocked')).toBeInTheDocument()
+    expect(within(dialog).getByText('1 of 34 unlocked')).toBeInTheDocument()
     expect(within(dialog).getByText('First win')).toBeInTheDocument()
     expect(within(dialog).getByText('Century')).toBeInTheDocument()
   })
@@ -116,7 +117,7 @@ describe('achievements', () => {
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Achievements' })
     // A perfect 20/20 win unlocks first-win plus all 20 score milestones.
-    expect(within(dialog).getByText('21 of 33 unlocked')).toBeInTheDocument()
+    expect(within(dialog).getByText('21 of 34 unlocked')).toBeInTheDocument()
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 

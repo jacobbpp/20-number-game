@@ -20,31 +20,15 @@ export interface Achievement {
 }
 
 // Ordered as the intended "ladder" — roughly easiest to hardest — since
-// that's the order they render in on the achievements screen.
+// that's the order they render in on the achievements screen. Win streaks
+// and hard mode sit at the very end on purpose: they're about play style,
+// not progress, so they don't need to be seen early to feel achievable.
 export const NAMED_ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first-win',
     title: 'First win',
     description: 'Filled all 20 positions for the first time.',
     isUnlocked: ({ stats }) => stats.totalWins >= 1,
-  },
-  {
-    id: 'win-streak-3',
-    title: 'Win streak: 3',
-    description: 'Win three games in a row.',
-    isUnlocked: ({ stats }) => stats.bestWinStreak >= 3,
-  },
-  {
-    id: 'win-streak-5',
-    title: 'Win streak: 5',
-    description: 'Win five games in a row.',
-    isUnlocked: ({ stats }) => stats.bestWinStreak >= 5,
-  },
-  {
-    id: 'fearless',
-    title: 'Fearless',
-    description: 'Win a game with hard mode on.',
-    isUnlocked: ({ stats }) => stats.hardModeWins >= 1,
   },
   {
     id: 'dedicated',
@@ -57,6 +41,12 @@ export const NAMED_ACHIEVEMENTS: Achievement[] = [
     title: 'Week streak',
     description: 'Keep the daily streak alive for 7 days.',
     isUnlocked: ({ dailyStreak }) => dailyStreak.bestStreak >= 7,
+  },
+  {
+    id: 'near-perfect-day',
+    title: 'Near-perfect day',
+    description: 'Filled at least 90% of a daily challenge board.',
+    isUnlocked: ({ dailyHistory }) => dailyHistory.some(result => result.placedCount / result.positions.length >= 0.9),
   },
   {
     id: 'daily-win',
@@ -79,13 +69,13 @@ export const NAMED_ACHIEVEMENTS: Achievement[] = [
   {
     id: 'neighbours',
     title: 'Neighbours',
-    description: 'Placed two rolls from neighbouring hundreds — like a 180 and a 240 — right next to each other on the board.',
+    description: 'Placed two consecutive numbers — like 978 and 979 — right next to each other on the board.',
     isUnlocked: ({ stats }) => {
       const placements = stats.lastGame?.placements ?? []
       const valueByPosition = new Map(placements.map(p => [p.position, p.value]))
       return placements.some(p => {
         const next = valueByPosition.get(p.position + 1)
-        return next !== undefined && Math.abs(bucketForValue(p.value) - bucketForValue(next)) === 1
+        return next !== undefined && Math.abs(p.value - next) === 1
       })
     },
   },
@@ -118,6 +108,24 @@ export const NAMED_ACHIEVEMENTS: Achievement[] = [
       const buckets = new Set(placements.map(p => bucketForValue(p.value)))
       return buckets.size >= VALUE_BUCKETS
     },
+  },
+  {
+    id: 'win-streak-3',
+    title: 'Win streak: 3',
+    description: 'Win three games in a row.',
+    isUnlocked: ({ stats }) => stats.bestWinStreak >= 3,
+  },
+  {
+    id: 'win-streak-5',
+    title: 'Win streak: 5',
+    description: 'Win five games in a row.',
+    isUnlocked: ({ stats }) => stats.bestWinStreak >= 5,
+  },
+  {
+    id: 'fearless',
+    title: 'Fearless',
+    description: 'Win a game with hard mode on.',
+    isUnlocked: ({ stats }) => stats.hardModeWins >= 1,
   },
 ]
 
