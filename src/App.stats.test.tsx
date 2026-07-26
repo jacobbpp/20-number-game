@@ -10,13 +10,13 @@ function emptyMatrix() {
   return Array.from({ length: 20 }, () => Array(10).fill(0))
 }
 
-async function openSection(name: string) {
+async function openStats() {
   fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
-  fireEvent.click(await screen.findByRole('button', { name: new RegExp(name) }))
 }
 
-async function openPatternsTab() {
-  fireEvent.click(await screen.findByRole('button', { name: 'Patterns' }))
+async function openHeatmap() {
+  await openStats()
+  fireEvent.click(await screen.findByRole('button', { name: /^Heatmap/ }))
 }
 
 beforeEach(() => {
@@ -30,8 +30,8 @@ afterEach(() => {
   cleanup()
 })
 
-describe('stats menu', () => {
-  it('shows a live preview of the Insights row, and a plain daily-streak line above the menu', async () => {
+describe('stats screen', () => {
+  it('shows the daily streak line and a not-enough-data message with no signal yet', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
@@ -49,38 +49,23 @@ describe('stats menu', () => {
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openStats()
 
     expect(await screen.findByText('Daily streak: No streak yet')).toBeInTheDocument()
-    expect(screen.getByText('Not enough data yet')).toBeInTheDocument()
+    expect(screen.getByText('Not enough games yet to spot a pattern. Keep playing.')).toBeInTheDocument()
   })
 
-  it('shows a pattern count on the Insights row once there is enough signal', async () => {
-    const matrix = emptyMatrix()
-    matrix[3][2] = 4
-
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({ totalGames: 6, totalWins: 2, totalTurns: 27, matrix, lossBucketCounts: Array(10).fill(0), lastGame: null }),
-    )
-
-    render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
-
-    expect(await screen.findByText('1 pattern found')).toBeInTheDocument()
-  })
-
-  it('navigating back from a section returns to the menu, not the game', async () => {
+  it('navigating back from the heatmap returns to stats, not the game', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({ totalGames: 1, totalWins: 1, totalTurns: 1, matrix: emptyMatrix(), lossBucketCounts: Array(10).fill(0), lastGame: null }),
     )
 
     render(<App />)
-    await openSection('Heatmap')
+    await openHeatmap()
     expect(await screen.findByText('Rarely lands here')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to stats menu' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Back to stats' }))
     expect(await screen.findByRole('button', { name: /^Heatmap/ })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to game' }))
@@ -89,7 +74,7 @@ describe('stats menu', () => {
 })
 
 describe('daily streak line', () => {
-  it('shows the current and best daily streak as plain text on the menu, sourced from the daily challenge streak', async () => {
+  it('shows the current and best daily streak as plain text, sourced from the daily challenge streak', async () => {
     vi.setSystemTime(new Date(2026, 0, 15, 12, 0, 0))
     const today = getLocalDateString()
     localStorage.setItem('order20-daily-streak', JSON.stringify({ count: 3, lastPlayedDate: today, bestStreak: 6 }))
@@ -106,7 +91,7 @@ describe('daily streak line', () => {
     )
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    await openStats()
 
     expect(await screen.findByText('Daily streak: 3 day streak')).toBeInTheDocument()
 
@@ -125,8 +110,7 @@ describe('insights section', () => {
     )
 
     render(<App />)
-    await openSection('Insights')
-    await openPatternsTab()
+    await openStats()
 
     expect(await screen.findByText('Signature position')).toBeInTheDocument()
     expect(screen.getByText(/Position 4 is your most-used slot, filled 5 times/)).toBeInTheDocument()
@@ -148,8 +132,7 @@ describe('insights section', () => {
     )
 
     render(<App />)
-    await openSection('Insights')
-    await openPatternsTab()
+    await openStats()
 
     expect(await screen.findByText('Hard mode')).toBeInTheDocument()
     expect(screen.getByText("Hard mode hasn't slowed you down. You do just as well without the hints.")).toBeInTheDocument()
@@ -176,7 +159,7 @@ describe('insights section', () => {
     localStorage.setItem('order20-daily-activity', JSON.stringify(dailyActivity))
 
     render(<App />)
-    await openSection('Insights')
+    await openStats()
 
     const heroStrip = (await screen.findByText('best score')).closest('.stats-hero-strip') as HTMLElement
     expect(within(heroStrip).getByText('14')).toBeInTheDocument()
@@ -210,8 +193,7 @@ describe('insights section', () => {
     )
 
     render(<App />)
-    await openSection('Insights')
-    await openPatternsTab()
+    await openStats()
 
     expect(await screen.findByText('Best position')).toBeInTheDocument()
     expect(screen.getByText('Position 4 is where you have your best record.')).toBeInTheDocument()
@@ -240,8 +222,7 @@ describe('insights section', () => {
     )
 
     render(<App />)
-    await openSection('Insights')
-    await openPatternsTab()
+    await openStats()
 
     expect(await screen.findByText('Board half')).toBeInTheDocument()
     expect(screen.getByText('Numbers you place in the top half of the board tend to work out better than the bottom half.')).toBeInTheDocument()
@@ -263,8 +244,7 @@ describe('insights section', () => {
     )
 
     render(<App />)
-    await openSection('Insights')
-    await openPatternsTab()
+    await openStats()
 
     expect(await screen.findByText('Streak momentum')).toBeInTheDocument()
     expect(screen.getByText('3 more wins ties your best streak ever.')).toBeInTheDocument()
@@ -293,7 +273,7 @@ describe('heatmap section', () => {
     )
 
     render(<App />)
-    await openSection('Heatmap')
+    await openHeatmap()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Wins' }))
     expect(screen.getByRole('button', { name: 'Wins' })).toHaveAttribute('aria-pressed', 'true')
@@ -311,7 +291,7 @@ describe('heatmap section', () => {
     )
 
     render(<App />)
-    await openSection('Heatmap')
+    await openHeatmap()
 
     const endsLabel = await screen.findByText('Rarely lands here')
     const legend = endsLabel.closest('.heatmap__legend') as HTMLElement

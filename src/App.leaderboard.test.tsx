@@ -429,7 +429,6 @@ describe('insights leaderboard activity', () => {
 
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
-    fireEvent.click(await screen.findByRole('button', { name: /Insights/ }))
 
     const panel = (await screen.findByText('🏆 Leaderboard reach')).closest('.insight-panel--leaderboard') as HTMLElement
     expect(within(panel).getByText('1')).toBeInTheDocument()

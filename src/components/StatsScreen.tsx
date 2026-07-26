@@ -32,8 +32,7 @@ import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
 
 type HeatmapView = 'all' | 'wins' | 'losses'
-type StatsSection = 'menu' | 'heatmap' | 'insights'
-type InsightsTab = 'dashboard' | 'patterns'
+type StatsSection = 'stats' | 'heatmap'
 
 const SHORT_GAME_THRESHOLD = 10
 
@@ -52,12 +51,8 @@ interface StatsScreenProps {
   onOpenLeaderboard: () => void
 }
 
-// Shorter than the menu row title on purpose — the header has less room to
-// work with, and the section's own content spells things out again right
-// underneath.
-const SECTION_TITLES: Record<Exclude<StatsSection, 'menu'>, string> = {
+const SECTION_TITLES: Record<Exclude<StatsSection, 'stats'>, string> = {
   heatmap: 'Heatmap',
-  insights: 'Insights',
 }
 
 const PANEL_RGB_DARK: RGB = [42, 33, 81] // #2A2151
@@ -92,9 +87,8 @@ export function StatsScreen({
   onOpenLeaderboard,
 }: StatsScreenProps) {
   const { totalGames, lastGame } = stats
-  const [section, setSection] = useState<StatsSection>('menu')
+  const [section, setSection] = useState<StatsSection>('stats')
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
-  const [insightsTab, setInsightsTab] = useState<InsightsTab>('dashboard')
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
   const peak = maxCount(activeMatrix)
   const insight = computeInsight(stats)
@@ -146,32 +140,24 @@ export function StatsScreen({
     hardRate !== null,
     insight !== null,
   ].filter(Boolean).length
-  const insightCount = patternCount + (reach.gamesToday > 0 ? 1 : 0) + (trend.length >= 2 ? 1 : 0) + (closeCalls > 0 ? 1 : 0)
 
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
 
-  const insightsPreview = insightCount > 0 ? `${insightCount} pattern${insightCount === 1 ? '' : 's'} found` : 'Not enough data yet'
-
-  const menuItems: { key: Exclude<StatsSection, 'menu'>; title: string; preview: string }[] = [
-    { key: 'heatmap', title: 'Heatmap', preview: 'Where each value range lands' },
-    { key: 'insights', title: 'Insights', preview: insightsPreview },
-  ]
-
   const handleBack = () => {
-    if (section === 'menu') onClose()
-    else setSection('menu')
+    if (section === 'stats') onClose()
+    else setSection('stats')
   }
 
   return (
     <div className="stats-screen">
       <div className="stats-screen__header">
-        <button type="button" className="icon-btn" onClick={handleBack} aria-label={section === 'menu' ? 'Back to game' : 'Back to stats menu'}>
+        <button type="button" className="icon-btn" onClick={handleBack} aria-label={section === 'stats' ? 'Back to game' : 'Back to stats'}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <span className="stats-screen__title">{section === 'menu' ? 'Stats' : SECTION_TITLES[section]}</span>
+        <span className="stats-screen__title">{section === 'stats' ? 'Stats' : SECTION_TITLES[section]}</span>
         <button type="button" className="icon-btn icon-btn--small" onClick={onOpenHowToPlay} aria-label="How to play">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M9.5 9a2.5 2.5 0 0 1 4.9.75c0 1.5-2.15 2-2.4 3.25" />
@@ -188,53 +174,14 @@ export function StatsScreen({
 
       {totalGames === 0 ? (
         <p className="stats-screen__empty">Play a full game to start building your stats.</p>
-      ) : section === 'menu' ? (
-        <div className="stats-screen__body stats-menu">
-          <p className="stats-screen__caption" style={{ textAlign: 'center', margin: '0 0 4px' }}>
-            Daily streak: {dailyStreakText}
-          </p>
-          {menuItems.map(item => (
-            <button key={item.key} type="button" className="stats-menu__row" onClick={() => setSection(item.key)}>
-              <span className="stats-menu__row-text">
-                <span className="stats-menu__row-title">{item.title}</span>
-                <span className="stats-menu__row-preview">{item.preview}</span>
-              </span>
-              <ChevronRightIcon />
-            </button>
-          ))}
-          <button type="button" className="stats-menu__row" onClick={onOpenLeaderboard}>
-            <span className="stats-menu__row-text">
-              <span className="stats-menu__row-title">Leaderboard</span>
-              <span className="stats-menu__row-preview">Top scores, day/week/month/all-time</span>
-            </span>
-            <ChevronRightIcon />
-          </button>
-        </div>
       ) : (
         <div className="stats-screen__body">
-          {section === 'insights' && (
+          {section === 'stats' && (
             <div className="insights-body">
-              <div className="heatmap-toggle" role="group" aria-label="Insights view">
-                <button
-                  type="button"
-                  className={`heatmap-toggle__option${insightsTab === 'dashboard' ? ' heatmap-toggle__option--active' : ''}`}
-                  aria-pressed={insightsTab === 'dashboard'}
-                  onClick={() => setInsightsTab('dashboard')}
-                >
-                  Dashboard
-                </button>
-                <button
-                  type="button"
-                  className={`heatmap-toggle__option${insightsTab === 'patterns' ? ' heatmap-toggle__option--active' : ''}`}
-                  aria-pressed={insightsTab === 'patterns'}
-                  onClick={() => setInsightsTab('patterns')}
-                >
-                  Patterns
-                </button>
-              </div>
+              <p className="stats-screen__caption" style={{ textAlign: 'center' }}>
+                Daily streak: {dailyStreakText}
+              </p>
 
-              {insightsTab === 'dashboard' && (
-              <>
               <div className="stats-hero-strip">
                 <div className="stats-hero-strip__card">
                   <p className="stats-hero-strip__value">{bestScore}</p>
@@ -394,11 +341,6 @@ export function StatsScreen({
                   </div>
                 </div>
               )}
-              </>
-              )}
-
-              {insightsTab === 'patterns' && (
-              <div className="insights-list">
 
               {signature !== null && (
                 <div className="insight-card insight-card--position">
@@ -488,8 +430,21 @@ export function StatsScreen({
               {patternCount === 0 && (
                 <p className="stats-screen__caption">Not enough games yet to spot a pattern. Keep playing.</p>
               )}
-              </div>
-              )}
+
+              <button type="button" className="stats-menu__row" onClick={() => setSection('heatmap')}>
+                <span className="stats-menu__row-text">
+                  <span className="stats-menu__row-title">Heatmap</span>
+                  <span className="stats-menu__row-preview">Where each value range lands</span>
+                </span>
+                <ChevronRightIcon />
+              </button>
+              <button type="button" className="stats-menu__row" onClick={onOpenLeaderboard}>
+                <span className="stats-menu__row-text">
+                  <span className="stats-menu__row-title">Leaderboard</span>
+                  <span className="stats-menu__row-preview">Top scores, day/week/month/all-time</span>
+                </span>
+                <ChevronRightIcon />
+              </button>
             </div>
           )}
 
