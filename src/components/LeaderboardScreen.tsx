@@ -230,7 +230,15 @@ export function LeaderboardScreen({
         )}
       </div>
 
-      {selected && <LeaderboardEntryScreen entry={selected.entry} rank={selected.rank} onClose={() => setSelected(null)} />}
+      {selected && (
+        <LeaderboardEntryScreen
+          entry={selected.entry}
+          rank={selected.rank}
+          isYou={selected.entry.name === rememberedName}
+          dailyDate={mode === 'daily' ? dailyDate : undefined}
+          onClose={() => setSelected(null)}
+        />
+      )}
 
       {showLockedToast && (
         <div className="locked-toast" role="status">

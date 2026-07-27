@@ -222,6 +222,30 @@ describe('leaderboard screen', () => {
     expect(await screen.findByText('2 of 3 placed · 552 had nowhere to go')).toBeInTheDocument()
   })
 
+  it('offers a Share button on your own entry, but not on someone else\'s', async () => {
+    seedPlayedStats()
+    localStorage.setItem('order20-leaderboard-name', 'REILLY')
+    const board = [100, null, 250]
+    mockLeaderboardApi({
+      entries: [
+        { id: 5, name: 'REILLY', score: 2, board },
+        { id: 6, name: 'TOM', score: 2, board },
+      ],
+    })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+
+    fireEvent.click(await screen.findByRole('button', { name: /REILLY/ }))
+    expect(await screen.findByRole('button', { name: 'Share' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+
+    fireEvent.click(await screen.findByRole('button', { name: /TOM/ }))
+    expect(await screen.findByRole('heading', { name: '#2 TOM' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument()
+  })
+
   it('switches to the daily leaderboard and fetches today\'s challenge instead', async () => {
     seedPlayedStats()
     const fetchMock = mockLeaderboardApi({

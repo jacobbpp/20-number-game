@@ -1,14 +1,17 @@
 import { ResultGrid } from './ResultGrid'
+import { ShareButton } from './ShareButton'
 import type { LeaderboardEntry } from '../hooks/useLeaderboard'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface LeaderboardEntryScreenProps {
   entry: LeaderboardEntry
   rank: number
+  isYou: boolean
+  dailyDate?: string
   onClose: () => void
 }
 
-export function LeaderboardEntryScreen({ entry, rank, onClose }: LeaderboardEntryScreenProps) {
+export function LeaderboardEntryScreen({ entry, rank, isYou, dailyDate, onClose }: LeaderboardEntryScreenProps) {
   const containerRef = useFocusTrap<HTMLDivElement>()
 
   return (
@@ -30,9 +33,23 @@ export function LeaderboardEntryScreen({ entry, rank, onClose }: LeaderboardEntr
           <p className="overlay__reason">This score was saved before boards were recorded, so there's nothing to show here.</p>
         )}
 
-        <button type="button" className="btn btn--primary" onClick={onClose} autoFocus>
-          Close
-        </button>
+        {isYou && entry.board ? (
+          <div className="overlay__actions">
+            <button type="button" className="btn btn--primary" onClick={onClose} autoFocus>
+              Close
+            </button>
+            <ShareButton
+              positions={entry.board}
+              placedCount={entry.score}
+              won={entry.score === entry.board.length}
+              dailyDate={dailyDate}
+            />
+          </div>
+        ) : (
+          <button type="button" className="btn btn--primary" onClick={onClose} autoFocus>
+            Close
+          </button>
+        )}
       </div>
     </div>
   )
