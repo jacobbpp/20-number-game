@@ -6,3 +6,18 @@ compatibility_date = "2026-07-19"
 binding = "DB"
 database_name = "order20-community-stats"
 database_id = "49b5b071-db4b-4edf-91c5-1fafaf078dcd"
+
+# 00:10 UTC, ten minutes after the day it summarises has ended, so there is no
+# race with a game logged in the last seconds before midnight.
+[triggers]
+crons = ["10 0 * * *"]
+
+[[durable_objects.bindings]]
+name = "ACTIVITY"
+class_name = "ActivityFeed"
+
+# new_sqlite_classes, not new_classes: the SQLite storage backend is the only
+# one available on the Workers free plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ActivityFeed"]

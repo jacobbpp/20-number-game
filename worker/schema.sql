@@ -55,6 +55,24 @@ CREATE TABLE IF NOT EXISTS game_log (
 CREATE INDEX IF NOT EXISTS idx_game_log_device_date ON game_log (device_id, date);
 CREATE INDEX IF NOT EXISTS idx_game_log_date ON game_log (date);
 
+-- One pre-computed row per completed day, written by the nightly cron rather
+-- than aggregated on every read. game_log can answer all of this directly,
+-- but only by scanning every row for that date on each request; the app opens
+-- this panel often and the answer never changes once the day is over. Keying
+-- on date (not an autoincrement id) makes a re-run of the same day an upsert,
+-- so a retried cron invocation can't double-count.
+CREATE TABLE IF NOT EXISTS daily_summary (
+  date TEXT PRIMARY KEY,
+  games INTEGER NOT NULL,
+  players INTEGER NOT NULL,
+  busiest_name TEXT,
+  busiest_games INTEGER,
+  best_name TEXT,
+  best_score INTEGER,
+  best_board_size INTEGER,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS device_placements (
   device_id TEXT NOT NULL,
   board_size INTEGER NOT NULL,

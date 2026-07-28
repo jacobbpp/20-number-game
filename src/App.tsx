@@ -27,6 +27,7 @@ import { useCurrentDailyGame } from './hooks/useCurrentDailyGame'
 import { useCurrentGame } from './hooks/useCurrentGame'
 import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useCommunityStats } from './hooks/useCommunityStats'
+import { useCommunityFeed, useYesterdayRecap } from './hooks/useGroupActivity'
 import { useGameStats } from './hooks/useGameStats'
 import { useHardMode } from './hooks/useHardMode'
 import { useLeaderboard, type LeaderboardWindow } from './hooks/useLeaderboard'
@@ -94,6 +95,11 @@ function App() {
   }, [gameId])
 
   const { todayResult, streak, history, recordDailyResult } = useDailyChallenge(dailyDate)
+  // Held here rather than inside StatsScreen on purpose: the live count is
+  // meant to mean "has the game open", so the connection has to outlive any
+  // one screen. See useCommunityFeed.
+  const groupFeed = useCommunityFeed()
+  const { recap: groupRecap, loaded: groupRecapLoaded } = useYesterdayRecap(dailyDate)
   const { unlockedAt: unlockedAchievements, newlyUnlocked, dismissNewlyUnlocked } = useAchievements(stats, streak, bestScore, history, dailyActivity)
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(!hasSeenOnboarding)
   const [showCoachMark, setShowCoachMark] = useState(false)
@@ -374,6 +380,9 @@ function App() {
           theme={theme}
           bestScore={bestScore}
           dailyActivity={dailyActivity}
+          groupFeed={groupFeed}
+          groupRecap={groupRecap}
+          groupRecapLoaded={groupRecapLoaded}
           unlockedAchievementCount={Object.keys(unlockedAchievements).length}
           totalAchievementCount={ACHIEVEMENTS.length}
           onClose={() => setIsStatsOpen(false)}

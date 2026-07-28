@@ -53,6 +53,14 @@ const INSIGHT_ENTRIES: Entry[] = [
     desc: 'Your best-ever score, average score with a trend arrow against last week, games played today with a 7-day sparkline, and total wins.',
   },
   { term: 'Last 30 days', desc: 'A calendar of games played each day, with your busiest day ever highlighted.' },
+  {
+    term: 'Yesterday in the group',
+    desc: "Everyone's day, not just yours: games played, how many people played, who played the most, and the best single run. It's worked out once overnight rather than every time you open the app, so it covers whole finished days and appears the morning after.",
+  },
+  {
+    term: 'Recent activity',
+    desc: "The last 20 games finished by anyone, newest first, updating live as they happen. A green dot means the live connection is up. When other people have the game open at the same time as you, it says so — that means the app is open, not that they're mid-game. Anyone who has never saved a leaderboard name shows as \"someone\".",
+  },
   { term: 'Leaderboard reach', desc: "How many of today's games made the day, week, month, and all-time leaderboards." },
   { term: 'Best score over time', desc: 'A line chart of your personal best climbing as you set new records.' },
   { term: 'Closest calls', desc: 'How many games have ended exactly one placement short of your best.' },

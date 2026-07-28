@@ -27,7 +27,9 @@ import {
   weeklyAverageDelta,
   type DailyActivityLog,
 } from '../game/dailyActivity'
+import { describeMode, displayName, formatRelativeTime } from '../game/groupFeed'
 import { formatDailyDateLabel } from '../game/share'
+import type { GroupFeed, GroupRecap } from '../hooks/useGroupActivity'
 import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
 
@@ -45,6 +47,9 @@ interface StatsScreenProps {
   unlockedAchievementCount: number
   totalAchievementCount: number
   dailyActivity: DailyActivityLog
+  groupFeed: GroupFeed
+  groupRecap: GroupRecap | null
+  groupRecapLoaded: boolean
   onClose: () => void
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
@@ -81,6 +86,9 @@ export function StatsScreen({
   unlockedAchievementCount,
   totalAchievementCount,
   dailyActivity,
+  groupFeed,
+  groupRecap,
+  groupRecapLoaded,
   onClose,
   onOpenHowToPlay,
   onOpenAchievements,
@@ -107,6 +115,9 @@ export function StatsScreen({
         ? `Best: ${streak.bestStreak} days`
         : 'No streak yet'
 
+  // Read once per render so every row in the activity feed is measured
+  // against the same instant rather than drifting apart down the list.
+  const now = Date.now()
   const todayEntry = dailyActivity[today]
   const reach = todayReach(dailyActivity, today)
   const busiest = busiestDay(dailyActivity)
@@ -275,6 +286,83 @@ export function StatsScreen({
                       ? `Busiest day yet: ${busiest.games} game${busiest.games === 1 ? '' : 's'}, today.`
                       : `Busiest day: ${busiest.games} game${busiest.games === 1 ? '' : 's'}, on ${formatDailyDateLabel(busiest.date)}. Today: ${reach.gamesToday}.`}
                 </p>
+              </div>
+
+              <div className="group-head">
+                <span className="group-head__text">The group</span>
+                <span className="group-head__rule" aria-hidden="true" />
+              </div>
+
+              <div className="insight-panel insight-panel--group">
+                <p className="insight-panel__label">Yesterday in the group</p>
+                {!groupRecapLoaded ? (
+                  <p className="stats-screen__caption">Fetching yesterday.</p>
+                ) : groupRecap === null ? (
+                  <p className="stats-screen__caption">Yesterday's round-up hasn't run yet. It lands overnight.</p>
+                ) : groupRecap.games === 0 ? (
+                  <p className="stats-screen__caption">Nobody played yesterday.</p>
+                ) : (
+                  <>
+                    <div className="recap-grid">
+                      <div className="recap-cell">
+                        <p className="recap-cell__val">{groupRecap.games}</p>
+                        <p className="recap-cell__lbl">game{groupRecap.games === 1 ? '' : 's'} played</p>
+                      </div>
+                      <div className="recap-cell">
+                        <p className="recap-cell__val">{groupRecap.players}</p>
+                        <p className="recap-cell__lbl">{groupRecap.players === 1 ? 'person' : 'people'} played</p>
+                      </div>
+                    </div>
+                    <p className="recap-line">
+                      {groupRecap.busiestGames !== null && (
+                        <>
+                          Busiest was <b>{displayName(groupRecap.busiestName)}</b> with {groupRecap.busiestGames} game
+                          {groupRecap.busiestGames === 1 ? '' : 's'}.{' '}
+                        </>
+                      )}
+                      {groupRecap.bestScore !== null && groupRecap.bestBoardSize !== null && (
+                        <>
+                          Best run was <b>{displayName(groupRecap.bestName)}</b> on {groupRecap.bestScore} of {groupRecap.bestBoardSize}.
+                        </>
+                      )}
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="insight-panel insight-panel--group">
+                <p className="insight-panel__label">
+                  {groupFeed.live && <span className="live-dot" aria-hidden="true" />}
+                  Recent activity
+                </p>
+                {groupFeed.playing > 0 && (
+                  // Deliberately "has the game open", not "is playing" — the
+                  // socket counts open connections, and claiming more than
+                  // that would be a small lie the panel can't back up.
+                  <p className="stats-screen__caption" style={{ margin: '-4px 0 10px' }}>
+                    {groupFeed.playing} {groupFeed.playing === 1 ? 'person has' : 'people have'} the game open.
+                  </p>
+                )}
+                {groupFeed.events.length === 0 ? (
+                  <p className="stats-screen__caption">No games finished recently.</p>
+                ) : (
+                  <ul className="feed">
+                    {groupFeed.events.map((event, index) => (
+                      <li key={`${event.at}-${index}`} className="feed__row">
+                        <span className="feed__name">{displayName(event.name)}</span>
+                        <span className="feed__what">{describeMode(event.mode)}</span>
+                        <span
+                          className={
+                            event.placedCount === event.boardSize ? 'feed__score feed__score--win' : 'feed__score'
+                          }
+                        >
+                          {event.placedCount}/{event.boardSize}
+                        </span>
+                        <span className="feed__when">{formatRelativeTime(event.at, now)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {reach.gamesToday > 0 && (

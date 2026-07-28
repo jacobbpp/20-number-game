@@ -5,6 +5,39 @@ function emptyMatrix() {
   return Array.from({ length: 20 }, () => Array(10).fill(0))
 }
 
+// useCommunityFeed opens a WebSocket as soon as <App /> mounts. The runtime
+// here has a real WebSocket implementation, so without this every test that
+// renders the app genuinely dials the deployed worker — slow, flaky, and it
+// throws asynchronously long after the test that started it has finished.
+// This stub connects to nothing. Tests that want to drive the feed replace it
+// and call the handlers themselves.
+class SilentWebSocket {
+  static readonly CONNECTING = 0
+  static readonly OPEN = 1
+  static readonly CLOSING = 2
+  static readonly CLOSED = 3
+
+  readyState = SilentWebSocket.CONNECTING
+  onopen: ((event: unknown) => void) | null = null
+  onmessage: ((event: { data: string }) => void) | null = null
+  onerror: ((event: unknown) => void) | null = null
+  onclose: ((event: unknown) => void) | null = null
+
+  readonly url: string
+
+  // Written out rather than declared as a constructor parameter property,
+  // which this project's erasableSyntaxOnly setting disallows.
+  constructor(url: string) {
+    this.url = url
+  }
+
+  send(): void {}
+
+  close(): void {
+    this.readyState = SilentWebSocket.CLOSED
+  }
+}
+
 // Both useCommunityStats and useLeaderboard fetch (or POST) on every mount
 // or completed game, so any test rendering <App /> would otherwise hit the
 // real network. Individual tests that care about a specific response
@@ -12,6 +45,7 @@ function emptyMatrix() {
 // re-establishes safe, empty defaults before every test: an all-zero
 // community matrix, and a leaderboard check that never qualifies.
 beforeEach(() => {
+  vi.stubGlobal('WebSocket', SilentWebSocket)
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL) => {

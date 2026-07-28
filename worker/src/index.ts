@@ -1,5 +1,8 @@
+import { DurableObject } from 'cloudflare:workers'
+
 export interface Env {
   DB: D1Database
+  ACTIVITY: DurableObjectNamespace<ActivityFeed>
 }
 
 // Mirrors src/game/stats.ts: VALUE_BUCKETS on the frontend, and the same
@@ -592,15 +595,312 @@ async function handleGameLog(request: Request, env: Env): Promise<Response> {
 
   const { deviceId, name, date, mode, boardSize, placedCount } = body
   const cleanName = typeof name === 'string' && name.trim().length > 0 ? name.trim().toUpperCase().slice(0, 8) : null
+  const loggedAt = new Date().toISOString()
 
   await env.DB.prepare(
     `INSERT INTO game_log (device_id, name, date, mode, board_size, placed_count, created_at)
      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
   )
-    .bind(deviceId, cleanName, date, mode, boardSize, placedCount, new Date().toISOString())
+    .bind(deviceId, cleanName, date, mode, boardSize, placedCount, loggedAt)
     .run()
 
+  // Same game, pushed to anyone watching the live feed. Awaited rather than
+  // fired into waitUntil: nothing on the client blocks on this response (the
+  // frontend's logGame discards it), so the few milliseconds cost nobody
+  // anything, and in exchange the event is guaranteed to be in the feed
+  // before we answer instead of racing the response. The catch keeps a feed
+  // problem from undoing a game_log write that already succeeded — D1 is the
+  // record that matters, the feed is ephemeral.
+  await env.ACTIVITY.getByName(FEED_INSTANCE)
+    .record({ name: cleanName, mode, boardSize, placedCount, at: loggedAt })
+    .catch(() => {})
+
   return new Response(null, { status: 204, headers: corsHeaders() })
+}
+
+export interface DailySummary {
+  date: string
+  games: number
+  players: number
+  busiestName: string | null
+  busiestGames: number | null
+  bestName: string | null
+  bestScore: number | null
+  bestBoardSize: number | null
+}
+
+// Rolls one finished day of game_log into a single daily_summary row. Names
+// come from game_log where the client sent one and fall back to the streaks
+// table otherwise, since most games are logged before a name is ever chosen —
+// a device that has never saved one stays null and reads as "someone".
+export async function rollUpDay(env: Env, date: string, now: string): Promise<DailySummary> {
+  const totals = await env.DB.prepare('SELECT COUNT(*) as games, COUNT(DISTINCT device_id) as players FROM game_log WHERE date = ?1')
+    .bind(date)
+    .first<{ games: number; players: number }>()
+
+  const games = totals?.games ?? 0
+  const players = totals?.players ?? 0
+
+  // A day nobody played still gets a row, so the app can say so plainly
+  // rather than showing an indefinite "nothing here yet".
+  const busiest =
+    games === 0
+      ? null
+      : await env.DB.prepare(
+          `SELECT COALESCE(gl.name, s.name) as name, COUNT(*) as games
+           FROM game_log gl LEFT JOIN streaks s ON s.device_id = gl.device_id
+           WHERE gl.date = ?1
+           GROUP BY gl.device_id
+           ORDER BY games DESC LIMIT 1`,
+        )
+          .bind(date)
+          .first<{ name: string | null; games: number }>()
+
+  // Ranked by share of the board filled, not raw count — board sizes vary
+  // from 10 to 30, so 30 placed on a 30-slot daily and 17 on a 20-slot free
+  // play are not the same achievement and raw count would always favour the
+  // bigger board.
+  const best =
+    games === 0
+      ? null
+      : await env.DB.prepare(
+          `SELECT COALESCE(gl.name, s.name) as name, gl.placed_count, gl.board_size
+           FROM game_log gl LEFT JOIN streaks s ON s.device_id = gl.device_id
+           WHERE gl.date = ?1
+           ORDER BY (CAST(gl.placed_count AS REAL) / gl.board_size) DESC, gl.placed_count DESC
+           LIMIT 1`,
+        )
+          .bind(date)
+          .first<{ name: string | null; placed_count: number; board_size: number }>()
+
+  const summary: DailySummary = {
+    date,
+    games,
+    players,
+    busiestName: busiest?.name ?? null,
+    busiestGames: busiest?.games ?? null,
+    bestName: best?.name ?? null,
+    bestScore: best?.placed_count ?? null,
+    bestBoardSize: best?.board_size ?? null,
+  }
+
+  await env.DB.prepare(
+    `INSERT INTO daily_summary (date, games, players, busiest_name, busiest_games, best_name, best_score, best_board_size, created_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+     ON CONFLICT (date) DO UPDATE SET
+       games = ?2, players = ?3, busiest_name = ?4, busiest_games = ?5,
+       best_name = ?6, best_score = ?7, best_board_size = ?8, created_at = ?9`,
+  )
+    .bind(
+      date,
+      games,
+      players,
+      summary.busiestName,
+      summary.busiestGames,
+      summary.bestName,
+      summary.bestScore,
+      summary.bestBoardSize,
+      now,
+    )
+    .run()
+
+  return summary
+}
+
+// The app asks with its own idea of today, the same way the streak
+// leaderboard does, so a player just past midnight in their timezone doesn't
+// get handed a recap they'd read as the wrong day.
+async function handleYesterdayRecap(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const today = url.searchParams.get('today') ?? ''
+
+  if (!DATE_PATTERN.test(today)) {
+    return json({ error: 'today (YYYY-MM-DD) is required.' }, 400)
+  }
+
+  const date = yesterday(today)
+  const row = await env.DB.prepare(
+    `SELECT date, games, players, busiest_name, busiest_games, best_name, best_score, best_board_size
+     FROM daily_summary WHERE date = ?1`,
+  )
+    .bind(date)
+    .first<{
+      date: string
+      games: number
+      players: number
+      busiest_name: string | null
+      busiest_games: number | null
+      best_name: string | null
+      best_score: number | null
+      best_board_size: number | null
+    }>()
+
+  if (!row) {
+    return json({ date, summary: null })
+  }
+
+  const summary: DailySummary = {
+    date: row.date,
+    games: row.games,
+    players: row.players,
+    busiestName: row.busiest_name,
+    busiestGames: row.busiest_games,
+    bestName: row.best_name,
+    bestScore: row.best_score,
+    bestBoardSize: row.best_board_size,
+  }
+
+  return json({ date, summary })
+}
+
+export interface FeedEvent {
+  name: string | null
+  mode: string
+  boardSize: number
+  placedCount: number
+  at: string
+}
+
+export interface FeedSnapshot {
+  events: FeedEvent[]
+  playing: number
+}
+
+// Only ever enough rows to fill the panel — this is a "what just happened"
+// feed, not a history. game_log already keeps the permanent record.
+const MAX_FEED_EVENTS = 20
+
+function isWebSocketUpgrade(request: Request): boolean {
+  return request.headers.get('Upgrade')?.toLowerCase() === 'websocket'
+}
+
+// A single shared instance ("the group") rather than one per player. That's
+// normally the Durable Object anti-pattern, but the coordination atom here
+// genuinely is the whole group: everyone reads the same feed and the same
+// live count, and there is exactly one of those. At this app's volume (a few
+// hundred games a day across a handful of people) there's no contention to
+// shard away from.
+const FEED_INSTANCE = 'group'
+
+export class ActivityFeed extends DurableObject<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env)
+    // Schema setup only — blockConcurrencyWhile here runs once per wake, and
+    // must never wrap request work or it serializes the whole object.
+    ctx.blockConcurrencyWhile(async () => {
+      this.ctx.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS events (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          mode TEXT NOT NULL,
+          board_size INTEGER NOT NULL,
+          placed_count INTEGER NOT NULL,
+          at TEXT NOT NULL
+        )
+      `)
+    })
+  }
+
+  // Called over RPC when a game is logged. Storage first, then push — a
+  // client that misses the broadcast still gets the event in its next
+  // snapshot, but an event that was only ever broadcast would be lost the
+  // moment this object hibernates.
+  async record(event: FeedEvent): Promise<void> {
+    this.ctx.storage.sql.exec(
+      'INSERT INTO events (name, mode, board_size, placed_count, at) VALUES (?, ?, ?, ?, ?)',
+      event.name,
+      event.mode,
+      event.boardSize,
+      event.placedCount,
+      event.at,
+    )
+    this.ctx.storage.sql.exec('DELETE FROM events WHERE id NOT IN (SELECT id FROM events ORDER BY id DESC LIMIT ?)', MAX_FEED_EVENTS)
+    this.broadcast()
+  }
+
+  async snapshot(): Promise<FeedSnapshot> {
+    return this.buildSnapshot()
+  }
+
+  private buildSnapshot(excluding?: WebSocket): FeedSnapshot {
+    const rows = this.ctx.storage.sql
+      .exec<{ name: string | null; mode: string; board_size: number; placed_count: number; at: string }>(
+        'SELECT name, mode, board_size, placed_count, at FROM events ORDER BY id DESC',
+      )
+      .toArray()
+
+    return {
+      events: rows.map(row => ({
+        name: row.name,
+        mode: row.mode,
+        boardSize: row.board_size,
+        placedCount: row.placed_count,
+        at: row.at,
+      })),
+      playing: this.ctx.getWebSockets().filter(socket => socket !== excluding).length,
+    }
+  }
+
+  // `excluding` exists for the disconnect case: getWebSockets() still lists a
+  // socket while its close handler is running, so counting naively there would
+  // report one player too many to everyone left.
+  private broadcast(excluding?: WebSocket): void {
+    const payload = JSON.stringify(this.buildSnapshot(excluding))
+    for (const socket of this.ctx.getWebSockets()) {
+      if (socket === excluding) continue
+      try {
+        socket.send(payload)
+      } catch {
+        // Already closing — its close handler will run and re-broadcast.
+      }
+    }
+  }
+
+  override async fetch(request: Request): Promise<Response> {
+    if (!isWebSocketUpgrade(request)) {
+      return new Response('Expected a websocket upgrade.', { status: 426 })
+    }
+
+    const [client, server] = Object.values(new WebSocketPair())
+    // acceptWebSocket, not server.accept() — this is what lets the object be
+    // evicted from memory while connections stay open, so idle players don't
+    // accrue duration charges.
+    this.ctx.acceptWebSocket(server)
+    // Sends to the newcomer and everyone already here, so the live count
+    // updates for all of them in one step.
+    this.broadcast()
+
+    return new Response(null, { status: 101, webSocket: client })
+  }
+
+  // Clients only listen; anything inbound is treated as a request to resync.
+  override async webSocketMessage(ws: WebSocket): Promise<void> {
+    ws.send(JSON.stringify(this.buildSnapshot()))
+  }
+
+  override async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
+    // 1006 is "abnormal closure" and is never valid to send back.
+    ws.close(code === 1006 ? 1000 : code, reason)
+    this.broadcast(ws)
+  }
+
+  override async webSocketError(ws: WebSocket): Promise<void> {
+    this.broadcast(ws)
+  }
+}
+
+// Two ways in: a WebSocket for live updates, or a plain GET that returns the
+// same snapshot once. The fallback matters because a network or browser that
+// blocks WebSockets would otherwise leave the panel empty forever rather than
+// merely un-live.
+async function handleActivity(request: Request, env: Env): Promise<Response> {
+  const stub = env.ACTIVITY.getByName(FEED_INSTANCE)
+
+  if (isWebSocketUpgrade(request)) {
+    return stub.fetch(request)
+  }
+
+  return json(await stub.snapshot())
 }
 
 export default {
@@ -655,6 +955,22 @@ export default {
       return handleGameLog(request, env)
     }
 
+    if (request.method === 'GET' && url.pathname === '/community/yesterday') {
+      return handleYesterdayRecap(request, env)
+    }
+
+    if (request.method === 'GET' && url.pathname === '/activity') {
+      return handleActivity(request, env)
+    }
+
     return json({ error: 'Not found.' }, 404)
+  },
+
+  // Fires just after midnight UTC, so the day being summarised has already
+  // ended and every game for it is in. Keying daily_summary on date makes a
+  // retried invocation an upsert rather than a duplicate.
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    const now = new Date().toISOString()
+    await rollUpDay(env, yesterday(now.slice(0, 10)), now)
   },
 }
