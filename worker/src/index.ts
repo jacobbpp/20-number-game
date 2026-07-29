@@ -473,7 +473,10 @@ async function handleDailyLeaderboard(request: Request, env: Env): Promise<Respo
   return json({ boardSize, date, entries })
 }
 
-function yesterday(date: string): string {
+// Exported for its own tests: both the streak leaderboard and the nightly
+// roll-up depend on it, and getting it wrong across a month or year boundary
+// would quietly attribute a day's games to the wrong date.
+export function yesterday(date: string): string {
   const [year, month, day] = date.split('-').map(Number)
   const d = new Date(Date.UTC(year, month - 1, day))
   d.setUTCDate(d.getUTCDate() - 1)
@@ -969,8 +972,12 @@ export default {
   // Fires just after midnight UTC, so the day being summarised has already
   // ended and every game for it is in. Keying daily_summary on date makes a
   // retried invocation an upsert rather than a duplicate.
-  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
-    const now = new Date().toISOString()
-    await rollUpDay(env, yesterday(now.slice(0, 10)), now)
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
+    // controller.scheduledTime rather than Date.now(): it's the instant this
+    // run was *meant* to fire. A delayed or retried invocation then still
+    // rolls up the day it was scheduled for, instead of whichever day it
+    // happened to actually run on.
+    const firedAt = new Date(controller.scheduledTime).toISOString()
+    await rollUpDay(env, yesterday(firedAt.slice(0, 10)), firedAt)
   },
 }
