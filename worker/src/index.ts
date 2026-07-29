@@ -621,6 +621,127 @@ async function handleGameLog(request: Request, env: Env): Promise<Response> {
   return new Response(null, { status: 204, headers: corsHeaders() })
 }
 
+// No 0/O or 1/I/L: the whole point is that someone reads this aloud across a
+// room, or copies it off one screen onto another, without a character that
+// looks like a different character.
+const TRANSFER_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
+const TRANSFER_CODE_LENGTH = 6
+const TRANSFER_TTL_MS = 15 * 60 * 1000
+// A saved game is a few kilobytes. This is a generous ceiling that still stops
+// the endpoint being used as free general-purpose storage.
+const MAX_TRANSFER_PAYLOAD_BYTES = 256 * 1024
+
+const TRANSFER_CODE_PATTERN = new RegExp(`^[${TRANSFER_ALPHABET}]{${TRANSFER_CODE_LENGTH}}$`)
+
+// crypto.getRandomValues rather than Math.random: this is the only thing
+// standing between a stranger and someone's saved game for fifteen minutes.
+// Rejection sampling keeps every character equally likely, which a plain
+// modulo would not.
+function generateTransferCode(): string {
+  const bytes = new Uint8Array(TRANSFER_CODE_LENGTH * 2)
+  let code = ''
+
+  while (code.length < TRANSFER_CODE_LENGTH) {
+    crypto.getRandomValues(bytes)
+    for (const byte of bytes) {
+      if (code.length === TRANSFER_CODE_LENGTH) break
+      if (byte < 248) code += TRANSFER_ALPHABET[byte % TRANSFER_ALPHABET.length]
+    }
+  }
+
+  return code
+}
+
+async function handleTransferCreate(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  if (!body || typeof body !== 'object' || typeof (body as { payload?: unknown }).payload !== 'string') {
+    return json({ error: 'payload (a string) is required.' }, 400)
+  }
+
+  const { payload } = body as { payload: string }
+  if (payload.length === 0 || payload.length > MAX_TRANSFER_PAYLOAD_BYTES) {
+    return json({ error: 'payload is empty or too large.' }, 400)
+  }
+
+  const now = Date.now()
+  const code = generateTransferCode()
+
+  // Expired rows are cleared out here rather than on a schedule. Transfers are
+  // rare and short-lived, so a sweep on write keeps the table small without
+  // needing its own cron.
+  await env.DB.prepare('DELETE FROM transfers WHERE expires_at < ?1').bind(new Date(now).toISOString()).run()
+
+  await env.DB.prepare('INSERT INTO transfers (code, payload, created_at, expires_at) VALUES (?1, ?2, ?3, ?4)')
+    .bind(code, payload, new Date(now).toISOString(), new Date(now + TRANSFER_TTL_MS).toISOString())
+    .run()
+
+  return json({ code, expiresAt: new Date(now + TRANSFER_TTL_MS).toISOString() })
+}
+
+async function handleTransferClaim(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  const rawCode = (body as { code?: unknown })?.code
+  if (typeof rawCode !== 'string') {
+    return json({ error: 'code is required.' }, 400)
+  }
+
+  // Typed by a person, so accept the shape they'd naturally produce.
+  const code = rawCode.trim().toUpperCase()
+  if (!TRANSFER_CODE_PATTERN.test(code)) {
+    return json({ error: 'That code does not look right.' }, 400)
+  }
+
+  const now = new Date().toISOString()
+  const row = await env.DB.prepare('SELECT payload, expires_at, claimed_at FROM transfers WHERE code = ?1')
+    .bind(code)
+    .first<{ payload: string; expires_at: string; claimed_at: string | null }>()
+
+  // One message for "no such code", "already used" and "too old". Telling the
+  // difference would confirm to a guesser that a code exists.
+  if (!row || row.claimed_at !== null || row.expires_at < now) {
+    return json({ error: 'That code has expired or has already been used.' }, 404)
+  }
+
+  // Marking claimed is conditional on it still being unclaimed, so two devices
+  // racing the same code can only ever have one of them win.
+  const claim = await env.DB.prepare('UPDATE transfers SET claimed_at = ?1 WHERE code = ?2 AND claimed_at IS NULL')
+    .bind(now, code)
+    .run()
+
+  if (!claim.meta.changes) {
+    return json({ error: 'That code has expired or has already been used.' }, 404)
+  }
+
+  return json({ payload: row.payload })
+}
+
+// Lets the sending device notice the move landed, so it can offer to clear
+// itself. Deliberately returns nothing but a boolean.
+async function handleTransferStatus(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const code = (url.searchParams.get('code') ?? '').trim().toUpperCase()
+
+  if (!TRANSFER_CODE_PATTERN.test(code)) {
+    return json({ error: 'code is required.' }, 400)
+  }
+
+  const row = await env.DB.prepare('SELECT claimed_at FROM transfers WHERE code = ?1').bind(code).first<{ claimed_at: string | null }>()
+
+  return json({ claimed: row?.claimed_at != null })
+}
+
 export interface DailySummary {
   date: string
   games: number
@@ -964,6 +1085,18 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/activity') {
       return handleActivity(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/transfer') {
+      return handleTransferCreate(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/transfer/claim') {
+      return handleTransferClaim(request, env)
+    }
+
+    if (request.method === 'GET' && url.pathname === '/transfer/status') {
+      return handleTransferStatus(request, env)
     }
 
     return json({ error: 'Not found.' }, 404)

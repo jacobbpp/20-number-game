@@ -1306,6 +1306,230 @@ button:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- move my game ---- */
+.transfer-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid rgba(var(--surface-tint-rgb), 0.1);
+  border-radius: 14px;
+  padding: 13px;
+  margin-bottom: 10px;
+  color: var(--text);
+  font: inherit;
+}
+
+.transfer-choice__txt b {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.transfer-choice__txt span {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.transfer-codebox {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 18px 14px;
+  text-align: center;
+  margin-bottom: 14px;
+  box-shadow: inset 2px 0 0 var(--cta);
+}
+
+.transfer-codebox__lbl {
+  margin: 0 0 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.transfer-code {
+  margin: 0;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--cta);
+}
+
+.transfer-codebox__timer {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.transfer-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transfer-list li {
+  position: relative;
+  padding: 3px 0 3px 18px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.transfer-list li::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--win);
+}
+
+.transfer-input__label {
+  display: block;
+  margin: 4px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.transfer-input {
+  width: 100%;
+  min-height: 56px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--surface-tint-rgb), 0.2);
+  background: var(--panel);
+  color: var(--cta);
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-align: center;
+  text-indent: 0.28em;
+  padding: 0 10px;
+}
+
+.transfer-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.transfer-input::placeholder {
+  color: var(--text-disabled);
+  opacity: 0.5;
+}
+
+.transfer-error {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.transfer-action {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.transfer-note {
+  margin-top: 14px;
+}
+
+.transfer-done {
+  text-align: center;
+  padding: 24px 0 10px;
+}
+
+.transfer-done__tick {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(126, 217, 168, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.transfer-done__title {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--win);
+}
+
+.transfer-done__sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.transfer-guide__label {
+  margin: 22px 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.transfer-guide {
+  display: grid;
+  gap: 12px;
+}
+
+.transfer-step {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 14px 14px 16px;
+}
+
+.transfer-step__art {
+  margin: 0 0 12px;
+  background: rgba(var(--surface-tint-rgb), 0.04);
+  border-radius: 12px;
+  padding: 10px 8px;
+}
+
+.transfer-step__art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.transfer-step__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-on);
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.transfer-step__title {
+  margin: 0 0 5px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.transfer-step__body {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
 .activity-cal {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

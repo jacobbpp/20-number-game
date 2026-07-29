@@ -14,6 +14,7 @@ interface SettingsScreenProps {
   version: string
   onOpenChangelog: () => void
   onOpenGuide: () => void
+  onOpenTransfer: () => void
   onClose: () => void
 }
 
@@ -29,6 +30,7 @@ export function SettingsScreen({
   version,
   onOpenChangelog,
   onOpenGuide,
+  onOpenTransfer,
   onClose,
 }: SettingsScreenProps) {
   const [isConfirmingReset, setIsConfirmingReset] = useState(false)
@@ -150,6 +152,16 @@ export function SettingsScreen({
             v{version}
           </button>
         </div>
+
+        <button type="button" className="stats-menu__row" onClick={onOpenTransfer}>
+          <span className="stats-menu__row-text">
+            <span className="stats-menu__row-title">Move my game</span>
+            <span className="stats-menu__row-preview">Put your stats and streak on another device</span>
+          </span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
 
         <button type="button" className="stats-menu__row" onClick={onOpenGuide}>
           <span className="stats-menu__row-text">

@@ -73,6 +73,20 @@ CREATE TABLE IF NOT EXISTS daily_summary (
   created_at TEXT NOT NULL
 );
 
+-- A game in transit between two devices. The payload is the sending device's
+-- own saved game, held only long enough to be collected: fifteen minutes, and
+-- once claimed the row keeps a claimed_at so the sender can be told it landed
+-- but the payload can never be handed out twice.
+CREATE TABLE IF NOT EXISTS transfers (
+  code TEXT PRIMARY KEY,
+  payload TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  claimed_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_transfers_expires ON transfers (expires_at);
+
 CREATE TABLE IF NOT EXISTS device_placements (
   device_id TEXT NOT NULL,
   board_size INTEGER NOT NULL,

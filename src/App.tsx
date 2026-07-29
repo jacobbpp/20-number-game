@@ -28,6 +28,7 @@ import { useCurrentGame } from './hooks/useCurrentGame'
 import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useCommunityStats } from './hooks/useCommunityStats'
 import { useCommunityFeed, useYesterdayRecap } from './hooks/useGroupActivity'
+import { TransferScreen } from './components/TransferScreen'
 import { useGameStats } from './hooks/useGameStats'
 import { useHardMode } from './hooks/useHardMode'
 import { useLeaderboard, type LeaderboardWindow } from './hooks/useLeaderboard'
@@ -46,6 +47,7 @@ function App() {
   const [isStatsOpen, setIsStatsOpen] = useState(false)
   const [isDailyOpen, setIsDailyOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isTransferOpen, setIsTransferOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [isChangelogOpen, setIsChangelogOpen] = useState(false)
   const [isGuideOpen, setIsGuideOpen] = useState(false)
@@ -410,12 +412,23 @@ function App() {
             setIsSettingsOpen(false)
             setIsGuideOpen(true)
           }}
+          onOpenTransfer={() => {
+            setIsSettingsOpen(false)
+            setIsTransferOpen(true)
+          }}
           onClose={() => setIsSettingsOpen(false)}
         />
       ) : isGuideOpen ? (
         <GuideScreen
           onClose={() => {
             setIsGuideOpen(false)
+            setIsSettingsOpen(true)
+          }}
+        />
+      ) : isTransferOpen ? (
+        <TransferScreen
+          onClose={() => {
+            setIsTransferOpen(false)
             setIsSettingsOpen(true)
           }}
         />

@@ -88,6 +88,10 @@ const SETTINGS_ENTRIES: Entry[] = [
     term: 'Home screen',
     desc: 'Turns the "Ready to play?" landing screen on or off. Off skips straight to the board on every load.',
   },
+  {
+    term: 'Move my game',
+    desc: "Puts your stats, streak, achievements and name onto another device. The device that has your game shows a six character code, good for fifteen minutes and usable once; you type that code into the new device and everything comes across. It's a one-time move, not a running sync, so afterwards you carry on playing on the new device. Receiving replaces whatever was already on that device, and once it lands the old one offers to clear itself but never does so on its own.",
+  },
   { term: 'Version', desc: "Shows the version you're on. Tap it to browse the full release history." },
   {
     term: 'Reset all data',

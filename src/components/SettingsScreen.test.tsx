@@ -15,6 +15,7 @@ function renderScreen(overrides: Partial<Parameters<typeof SettingsScreen>[0]> =
     version: '1.0.0',
     onOpenChangelog: vi.fn(),
     onOpenGuide: vi.fn(),
+    onOpenTransfer: vi.fn(),
     onClose: vi.fn(),
     ...overrides,
   }

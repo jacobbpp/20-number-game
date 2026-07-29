@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.47.0',
+    date: '2026-07-29',
+    title: 'Move your game to another device',
+    description:
+      "New phone, or cleared your browser? Settings now has Move my game. The device with your game shows a six character code, you type it into the new one, and your stats, streak, achievements and name all come across. There's an illustrated guide in there showing exactly which device does what.",
+  },
+  {
     version: '1.46.0',
     date: '2026-07-28',
     title: 'See what everyone else is up to',
