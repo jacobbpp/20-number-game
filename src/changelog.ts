@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.48.0',
+    date: '2026-07-29',
+    title: 'Tap a day in your play history',
+    description:
+      "The Last 30 days grid now works like a contribution chart: weekday columns, and five clear shades from quiet to busy. Tap any day you played and it opens underneath, showing how many games, your best that day, every score you got, and which leaderboards you reached.",
+  },
+  {
     version: '1.47.0',
     date: '2026-07-29',
     title: 'Move your game to another device',

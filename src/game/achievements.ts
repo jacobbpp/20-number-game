@@ -147,3 +147,11 @@ export const ACHIEVEMENTS: Achievement[] = [...NAMED_ACHIEVEMENTS, ...SCORE_MILE
 export function unlockedAchievementIds(ctx: AchievementContext): string[] {
   return ACHIEVEMENTS.filter(achievement => achievement.isUnlocked(ctx)).map(achievement => achievement.id)
 }
+
+// Counts only ids this version of the app actually knows about. The stored
+// record is append-only and can outlive the achievements in it — a renamed id,
+// or a saved game moved across from a newer version by Move my game — and
+// counting raw keys would then claim more unlocked than exist at all.
+export function countUnlocked(unlockedAt: Record<string, number>): number {
+  return ACHIEVEMENTS.filter(achievement => achievement.id in unlockedAt).length
+}

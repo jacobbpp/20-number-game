@@ -1,4 +1,4 @@
-import { ACHIEVEMENTS, NAMED_ACHIEVEMENTS, SCORE_MILESTONES } from '../game/achievements'
+import { ACHIEVEMENTS, NAMED_ACHIEVEMENTS, SCORE_MILESTONES, countUnlocked } from '../game/achievements'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface AchievementsScreenProps {
@@ -9,7 +9,7 @@ interface AchievementsScreenProps {
 
 export function AchievementsScreen({ unlockedAt, bestScore, onClose }: AchievementsScreenProps) {
   const containerRef = useFocusTrap<HTMLDivElement>()
-  const unlockedCount = ACHIEVEMENTS.filter(achievement => achievement.id in unlockedAt).length
+  const unlockedCount = countUnlocked(unlockedAt)
 
   return (
     <div className="overlay" role="alertdialog" aria-labelledby="achievements-title" ref={containerRef}>

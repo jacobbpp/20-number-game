@@ -17,18 +17,24 @@ import {
 } from '../game/stats'
 import { addDays, isStreakActive, type StreakData } from '../game/daily'
 import {
+  ACTIVITY_LEVELS,
+  activityLevel,
   activityWindow,
   bestScoreTrend,
   busiestDay,
+  calendarGrid,
   closestCalls,
   gamesPlayed,
+  leaderboardHitsForDay,
+  maxScore,
+  scoresForDay,
   shortGamesCount,
   todayReach,
   weeklyAverageDelta,
   type DailyActivityLog,
 } from '../game/dailyActivity'
 import { describeMode, displayName, formatRelativeTime } from '../game/groupFeed'
-import { formatDailyDateLabel } from '../game/share'
+import { formatDailyDateLabel, formatFullDateLabel } from '../game/share'
 import type { GroupFeed, GroupRecap } from '../hooks/useGroupActivity'
 import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
@@ -37,6 +43,9 @@ type HeatmapView = 'all' | 'wins' | 'losses'
 type StatsSection = 'stats' | 'heatmap'
 
 const SHORT_GAME_THRESHOLD = 10
+
+// Monday first, matching the grid's own padding.
+const WEEKDAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 interface StatsScreenProps {
   stats: StatsData
@@ -97,6 +106,7 @@ export function StatsScreen({
   const { totalGames, lastGame } = stats
   const [section, setSection] = useState<StatsSection>('stats')
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
   const peak = maxCount(activeMatrix)
   const insight = computeInsight(stats)
@@ -123,6 +133,10 @@ export function StatsScreen({
   const busiest = busiestDay(dailyActivity)
   const calendarDays = activityWindow(dailyActivity, today, 30)
   const calendarMax = Math.max(...calendarDays.map(day => day.games), 1)
+  const calendarCells = calendarGrid(dailyActivity, today, 30)
+  const selectedEntry = selectedDate === null ? undefined : dailyActivity[selectedDate]
+  const selectedScores = scoresForDay(selectedEntry)
+  const selectedHits = leaderboardHitsForDay(selectedEntry)
   const last7Days = activityWindow(dailyActivity, today, 7)
   const last7DaysMax = Math.max(...last7Days.map(day => day.games), 1)
   const trend = bestScoreTrend(dailyActivity)
@@ -255,30 +269,56 @@ export function StatsScreen({
 
               <div className="insight-panel">
                 <p className="insight-panel__label">Last 30 days</p>
-                <div
-                  className="activity-cal"
-                  role="img"
-                  aria-label={`Games played each day for the last 30 days. ${
-                    busiest ? `Busiest day: ${busiest.games} game${busiest.games === 1 ? '' : 's'} on ${busiest.date}.` : 'No games logged yet.'
-                  }`}
-                >
-                  {calendarDays.map(day => {
-                    const isToday = day.date === today
-                    const isBusiest = busiest !== null && day.date === busiest.date && day.games > 0
-                    const alpha = day.games === 0 ? 0 : 0.15 + (day.games / calendarMax) * 0.85
+
+                <div className="activity-cal__dows" aria-hidden="true">
+                  {WEEKDAY_INITIALS.map((initial, index) => (
+                    <span key={index}>{initial}</span>
+                  ))}
+                </div>
+
+                <div className="activity-cal">
+                  {calendarCells.map((cell, index) => {
+                    // Leading blanks exist only to push the first real day into
+                    // its true weekday column.
+                    if (cell.date === null) {
+                      return <span key={`pad-${index}`} className="activity-cal__cell activity-cal__cell--pad" aria-hidden="true" />
+                    }
+
+                    const level = activityLevel(cell.games, calendarMax)
+                    const classes = ['activity-cal__cell', `activity-cal__cell--l${level}`]
+                    if (cell.date === today) classes.push('activity-cal__cell--today')
+                    if (cell.date === selectedDate) classes.push('activity-cal__cell--selected')
+
+                    // A day with nothing on it has nothing to open, so it stays
+                    // a plain square rather than a button that leads nowhere.
+                    if (cell.games === 0) {
+                      return <span key={cell.date} className={classes.join(' ')} aria-hidden="true" />
+                    }
+
+                    const dayBest = maxScore(dailyActivity[cell.date])
                     return (
-                      <div
-                        key={day.date}
-                        className="activity-cal__cell"
-                        aria-hidden="true"
-                        style={{
-                          background: day.games === 0 ? 'rgba(var(--surface-tint-rgb), 0.06)' : `rgba(207, 143, 95, ${alpha.toFixed(2)})`,
-                          boxShadow: isToday ? '0 0 0 1.5px var(--text)' : isBusiest ? '0 0 0 1.5px #f2c869' : 'none',
-                        }}
+                      <button
+                        key={cell.date}
+                        type="button"
+                        className={classes.join(' ')}
+                        aria-pressed={cell.date === selectedDate}
+                        aria-label={`${formatFullDateLabel(cell.date)}, ${cell.games} game${cell.games === 1 ? '' : 's'}${
+                          dayBest !== null ? `, best ${dayBest}` : ''
+                        }`}
+                        onClick={() => setSelectedDate(current => (current === cell.date ? null : cell.date))}
                       />
                     )
                   })}
                 </div>
+
+                <div className="activity-legend" aria-hidden="true">
+                  <span>Quieter</span>
+                  {Array.from({ length: ACTIVITY_LEVELS + 1 }, (_, level) => (
+                    <i key={level} className={`activity-cal__cell activity-cal__cell--l${level}`} />
+                  ))}
+                  <span>Busier</span>
+                </div>
+
                 <p className="stats-screen__caption" style={{ margin: '10px 0 0' }}>
                   {busiest === null
                     ? 'No games logged yet.'
@@ -287,6 +327,43 @@ export function StatsScreen({
                       : `Busiest day: ${busiest.games} game${busiest.games === 1 ? '' : 's'}, on ${formatDailyDateLabel(busiest.date)}. Today: ${reach.gamesToday}.`}
                 </p>
               </div>
+
+              {selectedDate !== null && (
+                <div className="insight-panel day-detail">
+                  <div className="day-detail__top">
+                    <p className="day-detail__date">{formatFullDateLabel(selectedDate)}</p>
+                    <button type="button" className="day-detail__close" onClick={() => setSelectedDate(null)}>
+                      Close
+                    </button>
+                  </div>
+
+                  <div className="day-detail__stats">
+                    <div className="day-detail__stat">
+                      <p className="day-detail__stat-val">{selectedScores.length}</p>
+                      <p className="day-detail__stat-lbl">game{selectedScores.length === 1 ? '' : 's'}</p>
+                    </div>
+                    <div className="day-detail__stat">
+                      <p className="day-detail__stat-val">{selectedScores[0] ?? '—'}</p>
+                      <p className="day-detail__stat-lbl">best that day</p>
+                    </div>
+                  </div>
+
+                  <p className="day-detail__sub">Every score, best first</p>
+                  <div className="day-detail__chips">
+                    {selectedScores.map((score, index) => (
+                      <span key={index} className={index === 0 ? 'day-detail__chip day-detail__chip--best' : 'day-detail__chip'}>
+                        {score}
+                      </span>
+                    ))}
+                  </div>
+
+                  {selectedHits.length > 0 && (
+                    <p className="day-detail__note">
+                      {selectedHits.map(hit => `${hit.count} reached the ${hit.label} board`).join(', ')}.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="group-head">
                 <span className="group-head__text">The group</span>

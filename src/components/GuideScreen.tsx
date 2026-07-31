@@ -52,7 +52,10 @@ const INSIGHT_ENTRIES: Entry[] = [
     term: 'Best, average, games today, and wins',
     desc: 'Your best-ever score, average score with a trend arrow against last week, games played today with a 7-day sparkline, and total wins.',
   },
-  { term: 'Last 30 days', desc: 'A calendar of games played each day, with your busiest day ever highlighted.' },
+  {
+    term: 'Last 30 days',
+    desc: "A calendar of games played each day, in weekday columns like a contribution grid, shaded in five steps from quiet to busy. Tap any day you played to open it underneath: how many games, your best that day, every score you hit listed highest first, and which leaderboards you reached. Tap it again to close. Days with no games aren't tappable, since there's nothing to show. The scores are a ranked list rather than the order you played them, because only the day's totals are kept, not each individual game.",
+  },
   {
     term: 'Yesterday in the group',
     desc: "Everyone's day, not just yours: games played, how many people played, who played the most, and the best single run. It's worked out once overnight rather than every time you open the app, so it covers whole finished days and appears the morning after.",

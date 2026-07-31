@@ -1530,6 +1530,19 @@ button:focus-visible {
   color: var(--text-dim);
 }
 
+.activity-cal__dows {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.activity-cal__dows span {
+  font-size: 9px;
+  text-align: center;
+  color: var(--text-disabled);
+}
+
 .activity-cal {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1539,6 +1552,153 @@ button:focus-visible {
 .activity-cal__cell {
   aspect-ratio: 1;
   border-radius: 3px;
+  border: none;
+  padding: 0;
+}
+
+/* Four filled steps rather than a continuous fade, so two genuinely different
+   days can't come out looking the same. */
+.activity-cal__cell--l0 {
+  background: rgba(var(--surface-tint-rgb), 0.06);
+}
+
+.activity-cal__cell--l1 {
+  background: rgba(207, 143, 95, 0.28);
+}
+
+.activity-cal__cell--l2 {
+  background: rgba(207, 143, 95, 0.52);
+}
+
+.activity-cal__cell--l3 {
+  background: rgba(207, 143, 95, 0.76);
+}
+
+.activity-cal__cell--l4 {
+  background: rgba(207, 143, 95, 1);
+}
+
+.activity-cal__cell--pad {
+  background: transparent;
+}
+
+.activity-cal__cell--today {
+  box-shadow: 0 0 0 1.5px var(--text);
+}
+
+/* After today's outline, so a selected day still reads as selected. */
+.activity-cal__cell--selected {
+  box-shadow: 0 0 0 2px var(--win);
+}
+
+button.activity-cal__cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.activity-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 9.5px;
+  color: var(--text-disabled);
+}
+
+.activity-legend i {
+  width: 11px;
+  height: 11px;
+  aspect-ratio: auto;
+  display: block;
+}
+
+.day-detail {
+  box-shadow: inset 2px 0 0 var(--win);
+}
+
+.day-detail__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.day-detail__date {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.day-detail__close {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.day-detail__stats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.day-detail__stat {
+  flex: 1;
+  background: rgba(var(--surface-tint-rgb), 0.05);
+  border-radius: 9px;
+  padding: 8px 9px;
+}
+
+.day-detail__stat-val {
+  margin: 0;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-detail__stat-lbl {
+  margin: 1px 0 0;
+  font-size: 9.5px;
+  color: var(--text-dim);
+}
+
+.day-detail__sub {
+  margin: 0 0 7px;
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.day-detail__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.day-detail__chip {
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(var(--surface-tint-rgb), 0.08);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.day-detail__chip--best {
+  background: var(--cta-tint);
+  color: var(--cta);
+}
+
+.day-detail__note {
+  margin: 11px 0 0;
+  font-size: 11.5px;
+  color: var(--text-dim);
 }
 
 .range-bars {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ACHIEVEMENTS, SCORE_MILESTONES, unlockedAchievementIds, type AchievementContext } from './achievements'
+import { ACHIEVEMENTS, SCORE_MILESTONES, countUnlocked, unlockedAchievementIds, type AchievementContext } from './achievements'
 import { createEmptyStreak } from './daily'
 import { createEmptyStats } from './stats'
 
@@ -199,5 +199,27 @@ describe('unlockedAchievementIds', () => {
     ctx.stats.totalGames = 100
 
     expect(unlockedAchievementIds(ctx)).toEqual(['first-win', 'dedicated', 'century', 'win-streak-3', 'win-streak-5'])
+  })
+})
+
+describe('countUnlocked', () => {
+  it('counts the achievements that are actually unlocked', () => {
+    expect(countUnlocked({ 'first-win': 1, dedicated: 2 })).toBe(2)
+    expect(countUnlocked({})).toBe(0)
+  })
+
+  it('ignores ids this version knows nothing about', () => {
+    // The stored record is append-only, so it can outlive the achievements in
+    // it — a renamed id, or a game moved across from a newer version. Counting
+    // raw keys would report more unlocked than exist at all.
+    expect(countUnlocked({ 'first-win': 1, 'from-a-newer-version': 2, 'renamed-long-ago': 3 })).toBe(1)
+  })
+
+  it('can never exceed the number of achievements that exist', () => {
+    const everything: Record<string, number> = {}
+    ACHIEVEMENTS.forEach(achievement => (everything[achievement.id] = 1))
+    for (let i = 0; i < 20; i++) everything[`unknown-${i}`] = 1
+
+    expect(countUnlocked(everything)).toBe(ACHIEVEMENTS.length)
   })
 })

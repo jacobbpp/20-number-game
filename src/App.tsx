@@ -16,7 +16,7 @@ import { StatsScreen } from './components/StatsScreen'
 import { WhatsNewScreen } from './components/WhatsNewScreen'
 import { WinScreen } from './components/WinScreen'
 import { CHANGELOG } from './changelog'
-import { ACHIEVEMENTS } from './game/achievements'
+import { ACHIEVEMENTS, countUnlocked } from './game/achievements'
 import { createDailyRng, getDailyBoardSize, getLocalDateString, recordDailyStreak } from './game/daily'
 import { place, roll } from './game/engine'
 import { extractPlacements, suggestedPosition } from './game/stats'
@@ -385,7 +385,7 @@ function App() {
           groupFeed={groupFeed}
           groupRecap={groupRecap}
           groupRecapLoaded={groupRecapLoaded}
-          unlockedAchievementCount={Object.keys(unlockedAchievements).length}
+          unlockedAchievementCount={countUnlocked(unlockedAchievements)}
           totalAchievementCount={ACHIEVEMENTS.length}
           onClose={() => setIsStatsOpen(false)}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}

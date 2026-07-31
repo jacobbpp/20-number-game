@@ -16,6 +16,14 @@ export function formatDailyDateLabel(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+// Includes the weekday, for a date that has to stand on its own rather than
+// sit in a list where its neighbours give it context.
+export function formatFullDateLabel(dateString: string): string {
+  const [year, month, day] = dateString.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' })
+}
+
 export function buildDailyShareText(
   positions: (number | null)[],
   placedCount: number,

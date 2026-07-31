@@ -123,6 +123,68 @@ export function activityWindow(log: DailyActivityLog, today: string, days: numbe
   return window
 }
 
+// Every score from one day, highest first. The histogram doesn't record the
+// order games were played in, so this deliberately reads as a ranked list
+// rather than pretending to be a timeline.
+export function scoresForDay(entry: DailyActivityEntry | undefined): number[] {
+  if (!entry) return []
+  const scores: number[] = []
+  for (let i = entry.scoreHistogram.length - 1; i >= 0; i--) {
+    for (let n = 0; n < entry.scoreHistogram[i]; n++) scores.push(i + 1)
+  }
+  return scores
+}
+
+// Four filled steps plus an empty one. Discrete rather than a smooth fade:
+// with a continuous alpha, a four-game day and a six-game day come out close
+// enough to look identical, which defeats the point of a heatmap.
+export const ACTIVITY_LEVELS = 4
+
+export function activityLevel(games: number, busiest: number): number {
+  if (games <= 0) return 0
+  if (busiest <= 0) return 0
+  // Rounded up, so any day that was played at all clears level 1 and never
+  // renders as an untouched square.
+  return Math.max(1, Math.min(ACTIVITY_LEVELS, Math.ceil((games / busiest) * ACTIVITY_LEVELS)))
+}
+
+// Monday-first column index. Parsed as UTC so the answer is a property of the
+// calendar date itself and can't shift with the reader's timezone.
+export function mondayFirstWeekday(date: string): number {
+  return (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7
+}
+
+export interface CalendarCell {
+  // Null marks a leading blank, present only so the first real day lands in
+  // its true weekday column.
+  date: string | null
+  games: number
+}
+
+export function calendarGrid(log: DailyActivityLog, today: string, days: number): CalendarCell[] {
+  const window = activityWindow(log, today, days)
+  if (window.length === 0) return []
+
+  const padding = mondayFirstWeekday(window[0].date)
+  return [...Array.from({ length: padding }, (): CalendarCell => ({ date: null, games: 0 })), ...window]
+}
+
+const WINDOW_LABELS: { key: keyof LeaderboardHitCounts; label: string }[] = [
+  { key: 'day', label: 'day' },
+  { key: 'week', label: 'week' },
+  { key: 'month', label: 'month' },
+  { key: 'all', label: 'all-time' },
+]
+
+// Reported per window rather than as one total. The four counters are
+// independent — a single strong game can appear in several — so summing them
+// would overstate how many games got somewhere, and there's no way to recover
+// the true union from counts alone.
+export function leaderboardHitsForDay(entry: DailyActivityEntry | undefined): { label: string; count: number }[] {
+  if (!entry) return []
+  return WINDOW_LABELS.map(({ key, label }) => ({ label, count: entry.leaderboardHits[key] })).filter(hit => hit.count > 0)
+}
+
 function averageScoreOverRange(log: DailyActivityLog, today: string, daysAgoStart: number, daysAgoEnd: number): number | null {
   let totalScore = 0
   let totalGames = 0
