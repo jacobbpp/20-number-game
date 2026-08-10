@@ -35,7 +35,7 @@ import {
 } from '../game/dailyActivity'
 import { describeMode, displayName, formatRelativeTime } from '../game/groupFeed'
 import { formatDailyDateLabel, formatFullDateLabel } from '../game/share'
-import type { GroupFeed, GroupRecap } from '../hooks/useGroupActivity'
+import { REACTION_EMOJI, type CommunityFeed, type GroupRecap } from '../hooks/useGroupActivity'
 import type { Theme } from '../hooks/useTheme'
 import { lerpColor, type RGB } from '../utils/color'
 
@@ -56,7 +56,7 @@ interface StatsScreenProps {
   unlockedAchievementCount: number
   totalAchievementCount: number
   dailyActivity: DailyActivityLog
-  groupFeed: GroupFeed
+  groupFeed: CommunityFeed
   groupRecap: GroupRecap | null
   groupRecapLoaded: boolean
   onClose: () => void
@@ -107,6 +107,7 @@ export function StatsScreen({
   const [section, setSection] = useState<StatsSection>('stats')
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [openRunId, setOpenRunId] = useState<number | null>(null)
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
   const peak = maxCount(activeMatrix)
   const insight = computeInsight(stats)
@@ -410,7 +411,7 @@ export function StatsScreen({
               <div className="insight-panel insight-panel--group">
                 <p className="insight-panel__label">
                   {groupFeed.live && <span className="live-dot" aria-hidden="true" />}
-                  Recent activity
+                  Best runs today
                 </p>
                 {groupFeed.playing > 0 && (
                   // Deliberately "has the game open", not "is playing" — the
@@ -421,24 +422,69 @@ export function StatsScreen({
                   </p>
                 )}
                 {groupFeed.events.length === 0 ? (
-                  <p className="stats-screen__caption">No games finished recently.</p>
+                  <p className="stats-screen__caption">Nobody has finished a game today.</p>
                 ) : (
-                  <ul className="feed">
-                    {groupFeed.events.map((event, index) => (
-                      <li key={`${event.at}-${index}`} className="feed__row">
-                        <span className="feed__name">{displayName(event.name)}</span>
-                        <span className="feed__what">{describeMode(event.mode)}</span>
-                        <span
-                          className={
-                            event.placedCount === event.boardSize ? 'feed__score feed__score--win' : 'feed__score'
-                          }
-                        >
-                          {event.placedCount}/{event.boardSize}
-                        </span>
-                        <span className="feed__when">{formatRelativeTime(event.at, now)}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <ul className="feed">
+                      {groupFeed.events.map(event => {
+                        const who = displayName(event.name)
+                        const score = `${event.placedCount} of ${event.boardSize}`
+                        return (
+                          <li key={event.id} className="feed__item">
+                            <button
+                              type="button"
+                              className={openRunId === event.id ? 'feed__row feed__row--open' : 'feed__row'}
+                              aria-expanded={openRunId === event.id}
+                              aria-label={`${who}, ${describeMode(event.mode)}, ${score}. React.`}
+                              onClick={() => setOpenRunId(current => (current === event.id ? null : event.id))}
+                            >
+                              <span className="feed__name">{who}</span>
+                              <span className="feed__what">{describeMode(event.mode)}</span>
+                              <span className={event.placedCount === event.boardSize ? 'feed__score feed__score--win' : 'feed__score'}>
+                                {event.placedCount}/{event.boardSize}
+                              </span>
+                              <span className="feed__when">{formatRelativeTime(event.at, now)}</span>
+                            </button>
+
+                            {openRunId === event.id && (
+                              <div className="feed__picker">
+                                {REACTION_EMOJI.map(emoji => (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    className={event.myReaction === emoji ? 'feed__pick feed__pick--on' : 'feed__pick'}
+                                    aria-pressed={event.myReaction === emoji}
+                                    aria-label={`${emoji === event.myReaction ? 'Remove' : 'React with'} ${emoji}`}
+                                    // Tapping the one you already left takes it
+                                    // back, so there's no separate clear button.
+                                    onClick={() => groupFeed.react(event.id, event.myReaction === emoji ? null : emoji)}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {event.reactions.length > 0 && (
+                              <div className="feed__reacts">
+                                {event.reactions.map(reaction => (
+                                  <span
+                                    key={reaction.emoji}
+                                    className={event.myReaction === reaction.emoji ? 'feed__react feed__react--mine' : 'feed__react'}
+                                  >
+                                    {reaction.emoji} <b>{reaction.count}</b>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    <p className="stats-screen__caption" style={{ margin: '10px 0 0' }}>
+                      Everyone's three best from the last day. Tap one to react.
+                    </p>
+                  </>
                 )}
               </div>
 

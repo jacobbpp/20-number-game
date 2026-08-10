@@ -61,8 +61,12 @@ const INSIGHT_ENTRIES: Entry[] = [
     desc: "Everyone's day, not just yours: games played, how many people played, who played the most, and the best single run. It's worked out once overnight rather than every time you open the app, so it covers whole finished days and appears the morning after.",
   },
   {
-    term: 'Recent activity',
-    desc: "The last 20 games finished by anyone, newest first, updating live as they happen. A green dot means the live connection is up. When other people have the game open at the same time as you, it says so — that means the app is open, not that they're mid-game. Anyone who has never saved a leaderboard name shows as \"someone\".",
+    term: 'Best runs today',
+    desc: "Everyone's three best runs from the last 24 hours, ranked by how much of the board they filled rather than by raw score, so a 30 of 30 daily beats an 18 of 20 free play. Three each means one long session can't push everyone else off. It updates live, and a green dot means that connection is up. When other people have the game open at the same time as you, it says so — that means the app is open, not that they're mid-game. Anyone who has never saved a leaderboard name shows as \"someone\".",
+  },
+  {
+    term: 'Reactions',
+    desc: "Tap any run on the board to react to it with one of four: well played, on fire, brutal, or funny-bad. One each per run — tapping a different one swaps it, and tapping the one you left takes it back, so a count of three means three different people. Yours is outlined. Reactions appear on everyone else's screen live, and disappear when the run they're on drops off the board a day later.",
   },
   { term: 'Leaderboard reach', desc: "How many of today's games made the day, week, month, and all-time leaderboards." },
   { term: 'Best score over time', desc: 'A line chart of your personal best climbing as you set new records.' },

@@ -1,12 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { API_BASE } from '../api'
+import { getOrCreateDeviceId } from './useLeaderboard'
+
+// Mirrors the worker's own allowlist. Anything outside it is rejected there,
+// so keeping the two in step is what stops the picker offering something the
+// server will refuse.
+export const REACTION_EMOJI = ['👏', '🔥', '😱', '😂'] as const
+
+export interface FeedReaction {
+  emoji: string
+  count: number
+}
 
 export interface FeedEvent {
+  id: number
   name: string | null
   mode: string
   boardSize: number
   placedCount: number
   at: string
+  reactions: FeedReaction[]
+  // What this device left, if anything. Worked out server side per viewer, so
+  // no one else's device id ever reaches the client.
+  myReaction: string | null
 }
 
 export interface GroupRecap {
@@ -45,19 +61,27 @@ interface SnapshotPayload {
 // is meant to answer "who has the game open", so a socket that only existed
 // while someone was looking at their stats would measure the wrong thing and
 // almost always report nobody.
-export function useCommunityFeed(): GroupFeed {
+export type CommunityFeed = GroupFeed & {
+  react: (eventId: number, emoji: string | null) => Promise<void>
+}
+
+export function useCommunityFeed(): CommunityFeed {
   const [feed, setFeed] = useState<GroupFeed>(EMPTY_FEED)
+  // Set when running on the fallback, so a reaction can pull a fresh snapshot
+  // itself rather than waiting for a broadcast that will never arrive.
+  const refetchRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     let cancelled = false
     let socket: WebSocket | null = null
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+    const deviceId = getOrCreateDeviceId()
 
     // Same snapshot, fetched once. Covers networks and browsers where a
     // WebSocket never opens — the panel is then merely not live, rather than
     // permanently empty.
     const loadOnce = () => {
-      fetch(`${API_BASE}/activity`)
+      fetch(`${API_BASE}/activity?deviceId=${encodeURIComponent(deviceId)}`)
         .then(response => (response.ok ? (response.json() as Promise<SnapshotPayload>) : null))
         .then(data => {
           if (cancelled || !data) return
@@ -67,6 +91,7 @@ export function useCommunityFeed(): GroupFeed {
           // Offline — the panel keeps whatever it last had.
         })
     }
+    refetchRef.current = loadOnce
 
     const connect = () => {
       if (cancelled) return
@@ -77,7 +102,7 @@ export function useCommunityFeed(): GroupFeed {
       }
 
       try {
-        socket = new WebSocket(`${API_BASE.replace(/^http/, 'ws')}/activity`)
+        socket = new WebSocket(`${API_BASE.replace(/^http/, 'ws')}/activity?deviceId=${encodeURIComponent(deviceId)}`)
       } catch {
         loadOnce()
         return
@@ -108,6 +133,7 @@ export function useCommunityFeed(): GroupFeed {
 
     return () => {
       cancelled = true
+      refetchRef.current = null
       if (reconnectTimer) clearTimeout(reconnectTimer)
       // Drop the handlers first: closing fires onclose, which would otherwise
       // queue a reconnect for a component that is already gone.
@@ -120,7 +146,24 @@ export function useCommunityFeed(): GroupFeed {
     }
   }, [])
 
-  return feed
+  // Posted over plain HTTP rather than up the socket, so it works the same
+  // whether or not the live connection came up. The object broadcasts the
+  // result, which is what actually updates the screen.
+  const react = useCallback(async (eventId: number, emoji: string | null) => {
+    try {
+      const response = await fetch(`${API_BASE}/activity/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: getOrCreateDeviceId(), eventId, emoji }),
+      })
+      // On the fallback there is no broadcast coming, so ask for the new state.
+      if (response.ok) refetchRef.current?.()
+    } catch {
+      // Best effort: a failed reaction never affects the game.
+    }
+  }, [])
+
+  return { ...feed, react }
 }
 
 interface RecapPayload {

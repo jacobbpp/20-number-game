@@ -162,47 +162,55 @@ async function postGame(body: Record<string, unknown>) {
 
 // The Durable Object's own storage is shared across these tests too, and
 // unlike D1 there's no way to clear it without adding a reset method that
-// would exist purely for tests. So these assert on the newest entries rather
-// than on the whole feed's length, except where the cap makes an exact length
-// the actual behaviour under test.
-describe('activity feed', () => {
-  it('records a logged game and reads it back newest first', async () => {
-    await postGame({ deviceId: 'device-aaa', name: 'AAA', date: '2026-03-01', mode: 'freeplay', boardSize: 20, placedCount: 12 })
-    await postGame({ deviceId: 'device-bbb', name: 'BBB', date: '2026-03-01', mode: 'daily', boardSize: 15, placedCount: 15 })
-
-    const response = await SELF.fetch('http://example.com/activity')
+// would exist purely for tests. So these use a device id of their own per
+// test and assert on that person's rows, rather than on the whole board.
+describe('best runs board', () => {
+  async function boardFor(deviceId?: string) {
+    const url = deviceId ? `http://example.com/activity?deviceId=${deviceId}` : 'http://example.com/activity'
+    const response = await SELF.fetch(url)
     expect(response.status).toBe(200)
+    return (await response.json()) as FeedSnapshot
+  }
 
-    const snapshot = (await response.json()) as FeedSnapshot
-    expect(snapshot.events[0].name).toBe('BBB')
-    expect(snapshot.events[0].mode).toBe('daily')
-    expect(snapshot.events[0].placedCount).toBe(15)
-    expect(snapshot.events[0].boardSize).toBe(15)
-    expect(snapshot.events[1].name).toBe('AAA')
-    expect(snapshot.events[1].placedCount).toBe(12)
+  it('ranks by share of the board filled, not by raw count', async () => {
+    // 15 of 15 beats 12 of 20 despite the smaller number, the same rule the
+    // nightly roll-up uses. Ordering on placedCount alone would invert this.
+    await postGame({ deviceId: 'rank-aaa', name: 'AAA', date: '2026-03-01', mode: 'freeplay', boardSize: 20, placedCount: 12 })
+    await postGame({ deviceId: 'rank-bbb', name: 'BBB', date: '2026-03-01', mode: 'daily', boardSize: 15, placedCount: 15 })
+
+    const board = await boardFor()
+    const ranked = board.events.filter(event => event.name === 'AAA' || event.name === 'BBB')
+    expect(ranked[0].name).toBe('BBB')
+    expect(ranked[1].name).toBe('AAA')
   })
 
-  it('keeps a game from an unnamed device rather than dropping it', async () => {
-    await postGame({ deviceId: 'device-anon', name: null, date: '2026-03-01', mode: 'freeplay', boardSize: 20, placedCount: 5 })
+  it('keeps a run from an unnamed device rather than dropping it', async () => {
+    await postGame({ deviceId: 'anon-device', name: null, date: '2026-03-01', mode: 'freeplay', boardSize: 20, placedCount: 5 })
 
-    const snapshot = (await (await SELF.fetch('http://example.com/activity')).json()) as FeedSnapshot
-    expect(snapshot.events[0].name).toBeNull()
-    expect(snapshot.events[0].placedCount).toBe(5)
+    const board = await boardFor()
+    const anon = board.events.find(event => event.name === null && event.placedCount === 5)
+    expect(anon).toBeDefined()
   })
 
-  it('caps the feed so it never grows without bound', async () => {
-    for (let i = 0; i < 25; i++) {
-      // A 30-slot daily board, so every placedCount up to 24 is a legal score
-      // for it — on a 20-slot free-play board the last four would be rejected.
-      await postGame({ deviceId: 'device-aaa', name: 'AAA', date: '2026-03-01', mode: 'daily', boardSize: 30, placedCount: i })
+  it('shows only a person\'s three best runs, however many they play', async () => {
+    for (let i = 1; i <= 12; i++) {
+      await postGame({ deviceId: 'busy-device', name: 'BUSY', date: '2026-03-01', mode: 'daily', boardSize: 30, placedCount: i })
     }
 
-    const snapshot = (await (await SELF.fetch('http://example.com/activity')).json()) as FeedSnapshot
-    expect(snapshot.events).toHaveLength(20)
-    // Newest first, so the last game logged (placedCount 24) leads and the
-    // five oldest have been trimmed away.
-    expect(snapshot.events[0].placedCount).toBe(24)
-    expect(snapshot.events[19].placedCount).toBe(5)
+    const board = await boardFor()
+    const theirs = board.events.filter(event => event.name === 'BUSY')
+
+    // One long session must not push everyone else off the board.
+    expect(theirs).toHaveLength(3)
+    expect(theirs.map(event => event.placedCount)).toEqual([12, 11, 10])
+  })
+
+  it('gives every run an id, so a reaction has something to attach to', async () => {
+    await postGame({ deviceId: 'ident-device', name: 'IDENT', date: '2026-03-01', mode: 'freeplay', boardSize: 20, placedCount: 16 })
+
+    const board = await boardFor()
+    const run = board.events.find(event => event.name === 'IDENT')
+    expect(run?.id).toBeGreaterThan(0)
   })
 
   it('reports nobody connected when read over plain HTTP', async () => {

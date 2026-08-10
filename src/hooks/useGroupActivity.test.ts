@@ -58,7 +58,9 @@ describe('useCommunityFeed', () => {
     renderHook(() => useCommunityFeed())
 
     expect(sockets).toHaveLength(1)
-    expect(sockets[0].url).toMatch(/^wss:\/\/.+\/activity$/)
+    // The device id rides on the query string: it's how the object knows whose
+    // reactions to mark as yours on this particular connection.
+    expect(sockets[0].url).toMatch(/^wss:\/\/.+\/activity\?deviceId=.+$/)
   })
 
   it('applies a pushed snapshot', () => {
@@ -204,7 +206,7 @@ describe('useCommunityFeed', () => {
     expect(result.current.events[0].name).toBe('ALR')
     // Fetched, not streamed, so it must not present itself as live.
     expect(result.current.live).toBe(false)
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringMatching(/\/activity$/))
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringMatching(/\/activity\?deviceId=/))
   })
 
   it('falls back to a plain fetch when the socket errors', async () => {

@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.49.0',
+    date: '2026-08-10',
+    title: 'React to each other',
+    description:
+      "Tap anyone's run in the group section and give it a 👏, 🔥, 😱 or 😂. It shows up on their screen straight away. The panel is now Best runs today: everyone's three best from the last day, so one long session can't bury the rest of you.",
+  },
+  {
     version: '1.48.0',
     date: '2026-07-29',
     title: 'Tap a day in your play history',

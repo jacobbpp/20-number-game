@@ -615,7 +615,7 @@ async function handleGameLog(request: Request, env: Env): Promise<Response> {
   // problem from undoing a game_log write that already succeeded — D1 is the
   // record that matters, the feed is ephemeral.
   await env.ACTIVITY.getByName(FEED_INSTANCE)
-    .record({ name: cleanName, mode, boardSize, placedCount, at: loggedAt })
+    .record({ deviceId, name: cleanName, mode, boardSize, placedCount, at: loggedAt })
     .catch(() => {})
 
   return new Response(null, { status: 204, headers: corsHeaders() })
@@ -877,12 +877,22 @@ async function handleYesterdayRecap(request: Request, env: Env): Promise<Respons
   return json({ date, summary })
 }
 
+export interface FeedReaction {
+  emoji: string
+  count: number
+}
+
 export interface FeedEvent {
+  id: number
   name: string | null
   mode: string
   boardSize: number
   placedCount: number
   at: string
+  reactions: FeedReaction[]
+  // Whether the viewer of this particular snapshot reacted, and with what.
+  // Per-viewer, which is why snapshots are built per socket rather than once.
+  myReaction: string | null
 }
 
 export interface FeedSnapshot {
@@ -890,9 +900,34 @@ export interface FeedSnapshot {
   playing: number
 }
 
-// Only ever enough rows to fill the panel — this is a "what just happened"
-// feed, not a history. game_log already keeps the permanent record.
-const MAX_FEED_EVENTS = 20
+// What goes in, as opposed to what comes out: no id yet, and no reactions,
+// since neither exists until the run has been stored.
+export interface FeedEventInput {
+  deviceId: string
+  name: string | null
+  mode: string
+  boardSize: number
+  placedCount: number
+  at: string
+}
+
+// The board covers a rolling day, so a reaction outlives the session it was
+// left in. A count-based window turned over in about three hours at this
+// group's rate, which made reacting largely pointless.
+const FEED_WINDOW_MS = 24 * 60 * 60 * 1000
+
+// Nothing should reach this in normal use; it only stops a runaway from
+// growing the object without bound.
+const MAX_FEED_EVENTS = 500
+
+// At most this many runs each, so one long session can't push everyone else
+// off the board entirely.
+const RUNS_PER_PERSON = 3
+
+// Deliberately small and fixed. Free text would need moderating, and this
+// covers what actually happens in this game: well played, on fire, brutal,
+// and funny-bad.
+export const REACTION_EMOJI = ['\u{1F44F}', '\u{1F525}', '\u{1F631}', '\u{1F602}']
 
 function isWebSocketUpgrade(request: Request): boolean {
   return request.headers.get('Upgrade')?.toLowerCase() === 'websocket'
@@ -900,11 +935,15 @@ function isWebSocketUpgrade(request: Request): boolean {
 
 // A single shared instance ("the group") rather than one per player. That's
 // normally the Durable Object anti-pattern, but the coordination atom here
-// genuinely is the whole group: everyone reads the same feed and the same
+// genuinely is the whole group: everyone reads the same board and the same
 // live count, and there is exactly one of those. At this app's volume (a few
 // hundred games a day across a handful of people) there's no contention to
 // shard away from.
 const FEED_INSTANCE = 'group'
+
+interface SocketAttachment {
+  deviceId: string | null
+}
 
 export class ActivityFeed extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
@@ -915,11 +954,32 @@ export class ActivityFeed extends DurableObject<Env> {
       this.ctx.storage.sql.exec(`
         CREATE TABLE IF NOT EXISTS events (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
+          device_id TEXT,
           name TEXT,
           mode TEXT NOT NULL,
           board_size INTEGER NOT NULL,
           placed_count INTEGER NOT NULL,
           at TEXT NOT NULL
+        )
+      `)
+
+      // Objects created before device_id existed keep their rows rather than
+      // having the board dropped from under them. Any that predate it group as
+      // their own person until they age out of the window on their own.
+      try {
+        this.ctx.storage.sql.exec('ALTER TABLE events ADD COLUMN device_id TEXT')
+      } catch {
+        // Already there.
+      }
+
+      // One row per person per event, enforced by the key rather than by
+      // trusting the caller not to send twice.
+      this.ctx.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS reactions (
+          event_id INTEGER NOT NULL,
+          device_id TEXT NOT NULL,
+          emoji TEXT NOT NULL,
+          PRIMARY KEY (event_id, device_id)
         )
       `)
     })
@@ -929,51 +989,122 @@ export class ActivityFeed extends DurableObject<Env> {
   // client that misses the broadcast still gets the event in its next
   // snapshot, but an event that was only ever broadcast would be lost the
   // moment this object hibernates.
-  async record(event: FeedEvent): Promise<void> {
+  async record(event: FeedEventInput): Promise<void> {
     this.ctx.storage.sql.exec(
-      'INSERT INTO events (name, mode, board_size, placed_count, at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO events (device_id, name, mode, board_size, placed_count, at) VALUES (?, ?, ?, ?, ?, ?)',
+      event.deviceId,
       event.name,
       event.mode,
       event.boardSize,
       event.placedCount,
       event.at,
     )
-    this.ctx.storage.sql.exec('DELETE FROM events WHERE id NOT IN (SELECT id FROM events ORDER BY id DESC LIMIT ?)', MAX_FEED_EVENTS)
+    this.prune(Date.parse(event.at))
     this.broadcast()
   }
 
-  async snapshot(): Promise<FeedSnapshot> {
-    return this.buildSnapshot()
+  private prune(nowMs: number): void {
+    const cutoff = new Date(nowMs - FEED_WINDOW_MS).toISOString()
+    this.ctx.storage.sql.exec('DELETE FROM events WHERE at < ?', cutoff)
+    this.ctx.storage.sql.exec('DELETE FROM events WHERE id NOT IN (SELECT id FROM events ORDER BY id DESC LIMIT ?)', MAX_FEED_EVENTS)
+    // Reactions belong to their run; when it goes, they go with it.
+    this.ctx.storage.sql.exec('DELETE FROM reactions WHERE event_id NOT IN (SELECT id FROM events)')
   }
 
-  private buildSnapshot(excluding?: WebSocket): FeedSnapshot {
+  async react(deviceId: string, eventId: number, emoji: string | null): Promise<void> {
+    if (emoji === null) {
+      this.ctx.storage.sql.exec('DELETE FROM reactions WHERE event_id = ? AND device_id = ?', eventId, deviceId)
+    } else {
+      // One each: reacting again with something else replaces, rather than
+      // letting one person stack every emoji onto the same run.
+      this.ctx.storage.sql.exec(
+        `INSERT INTO reactions (event_id, device_id, emoji) VALUES (?, ?, ?)
+         ON CONFLICT (event_id, device_id) DO UPDATE SET emoji = ?3`,
+        eventId,
+        deviceId,
+        emoji,
+      )
+    }
+    this.broadcast()
+  }
+
+  async snapshot(deviceId: string | null): Promise<FeedSnapshot> {
+    return this.buildSnapshot(deviceId)
+  }
+
+  private buildSnapshot(viewerDeviceId: string | null, excluding?: WebSocket): FeedSnapshot {
+    // Ranked by share of the board filled rather than raw count: board sizes
+    // run from 10 to 30, so 30 of 30 is a better run than 18 of 20 even though
+    // the raw numbers say otherwise.
     const rows = this.ctx.storage.sql
-      .exec<{ name: string | null; mode: string; board_size: number; placed_count: number; at: string }>(
-        'SELECT name, mode, board_size, placed_count, at FROM events ORDER BY id DESC',
+      .exec<{ id: number; name: string | null; mode: string; board_size: number; placed_count: number; at: string }>(
+        `SELECT id, name, mode, board_size, placed_count, at FROM (
+           SELECT *, ROW_NUMBER() OVER (
+             PARTITION BY COALESCE(device_id, CAST(id AS TEXT))
+             ORDER BY CAST(placed_count AS REAL) / board_size DESC, placed_count DESC, id DESC
+           ) AS person_rank
+           FROM events
+         )
+         WHERE person_rank <= ?
+         ORDER BY CAST(placed_count AS REAL) / board_size DESC, placed_count DESC, id DESC`,
+        RUNS_PER_PERSON,
       )
       .toArray()
 
+    const counts = this.ctx.storage.sql
+      .exec<{ event_id: number; emoji: string; n: number }>(
+        'SELECT event_id, emoji, COUNT(*) AS n FROM reactions GROUP BY event_id, emoji',
+      )
+      .toArray()
+
+    const mine = new Map<number, string>()
+    if (viewerDeviceId !== null) {
+      for (const row of this.ctx.storage.sql
+        .exec<{ event_id: number; emoji: string }>('SELECT event_id, emoji FROM reactions WHERE device_id = ?', viewerDeviceId)
+        .toArray()) {
+        mine.set(row.event_id, row.emoji)
+      }
+    }
+
     return {
       events: rows.map(row => ({
+        id: row.id,
         name: row.name,
         mode: row.mode,
         boardSize: row.board_size,
         placedCount: row.placed_count,
         at: row.at,
+        // Kept in a fixed order so the chips don't reshuffle as counts change.
+        reactions: REACTION_EMOJI.map(emoji => ({
+          emoji,
+          count: counts.find(count => count.event_id === row.id && count.emoji === emoji)?.n ?? 0,
+        })).filter(reaction => reaction.count > 0),
+        myReaction: mine.get(row.id) ?? null,
       })),
       playing: this.ctx.getWebSockets().filter(socket => socket !== excluding).length,
+    }
+  }
+
+  private viewerOf(socket: WebSocket): string | null {
+    try {
+      return (socket.deserializeAttachment() as SocketAttachment | null)?.deviceId ?? null
+    } catch {
+      return null
     }
   }
 
   // `excluding` exists for the disconnect case: getWebSockets() still lists a
   // socket while its close handler is running, so counting naively there would
   // report one player too many to everyone left.
+  //
+  // Built per socket rather than once, because whether a reaction is yours
+  // differs by viewer, and sending everyone's device ids so each client could
+  // work it out itself would leak them across the group.
   private broadcast(excluding?: WebSocket): void {
-    const payload = JSON.stringify(this.buildSnapshot(excluding))
     for (const socket of this.ctx.getWebSockets()) {
       if (socket === excluding) continue
       try {
-        socket.send(payload)
+        socket.send(JSON.stringify(this.buildSnapshot(this.viewerOf(socket), excluding)))
       } catch {
         // Already closing — its close handler will run and re-broadcast.
       }
@@ -985,11 +1116,15 @@ export class ActivityFeed extends DurableObject<Env> {
       return new Response('Expected a websocket upgrade.', { status: 426 })
     }
 
+    const deviceId = new URL(request.url).searchParams.get('deviceId')
     const [client, server] = Object.values(new WebSocketPair())
     // acceptWebSocket, not server.accept() — this is what lets the object be
     // evicted from memory while connections stay open, so idle players don't
     // accrue duration charges.
     this.ctx.acceptWebSocket(server)
+    // In-memory state is lost on hibernation, so who this socket belongs to
+    // has to be attached to the socket itself rather than held in a field.
+    server.serializeAttachment({ deviceId } satisfies SocketAttachment)
     // Sends to the newcomer and everyone already here, so the live count
     // updates for all of them in one step.
     this.broadcast()
@@ -999,7 +1134,7 @@ export class ActivityFeed extends DurableObject<Env> {
 
   // Clients only listen; anything inbound is treated as a request to resync.
   override async webSocketMessage(ws: WebSocket): Promise<void> {
-    ws.send(JSON.stringify(this.buildSnapshot()))
+    ws.send(JSON.stringify(this.buildSnapshot(this.viewerOf(ws))))
   }
 
   override async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
@@ -1020,11 +1155,48 @@ export class ActivityFeed extends DurableObject<Env> {
 async function handleActivity(request: Request, env: Env): Promise<Response> {
   const stub = env.ACTIVITY.getByName(FEED_INSTANCE)
 
+  // The upgrade carries ?deviceId through to the object untouched, which is
+  // how it knows whose reactions to mark as yours on this connection.
   if (isWebSocketUpgrade(request)) {
     return stub.fetch(request)
   }
 
-  return json(await stub.snapshot())
+  const deviceId = new URL(request.url).searchParams.get('deviceId')
+  return json(await stub.snapshot(deviceId !== null && DEVICE_ID_PATTERN.test(deviceId) ? deviceId : null))
+}
+
+interface ReactionBody {
+  deviceId: string
+  eventId: number
+  emoji: string | null
+}
+
+function isValidReaction(body: unknown): body is ReactionBody {
+  if (!body || typeof body !== 'object') return false
+  const { deviceId, eventId, emoji } = body as Record<string, unknown>
+  if (typeof deviceId !== 'string' || !DEVICE_ID_PATTERN.test(deviceId)) return false
+  if (typeof eventId !== 'number' || !Number.isInteger(eventId) || eventId < 1) return false
+  // null clears it; anything else has to be one of the four on offer, so the
+  // feed can't be used to post arbitrary text.
+  return emoji === null || (typeof emoji === 'string' && REACTION_EMOJI.includes(emoji))
+}
+
+async function handleReact(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  if (!isValidReaction(body)) {
+    return json({ error: 'deviceId, eventId, and emoji (one of the allowed set, or null) are required.' }, 400)
+  }
+
+  const { deviceId, eventId, emoji } = body
+  await env.ACTIVITY.getByName(FEED_INSTANCE).react(deviceId, eventId, emoji)
+
+  return new Response(null, { status: 204, headers: corsHeaders() })
 }
 
 export default {
@@ -1085,6 +1257,10 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/activity') {
       return handleActivity(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/activity/react') {
+      return handleReact(request, env)
     }
 
     if (request.method === 'POST' && url.pathname === '/transfer') {
