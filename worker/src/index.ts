@@ -414,11 +414,24 @@ interface DailyScoreSubmitBody {
   score: number
   board?: (number | null)[] | null
   endingRoll?: number | null
+  durationMs?: number | null
+}
+
+// A day is the ceiling: the clock pauses whenever the app isn't in front of
+// the player, so a genuine run can span hours of wall time but never this
+// much of actual play.
+const MAX_DURATION_MS = 24 * 60 * 60 * 1000
+
+// Optional, because a client cached from before the daily was timed still
+// submits perfectly valid scores without one.
+function isValidDuration(durationMs: unknown): durationMs is number | null {
+  if (durationMs === null) return true
+  return typeof durationMs === 'number' && Number.isFinite(durationMs) && durationMs >= 0 && durationMs <= MAX_DURATION_MS
 }
 
 function isValidDailyScoreSubmit(body: unknown): body is DailyScoreSubmitBody {
   if (!body || typeof body !== 'object') return false
-  const { boardSize, date, name, score, board, endingRoll } = body as Record<string, unknown>
+  const { boardSize, date, name, score, board, endingRoll, durationMs } = body as Record<string, unknown>
   if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
   if (typeof date !== 'string' || !DATE_PATTERN.test(date)) return false
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > boardSize) return false
@@ -426,7 +439,8 @@ function isValidDailyScoreSubmit(body: unknown): body is DailyScoreSubmitBody {
   const trimmed = name.trim()
   if (trimmed.length < 1 || trimmed.length > 8 || !NAME_PATTERN.test(trimmed)) return false
   if (!(board === undefined || board === null || isValidBoard(board, boardSize))) return false
-  return endingRoll === undefined || isValidEndingRoll(endingRoll)
+  if (!(endingRoll === undefined || isValidEndingRoll(endingRoll))) return false
+  return durationMs === undefined || isValidDuration(durationMs)
 }
 
 async function handleDailyScoreSubmit(request: Request, env: Env): Promise<Response> {
@@ -444,14 +458,15 @@ async function handleDailyScoreSubmit(request: Request, env: Env): Promise<Respo
     )
   }
 
-  const { boardSize, date, name, score, board, endingRoll } = body
+  const { boardSize, date, name, score, board, endingRoll, durationMs } = body
   const cleanName = name.trim().toUpperCase()
   const boardJson = Array.isArray(board) ? JSON.stringify(board) : null
 
   await env.DB.prepare(
-    'INSERT INTO daily_scores (board_size, challenge_date, name, score, board, ending_roll, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)',
+    `INSERT INTO daily_scores (board_size, challenge_date, name, score, board, ending_roll, duration_ms, created_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
   )
-    .bind(boardSize, date, cleanName, score, boardJson, endingRoll ?? null, new Date().toISOString())
+    .bind(boardSize, date, cleanName, score, boardJson, endingRoll ?? null, durationMs ?? null, new Date().toISOString())
     .run()
 
   return new Response(null, { status: 204, headers: corsHeaders() })
@@ -470,15 +485,26 @@ async function handleDailyLeaderboard(request: Request, env: Env): Promise<Respo
     return json({ error: 'date (YYYY-MM-DD) is required.' }, 400)
   }
 
+  // Score first, so a fast low score never outranks a slow high one. Then
+  // time, with `duration_ms IS NULL` ahead of it: SQLite sorts nulls first in
+  // ASC, which would put every untimed score from before this existed at the
+  // top of its tie rather than behind. Submission time remains the last word.
   const { results } = await env.DB.prepare(
-    `SELECT id, name, score, board, ending_roll FROM daily_scores
+    `SELECT id, name, score, board, ending_roll, duration_ms FROM daily_scores
      WHERE board_size = ?1 AND challenge_date = ?2
-     ORDER BY score DESC, created_at ASC LIMIT 10`,
+     ORDER BY score DESC, duration_ms IS NULL ASC, duration_ms ASC, created_at ASC LIMIT 10`,
   )
     .bind(boardSize, date)
-    .all<{ id: number; name: string; score: number; board: string | null; ending_roll: number | null }>()
+    .all<{ id: number; name: string; score: number; board: string | null; ending_roll: number | null; duration_ms: number | null }>()
 
-  const entries = results.map(({ id, name, score, board, ending_roll }) => ({ id, name, score, board: parseBoard(board), endingRoll: ending_roll }))
+  const entries = results.map(({ id, name, score, board, ending_roll, duration_ms }) => ({
+    id,
+    name,
+    score,
+    board: parseBoard(board),
+    endingRoll: ending_roll,
+    durationMs: duration_ms,
+  }))
   return json({ boardSize, date, entries })
 }
 

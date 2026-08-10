@@ -38,6 +38,10 @@ const DAILY_ENTRIES: Entry[] = [
     desc: 'Counts consecutive days played, whether you win or lose — only missing a full day breaks it. Playing today, or having played yesterday, keeps it alive.',
   },
   {
+    term: 'Your time',
+    desc: "Daily attempts are timed, but there's no clock while you play — your time appears on the recap once you've finished. It runs from your first placed number to your last, and pauses whenever the app isn't in front of you, so a locked phone or a switch to another app costs you nothing. On the Daily leaderboard it only ever breaks ties: two people on the same score are separated by who was quicker, and a fast low score never outranks a slow high one. Attempts recorded before this existed show a dash.",
+  },
+  {
     term: 'History',
     desc: "The last 30 days of attempts, with the date, board size, and score for each. Open it from \"View history\" on the recap screen.",
   },

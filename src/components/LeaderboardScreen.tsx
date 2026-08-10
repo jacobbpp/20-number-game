@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { LeaderboardEntry, LeaderboardWindow, StreakEntry } from '../hooks/useLeaderboard'
+import { formatDuration } from '../game/dailyTimer'
 import { BOARD_SIZE } from '../game/types'
 import { LeaderboardEntryScreen } from './LeaderboardEntryScreen'
 
@@ -200,6 +201,13 @@ export function LeaderboardScreen({
                   <span className="leaderboard-row__score">
                     {entry.score}/{boardSize}
                   </span>
+                  {/* Daily only: free play has no clock, and a dash marks a
+                      daily score recorded before there was one. */}
+                  {mode === 'daily' && (
+                    <span className={entry.durationMs == null ? 'leaderboard-row__time leaderboard-row__time--none' : 'leaderboard-row__time'}>
+                      {entry.durationMs == null ? '—' : formatDuration(entry.durationMs)}
+                    </span>
+                  )}
                 </>
               )
               const canReveal = mode === 'freeplay' || dailyCompleted

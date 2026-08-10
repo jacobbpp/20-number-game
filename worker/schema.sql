@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS scores (
 
 CREATE INDEX IF NOT EXISTS idx_scores_board_created ON scores (board_size, created_at);
 
+-- duration_ms is nullable on purpose: every score recorded before the daily
+-- was timed has none, and those keep their place on score while sitting
+-- behind a timed run on a tie.
 CREATE TABLE IF NOT EXISTS daily_scores (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   board_size INTEGER NOT NULL,
@@ -26,6 +29,7 @@ CREATE TABLE IF NOT EXISTS daily_scores (
   score INTEGER NOT NULL,
   board TEXT,
   ending_roll INTEGER,
+  duration_ms INTEGER,
   created_at TEXT NOT NULL
 );
 

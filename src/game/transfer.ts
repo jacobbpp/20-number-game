@@ -37,6 +37,8 @@ export const DEVICE_LOCAL_KEYS = [
   'order20-current-game',
   'order20-current-daily-game',
   'order20-current-game-recorded',
+  // Belongs to the half-finished daily above, and means nothing without it.
+  'order20-daily-timer',
 ] as const
 
 export type TransferSnapshot = Record<string, string>

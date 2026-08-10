@@ -6,6 +6,7 @@ import { RollDisplay } from './RollDisplay'
 import { ShareButton } from './ShareButton'
 import { isStreakActive, type StreakData } from '../game/daily'
 import { peekNextRolls } from '../game/dailyPeek'
+import { formatDuration } from '../game/dailyTimer'
 import { buildStreakShareText, formatDailyDateLabel } from '../game/share'
 import { useCopyFeedback } from '../hooks/useCopyFeedback'
 import type { GameState } from '../game/types'
@@ -20,6 +21,9 @@ interface DailyChallengeScreenProps {
   history: DailyResult[]
   today: string
   hardMode: boolean
+  // Null for an attempt finished before the daily was timed, or one restored
+  // from a previous session where the clock never ran.
+  durationMs: number | null
   onSelect: (index: number) => void
   onClose: () => void
   dailyLeaderboardQualifies: boolean
@@ -35,6 +39,7 @@ export function DailyChallengeScreen({
   history,
   today,
   hardMode,
+  durationMs,
   onSelect,
   onClose,
   dailyLeaderboardQualifies,
@@ -85,6 +90,12 @@ export function DailyChallengeScreen({
               </p>
               {todayResult.status === 'lost' && todayResult.lossReason && (
                 <p className="daily-screen__loss-reason">{todayResult.lossReason}</p>
+              )}
+              {durationMs !== null && (
+                <p className="daily-screen__time">
+                  <span>Your time</span>
+                  <b>{formatDuration(durationMs)}</b>
+                </p>
               )}
               <ResultGrid positions={todayResult.positions} />
               {peeks.length > 0 && (

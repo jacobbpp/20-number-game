@@ -11,6 +11,8 @@ export interface LeaderboardEntry {
   score: number
   board: (number | null)[] | null
   endingRoll: number | null
+  // Daily entries only, and null for any recorded before the daily was timed.
+  durationMs?: number | null
 }
 
 const NAME_KEY = 'order20-leaderboard-name'
@@ -166,13 +168,21 @@ export function useLeaderboard() {
   }, [])
 
   const submitDailyScore = useCallback(
-    (boardSize: number, date: string, playerName: string, score: number, board: (number | null)[], endingRoll: number | null) => {
+    (
+      boardSize: number,
+      date: string,
+      playerName: string,
+      score: number,
+      board: (number | null)[],
+      endingRoll: number | null,
+      durationMs: number | null,
+    ) => {
       localStorage.setItem(NAME_KEY, playerName)
       setName(playerName)
       fetch(`${API_BASE}/daily-scores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boardSize, date, name: playerName, score, board, endingRoll }),
+        body: JSON.stringify({ boardSize, date, name: playerName, score, board, endingRoll, durationMs }),
       }).catch(() => {
         // Best-effort — a failed submission never blocks closing the recap.
       })

@@ -2679,3 +2679,42 @@ button.activity-cal__cell:focus-visible {
 .daily-history__score--won {
   color: var(--accent);
 }
+
+/* Revealed only once the daily is over — there's no clock while you play. */
+.daily-screen__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 2px 0 12px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(var(--surface-tint-rgb), 0.08);
+}
+
+.daily-screen__time span {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.daily-screen__time b {
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cta);
+}
+
+.leaderboard-row__time {
+  min-width: 42px;
+  text-align: right;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard-row__time--none {
+  color: var(--text-disabled);
+}

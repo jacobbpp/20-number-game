@@ -28,6 +28,7 @@ import { useCurrentGame } from './hooks/useCurrentGame'
 import { useDailyChallenge } from './hooks/useDailyChallenge'
 import { useCommunityStats } from './hooks/useCommunityStats'
 import { useCommunityFeed, useYesterdayRecap } from './hooks/useGroupActivity'
+import { useDailyTimer } from './hooks/useDailyTimer'
 import { TransferScreen } from './components/TransferScreen'
 import { useGameStats } from './hooks/useGameStats'
 import { useHardMode } from './hooks/useHardMode'
@@ -97,6 +98,10 @@ function App() {
   }, [gameId])
 
   const { todayResult, streak, history, recordDailyResult } = useDailyChallenge(dailyDate)
+  const { begin: beginDailyTimer, finish: finishDailyTimer } = useDailyTimer(dailyDate)
+  // Held so the recap and the score submission can both read the final time
+  // after the run has ended.
+  const [dailyDurationMs, setDailyDurationMs] = useState<number | null>(null)
   // Held here rather than inside StatsScreen on purpose: the live count is
   // meant to mean "has the game open", so the connection has to outlive any
   // one screen. See useCommunityFeed.
@@ -224,6 +229,9 @@ function App() {
 
     vibrate(dailyState.status === 'won' ? 'win' : 'lose')
     playSound(dailyState.status === 'won' ? 'win' : 'lose')
+    // Stops the clock and hands back the total in the same tick, since the
+    // recap and the score submission both need it immediately.
+    setDailyDurationMs(finishDailyTimer())
     recordDailyResult({
       positions: dailyState.positions,
       placedCount: dailyState.placedCount,
@@ -255,6 +263,7 @@ function App() {
     dailyDate,
     streak,
     submitStreak,
+    finishDailyTimer,
   ])
 
   useEffect(() => {
@@ -274,6 +283,9 @@ function App() {
   }
 
   const handleDailySelect = (index: number) => {
+    // Every placement, not just the first: starting an already-running clock
+    // is a no-op, and this is also what restarts it after a refresh.
+    beginDailyTimer()
     setDailyState(prev => {
       const placed = place(prev, index)
       if (placed === prev || placed.status !== 'idle') return placed
@@ -357,6 +369,7 @@ function App() {
           history={history}
           today={dailyDate}
           hardMode={hardMode}
+          durationMs={dailyDurationMs}
           onSelect={handleDailySelect}
           onClose={() => setIsDailyOpen(false)}
           dailyLeaderboardQualifies={dailyLeaderboardQualifies}
@@ -369,6 +382,7 @@ function App() {
               dailyState.placedCount,
               dailyState.positions,
               dailyState.status === 'lost' ? dailyState.currentRoll : null,
+              dailyDurationMs,
             )
             setDailyLeaderboardQualifies(false)
           }}

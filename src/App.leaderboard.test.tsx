@@ -54,6 +54,7 @@ interface MockLeaderboardEntry {
   score: number
   board: (number | null)[] | null
   endingRoll?: number | null
+  durationMs?: number | null
 }
 
 interface MockStreakEntry {
@@ -463,5 +464,41 @@ describe('insights leaderboard activity', () => {
     expect(within(panel).getByText('month')).toBeInTheDocument()
     expect(within(panel).getByText('3')).toBeInTheDocument()
     expect(within(panel).getByText('all-time')).toBeInTheDocument()
+  })
+})
+
+describe('daily leaderboard times', () => {
+  it('shows each entry\'s time, and a dash for one recorded before timing existed', async () => {
+    seedPlayedStats()
+    mockLeaderboardApi({
+      entries: [{ id: 1, name: 'TOM', score: 18, board: null }],
+      dailyEntries: [
+        { id: 9, name: 'YRC', score: 15, board: null, durationMs: 112_000 },
+        { id: 10, name: 'JRC', score: 15, board: null, durationMs: 134_000 },
+        { id: 11, name: 'OLD', score: 15, board: null, durationMs: null },
+      ],
+    })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Daily' }))
+
+    expect(await screen.findByText('1:52')).toBeInTheDocument()
+    expect(screen.getByText('2:14')).toBeInTheDocument()
+    // Untimed entries show a dash rather than a misleading zero.
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
+  it('shows no times on the free-play board, which has no clock', async () => {
+    seedPlayedStats()
+    mockLeaderboardApi({ entries: [{ id: 1, name: 'TOM', score: 18, board: null }] })
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View stats' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Leaderboard/ }))
+
+    await screen.findByText('TOM')
+    expect(document.querySelectorAll('.leaderboard-row__time')).toHaveLength(0)
   })
 })
