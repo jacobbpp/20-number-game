@@ -5,10 +5,20 @@ beforeEach(async () => {
   await env.DB.prepare('DELETE FROM transfers').run()
 })
 
+// Transfers have no device id to key a rate limit on, so they're limited by
+// calling address. These tests mint far more codes than one person ever would,
+// so each call comes from its own address rather than sharing one bucket and
+// tripping the limiter partway through.
+let caller = 0
+function fromNewAddress() {
+  caller += 1
+  return { 'Content-Type': 'application/json', 'CF-Connecting-IP': `203.0.113.${caller % 250}` }
+}
+
 function create(payload: unknown) {
   return SELF.fetch('http://example.com/transfer', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: fromNewAddress(),
     body: JSON.stringify(payload),
   })
 }
@@ -16,7 +26,7 @@ function create(payload: unknown) {
 function claim(body: unknown) {
   return SELF.fetch('http://example.com/transfer/claim', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: fromNewAddress(),
     body: JSON.stringify(body),
   })
 }

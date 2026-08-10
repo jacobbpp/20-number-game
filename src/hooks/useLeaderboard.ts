@@ -130,7 +130,9 @@ export function useLeaderboard() {
       fetch(`${API_BASE}/scores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boardSize, name: playerName, score, board, endingRoll }),
+        // deviceId is sent purely so the server can rate limit per player
+        // rather than per household; it is never stored against the score.
+        body: JSON.stringify({ boardSize, name: playerName, score, board, endingRoll, deviceId: getOrCreateDeviceId() }),
       }).catch(() => {
         // Best-effort — a failed submission never blocks starting a new game.
       })
@@ -182,7 +184,8 @@ export function useLeaderboard() {
       fetch(`${API_BASE}/daily-scores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boardSize, date, name: playerName, score, board, endingRoll, durationMs }),
+        // As above: for rate limiting only, never stored.
+        body: JSON.stringify({ boardSize, date, name: playerName, score, board, endingRoll, durationMs, deviceId: getOrCreateDeviceId() }),
       }).catch(() => {
         // Best-effort — a failed submission never blocks closing the recap.
       })

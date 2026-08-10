@@ -1,79 +1,139 @@
 import { env, SELF } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
-import { withinRateLimit, type Env } from '../src/index'
+import { allowWrite } from '../src/index'
 
-function req(method = 'GET', ip = '203.0.113.10') {
-  return new Request('http://example.com/activity', { method, headers: { 'CF-Connecting-IP': ip } })
+const LIMIT = 60
+const WINDOW_MS = 60_000
+const T0 = 1_800_000_000_000
+
+// Drives the object directly so the window can be moved without waiting a
+// real minute.
+function limiterFor(key: string) {
+  return env.RATE_LIMITER.getByName(key)
 }
 
-// The binding only exists on a deployed worker, so these drive the gate
-// directly with a stand-in rather than trying to exhaust a real limiter.
-function envWith(limit: (options: { key: string }) => Promise<{ success: boolean }>): Env {
-  return { ...(env as unknown as Env), RATE_LIMITER: { limit } }
+function writeRequest(ip = '203.0.113.10') {
+  return new Request('http://example.com/games', { method: 'POST', headers: { 'CF-Connecting-IP': ip } })
 }
 
-describe('rate limit gate', () => {
-  it('lets a request through when the limiter says yes', async () => {
-    expect(await withinRateLimit(req(), envWith(async () => ({ success: true })))).toBe(true)
+describe('the counter itself', () => {
+  it('allows everything up to the limit and refuses the next one', async () => {
+    const limiter = limiterFor('counter-basic')
+
+    for (let i = 1; i <= LIMIT; i++) {
+      expect(await limiter.consume(T0)).toBe(true)
+    }
+    expect(await limiter.consume(T0)).toBe(false)
   })
 
-  it('turns a request away when the limiter says no', async () => {
-    expect(await withinRateLimit(req(), envWith(async () => ({ success: false })))).toBe(false)
+  it('keeps refusing for the rest of the window', async () => {
+    const limiter = limiterFor('counter-stays-shut')
+    for (let i = 0; i <= LIMIT; i++) await limiter.consume(T0)
+
+    expect(await limiter.consume(T0 + WINDOW_MS - 1)).toBe(false)
   })
 
-  it('keys on the calling address', async () => {
-    const seen: string[] = []
-    const testEnv = envWith(async ({ key }) => {
-      seen.push(key)
-      return { success: true }
-    })
+  it('starts fresh once the window has passed', async () => {
+    const limiter = limiterFor('counter-resets')
+    for (let i = 0; i <= LIMIT; i++) await limiter.consume(T0)
+    expect(await limiter.consume(T0)).toBe(false)
 
-    await withinRateLimit(req('GET', '203.0.113.10'), testEnv)
-    await withinRateLimit(req('GET', '198.51.100.7'), testEnv)
-
-    expect(seen).toEqual(['203.0.113.10', '198.51.100.7'])
+    expect(await limiter.consume(T0 + WINDOW_MS)).toBe(true)
   })
 
-  it('never counts a CORS preflight', async () => {
-    // Every JSON POST the app makes triggers one, so counting them would halve
-    // the real budget while stopping nothing: a preflight cannot write.
-    let called = false
-    const testEnv = envWith(async () => {
-      called = true
-      return { success: false }
-    })
+  it('leaves room for a real player, whose peak is about twenty writes a minute', async () => {
+    const limiter = limiterFor('counter-real-play')
 
-    expect(await withinRateLimit(req('OPTIONS'), testEnv)).toBe(true)
-    expect(called).toBe(false)
+    // Five games in a minute, the busiest minute in the whole log, at four
+    // writes each.
+    for (let i = 0; i < 20; i++) {
+      expect(await limiter.consume(T0 + i * 500)).toBe(true)
+    }
+  })
+})
+
+describe('who gets counted together', () => {
+  it('counts each key separately, so one person cannot use up another\'s', async () => {
+    const busy = limiterFor('device:busy-one')
+    for (let i = 0; i <= LIMIT; i++) await busy.consume(T0)
+    expect(await busy.consume(T0)).toBe(false)
+
+    // Somebody else on the same sofa is untouched.
+    expect(await limiterFor('device:quiet-one').consume(T0)).toBe(true)
   })
 
-  it('lets everything through when the binding is not configured at all', async () => {
-    // Local dev and the test runner have no limiter. Refusing traffic because
-    // it is missing would be a much worse failure than not limiting.
-    expect(await withinRateLimit(req(), { ...(env as unknown as Env), RATE_LIMITER: undefined })).toBe(true)
+  it('keys on the device when there is one', async () => {
+    const request = writeRequest()
+
+    for (let i = 0; i < LIMIT; i++) {
+      expect(await allowWrite(request, env, 'device-aaa')).toBe(true)
+    }
+    expect(await allowWrite(request, env, 'device-aaa')).toBe(false)
+    // Same address, different person: unaffected. This is the whole reason
+    // for keying on the device rather than the address.
+    expect(await allowWrite(request, env, 'device-bbb')).toBe(true)
   })
 
-  it('fails open when the limiter itself throws', async () => {
-    const testEnv = envWith(async () => {
-      throw new Error('limiter unavailable')
-    })
+  it('falls back to the address only when there is no device', async () => {
+    const request = writeRequest('198.51.100.42')
 
-    expect(await withinRateLimit(req(), testEnv)).toBe(true)
+    for (let i = 0; i < LIMIT; i++) {
+      expect(await allowWrite(request, env)).toBe(true)
+    }
+    expect(await allowWrite(request, env)).toBe(false)
+    // A different address is its own bucket.
+    expect(await allowWrite(writeRequest('198.51.100.43'), env)).toBe(true)
   })
 
-  it('falls back to a shared key when there is no address header', async () => {
-    const seen: string[] = []
-    const testEnv = envWith(async ({ key }) => {
-      seen.push(key)
-      return { success: true }
-    })
+  it('never lets an address bucket collide with a device of the same name', async () => {
+    const request = writeRequest('collide')
 
-    await withinRateLimit(new Request('http://example.com/activity'), testEnv)
+    for (let i = 0; i < LIMIT; i++) await allowWrite(request, env)
+    expect(await allowWrite(request, env)).toBe(false)
+    // Prefixed keys keep these apart even when the strings match.
+    expect(await allowWrite(request, env, 'collide')).toBe(true)
+  })
+})
 
-    expect(seen).toEqual(['unknown'])
+describe('when the limiter is unhappy', () => {
+  it('lets the write through rather than failing it', async () => {
+    const broken = {
+      ...env,
+      RATE_LIMITER: {
+        getByName() {
+          throw new Error('limiter unavailable')
+        },
+      },
+    } as unknown as Parameters<typeof allowWrite>[1]
+
+    // A limiter problem must never take writes down with it.
+    expect(await allowWrite(writeRequest(), broken, 'device-aaa')).toBe(true)
+  })
+})
+
+describe('through the real endpoints', () => {
+  it('refuses a write once that device has had its allowance', async () => {
+    const deviceId = 'flood-device-aaa'
+    const body = { deviceId, name: 'FLOOD', date: '2026-03-01', mode: 'freeplay', boardSize: 20, placedCount: 5 }
+
+    const post = () =>
+      SELF.fetch('http://example.com/games', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+    const codes: number[] = []
+    for (let i = 0; i < LIMIT + 5; i++) codes.push((await post()).status)
+
+    expect(codes.filter(code => code === 204)).toHaveLength(LIMIT)
+    expect(codes.filter(code => code === 429)).toHaveLength(5)
   })
 
-  it('leaves the real endpoints working, since no limiter is bound under test', async () => {
-    expect((await SELF.fetch('http://example.com/activity')).status).toBe(200)
+  it('leaves reads alone, so nothing gets slower or cut off', async () => {
+    // Only writes are gated: a poll should never be refused.
+    for (let i = 0; i < LIMIT + 10; i++) {
+      expect((await SELF.fetch('http://example.com/activity')).status).toBe(200)
+    }
   })
 })

@@ -1,17 +1,9 @@
 import { DurableObject } from 'cloudflare:workers'
 
-// Declared structurally rather than pulled from the generated types, so the
-// worker still compiles if the binding isn't present in a given environment.
-interface RateLimiter {
-  limit(options: { key: string }): Promise<{ success: boolean }>
-}
-
 export interface Env {
   DB: D1Database
   ACTIVITY: DurableObjectNamespace<ActivityFeed>
-  // Optional on purpose: absent under test and in local dev, where the right
-  // behaviour is to let everything through rather than to fail.
-  RATE_LIMITER?: RateLimiter
+  RATE_LIMITER: DurableObjectNamespace<RateLimiter>
 }
 
 // Mirrors src/game/stats.ts: VALUE_BUCKETS on the frontend, and the same
@@ -120,6 +112,8 @@ async function handlePost(request: Request, env: Env): Promise<Response> {
   }
 
   const { boardSize, placements, deviceId } = body
+  if (!(await allowWrite(request, env, deviceId))) return tooManyRequests()
+
   const statements = buildUpsertStatements(
     env,
     'INSERT INTO placements (board_size, position, value_bucket, count)',
@@ -254,6 +248,10 @@ interface ScoreSubmitBody {
   score: number
   board?: (number | null)[] | null
   endingRoll?: number | null
+  // Only ever used to rate limit per player instead of per household; never
+  // stored against the score and never shown. Optional so a client cached
+  // from before this still submits fine.
+  deviceId?: string
 }
 
 const NAME_PATTERN = /^[A-Za-z0-9 ]+$/
@@ -275,7 +273,8 @@ function isValidEndingRoll(endingRoll: unknown): endingRoll is number | null {
 
 function isValidScoreSubmit(body: unknown): body is ScoreSubmitBody {
   if (!body || typeof body !== 'object') return false
-  const { boardSize, name, score, board, endingRoll } = body as Record<string, unknown>
+  const { boardSize, name, score, board, endingRoll, deviceId } = body as Record<string, unknown>
+  if (deviceId !== undefined && (typeof deviceId !== 'string' || !DEVICE_ID_PATTERN.test(deviceId))) return false
   if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > boardSize) return false
   if (typeof name !== 'string') return false
@@ -300,7 +299,9 @@ async function handleScoreSubmit(request: Request, env: Env): Promise<Response> 
     )
   }
 
-  const { boardSize, name, score, board, endingRoll } = body
+  const { boardSize, name, score, board, endingRoll, deviceId } = body
+  if (!(await allowWrite(request, env, deviceId))) return tooManyRequests()
+
   const cleanName = name.trim().toUpperCase()
   const boardJson = Array.isArray(board) ? JSON.stringify(board) : null
 
@@ -415,6 +416,8 @@ interface DailyScoreSubmitBody {
   board?: (number | null)[] | null
   endingRoll?: number | null
   durationMs?: number | null
+  // As with free play: used only for rate limiting, never stored.
+  deviceId?: string
 }
 
 // A day is the ceiling: the clock pauses whenever the app isn't in front of
@@ -431,7 +434,8 @@ function isValidDuration(durationMs: unknown): durationMs is number | null {
 
 function isValidDailyScoreSubmit(body: unknown): body is DailyScoreSubmitBody {
   if (!body || typeof body !== 'object') return false
-  const { boardSize, date, name, score, board, endingRoll, durationMs } = body as Record<string, unknown>
+  const { boardSize, date, name, score, board, endingRoll, durationMs, deviceId } = body as Record<string, unknown>
+  if (deviceId !== undefined && (typeof deviceId !== 'string' || !DEVICE_ID_PATTERN.test(deviceId))) return false
   if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) return false
   if (typeof date !== 'string' || !DATE_PATTERN.test(date)) return false
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > boardSize) return false
@@ -458,7 +462,9 @@ async function handleDailyScoreSubmit(request: Request, env: Env): Promise<Respo
     )
   }
 
-  const { boardSize, date, name, score, board, endingRoll, durationMs } = body
+  const { boardSize, date, name, score, board, endingRoll, durationMs, deviceId } = body
+  if (!(await allowWrite(request, env, deviceId))) return tooManyRequests()
+
   const cleanName = name.trim().toUpperCase()
   const boardJson = Array.isArray(board) ? JSON.stringify(board) : null
 
@@ -549,6 +555,8 @@ async function handleStreakSubmit(request: Request, env: Env): Promise<Response>
   }
 
   const { deviceId, name, streakCount, lastPlayedDate } = body
+  if (!(await allowWrite(request, env, deviceId))) return tooManyRequests()
+
   const cleanName = name.trim().toUpperCase()
 
   await env.DB.prepare(
@@ -632,6 +640,8 @@ async function handleGameLog(request: Request, env: Env): Promise<Response> {
   }
 
   const { deviceId, name, date, mode, boardSize, placedCount } = body
+  if (!(await allowWrite(request, env, deviceId))) return tooManyRequests()
+
   const cleanName = typeof name === 'string' && name.trim().length > 0 ? name.trim().toUpperCase().slice(0, 8) : null
   const loggedAt = new Date().toISOString()
 
@@ -704,6 +714,10 @@ async function handleTransferCreate(request: Request, env: Env): Promise<Respons
     return json({ error: 'payload is empty or too large.' }, 400)
   }
 
+  // No device id in a transfer: the whole point is that the receiving device
+  // has none of this yet. Address is the only key available.
+  if (!(await allowWrite(request, env))) return tooManyRequests()
+
   const now = Date.now()
   const code = generateTransferCode()
 
@@ -737,6 +751,10 @@ async function handleTransferClaim(request: Request, env: Env): Promise<Response
   if (!TRANSFER_CODE_PATTERN.test(code)) {
     return json({ error: 'That code does not look right.' }, 400)
   }
+
+  // Also the one endpoint where a limit does real security work rather than
+  // curbing nuisance: it caps how fast codes can be guessed.
+  if (!(await allowWrite(request, env))) return tooManyRequests()
 
   const now = new Date().toISOString()
   const row = await env.DB.prepare('SELECT payload, expires_at, claimed_at FROM transfers WHERE code = ?1')
@@ -1235,47 +1253,72 @@ async function handleReact(request: Request, env: Env): Promise<Response> {
   }
 
   const { deviceId, eventId, emoji } = body
+  if (!(await allowWrite(request, env, deviceId))) return tooManyRequests()
+
   await env.ACTIVITY.getByName(FEED_INSTANCE).react(deviceId, eventId, emoji)
 
   return new Response(null, { status: 204, headers: corsHeaders() })
 }
 
-// Keyed on the caller's address, which is the only thing available before the
-// body has been read. It pools a household behind one router, which is why the
-// ceiling is set well above what real play produces rather than snugly around
-// it — and why Cloudflare's own docs advise against IP as a key.
+// Writes only. Reads are cheap, carry no risk of polluting anything, and
+// gating them would put a Durable Object round trip in front of every poll.
 //
-// See wrangler.toml: the binding was verified not to actually reject anything
-// on this worker, so this gate currently lets everything through. The logic
-// here is right and tested; it simply has nothing saying no to it yet.
-export async function withinRateLimit(request: Request, env: Env): Promise<boolean> {
-  // CORS preflights are generated by the browser, not the player, and can't
-  // write anything. Every JSON POST triggers one, so counting them would halve
-  // the real budget for no security gain.
-  if (request.method === 'OPTIONS') return true
+// Sixty a minute per person against a measured peak of about twenty: a game
+// makes three or four writes and the busiest real minute in the log is five
+// games. So this is invisible in normal play and stops a script immediately.
+const WRITES_PER_WINDOW = 60
+const RATE_WINDOW_MS = 60_000
 
-  // Absent under test and in local dev. Blocking everything because the
-  // limiter isn't wired up would be a far worse failure than not limiting.
-  if (!env.RATE_LIMITER) return true
+interface RateWindow {
+  startedAt: number
+  count: number
+}
+
+const WINDOW_KEY = 'window'
+
+// One instance per key, so two people are never queued behind each other.
+// A single shared limiter would serialise every write in the app through one
+// object, which is the Durable Object anti-pattern and would show up as
+// latency long before it showed up as protection.
+export class RateLimiter extends DurableObject<Env> {
+  // Fixed window rather than sliding: simpler, and the worst case is that
+  // someone straddling a boundary gets up to twice the allowance briefly.
+  // For a backstop against scripted abuse that is a fine trade.
+  async consume(nowMs: number): Promise<boolean> {
+    const stored = await this.ctx.storage.get<RateWindow>(WINDOW_KEY)
+    const window: RateWindow =
+      stored && nowMs - stored.startedAt < RATE_WINDOW_MS ? { ...stored, count: stored.count + 1 } : { startedAt: nowMs, count: 1 }
+
+    await this.ctx.storage.put(WINDOW_KEY, window)
+    return window.count <= WRITES_PER_WINDOW
+  }
+}
+
+// Keyed on the player rather than the address wherever possible. A household
+// shares one public address, so limiting on that alone would count four people
+// on the same sofa as one — which is also why Cloudflare's own docs advise
+// against IP as a key. The address is only a fallback for the couple of writes
+// that legitimately have no device behind them.
+export async function allowWrite(request: Request, env: Env, deviceId?: string | null): Promise<boolean> {
+  const key = deviceId ? `device:${deviceId}` : `ip:${request.headers.get('CF-Connecting-IP') ?? 'unknown'}`
 
   try {
-    const { success } = await env.RATE_LIMITER.limit({ key: request.headers.get('CF-Connecting-IP') ?? 'unknown' })
-    return success
+    return await env.RATE_LIMITER.getByName(key).consume(Date.now())
   } catch {
-    // Fails open: a problem in the limiter must never take the API down with
-    // it. The thing it guards against is nuisance, not danger.
+    // Fails open: a problem in the limiter must never take writes down with
+    // it. What it guards against is nuisance, not danger.
     return true
   }
+}
+
+function tooManyRequests(): Response {
+  return json({ error: 'Too many requests. Give it a moment and try again.' }, 429)
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders() })
-    }
-
-    if (!(await withinRateLimit(request, env))) {
-      return json({ error: 'Too many requests. Give it a moment and try again.' }, 429)
     }
 
     const url = new URL(request.url)
