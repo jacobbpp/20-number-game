@@ -7,6 +7,27 @@ binding = "DB"
 database_name = "order20-community-stats"
 database_id = "49b5b071-db4b-4edf-91c5-1fafaf078dcd"
 
+# A blunt backstop against a script hammering the leaderboard, not a throttle
+# on real play. Measured peak for one player is about five games a minute,
+# and a game makes three or four writes, so 120 leaves room for the whole
+# household at once. WAF rate limiting rules aren't an option here: those
+# apply to zones you own, and workers.dev isn't one.
+#
+# NOT CURRENTLY ENFORCING. Verified against the deployed worker on 2026-08-10:
+# the binding is present, limit() is called on every request and returns
+# {success: true} with no error, but nothing is ever rejected — 20 sequential
+# requests against a temporary limit of 5 all returned 200. Left in place
+# because it costs nothing and fails open, and would begin working if the
+# binding starts enforcing. Do not treat this as protection until a flood test
+# actually produces a 429.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 120
+  period = 60
+
 # 00:10 UTC, ten minutes after the day it summarises has ended, so there is no
 # race with a game logged in the last seconds before midnight.
 [triggers]
