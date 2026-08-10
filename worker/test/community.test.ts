@@ -224,3 +224,39 @@ describe('best runs board', () => {
     expect(response.status).toBe(426)
   })
 })
+
+// Grouping is by name first, which is what makes "three each" true on the
+// screen a person actually reads. These cover the two ways that matters.
+describe('who counts as one person', () => {
+  async function board() {
+    return (await (await SELF.fetch('http://example.com/activity')).json()) as FeedSnapshot
+  }
+
+  it('treats the same name on two devices as one person', async () => {
+    // Exactly what Move my game produces: the device id deliberately changes,
+    // but it is still one player and should still get three slots, not six.
+    for (let i = 1; i <= 4; i++) {
+      await postGame({ deviceId: 'moved-old-device', name: 'MOVER', date: '2026-03-01', mode: 'daily', boardSize: 30, placedCount: i })
+    }
+    for (let i = 5; i <= 8; i++) {
+      await postGame({ deviceId: 'moved-new-device', name: 'MOVER', date: '2026-03-01', mode: 'daily', boardSize: 30, placedCount: i })
+    }
+
+    const theirs = (await board()).events.filter(event => event.name === 'MOVER')
+    expect(theirs).toHaveLength(3)
+    expect(theirs.map(event => event.placedCount)).toEqual([8, 7, 6])
+  })
+
+  it('keeps two unnamed devices apart rather than merging them', async () => {
+    // With no name to group on it falls back to the device, so one anonymous
+    // player cannot eat the other's slots.
+    for (let i = 1; i <= 4; i++) {
+      await postGame({ deviceId: 'anon-one-device', name: null, date: '2026-03-01', mode: 'daily', boardSize: 25, placedCount: i })
+      await postGame({ deviceId: 'anon-two-device', name: null, date: '2026-03-01', mode: 'daily', boardSize: 25, placedCount: i })
+    }
+
+    const anon = (await board()).events.filter(event => event.name === null && event.boardSize === 25)
+    // Three each, from two distinct devices.
+    expect(anon).toHaveLength(6)
+  })
+})

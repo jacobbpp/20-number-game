@@ -1038,9 +1038,15 @@ export class ActivityFeed extends DurableObject<Env> {
     // the raw numbers say otherwise.
     const rows = this.ctx.storage.sql
       .exec<{ id: number; name: string | null; mode: string; board_size: number; placed_count: number; at: string }>(
+        // Grouped by name first, device second. Name is what a reader actually
+        // sees, so grouping by it is what makes "three each" true on screen —
+        // and it keeps one person as one person across a Move my game, where
+        // the device id deliberately changes. Device id only decides it for
+        // someone who has never saved a name, and the row id is a last resort
+        // for rows written before device ids were stored at all.
         `SELECT id, name, mode, board_size, placed_count, at FROM (
            SELECT *, ROW_NUMBER() OVER (
-             PARTITION BY COALESCE(device_id, CAST(id AS TEXT))
+             PARTITION BY COALESCE(NULLIF(name, ''), 'device:' || device_id, 'row:' || CAST(id AS TEXT))
              ORDER BY CAST(placed_count AS REAL) / board_size DESC, placed_count DESC, id DESC
            ) AS person_rank
            FROM events
