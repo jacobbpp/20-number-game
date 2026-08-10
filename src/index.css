@@ -1692,11 +1692,16 @@ button:focus-visible {
   margin-top: 8px;
 }
 
+/* flex: 1 and min-height: 0, exactly as .daily-screen does it. The board
+   inside is flex: 1 and stretches to whatever it is given, so without a
+   parent that claims the height of .app it sizes to its content instead and
+   six slots leave two thirds of the screen empty. */
 .short-screen {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px 0 24px;
+  gap: 10px;
 }
 
 .short-screen__header {
