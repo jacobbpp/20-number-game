@@ -357,8 +357,8 @@ describe('leaderboard screen', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
 
     await screen.findByText(/Top 10 today!/)
     fireEvent.change(screen.getByLabelText('Name for the leaderboard'), { target: { value: 'zee' } })
@@ -377,8 +377,8 @@ describe('leaderboard name prompt', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
 
     expect(await screen.findByText(/Top 10 today!/)).toBeInTheDocument()
 
@@ -400,8 +400,8 @@ describe('leaderboard name prompt', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
 
     await screen.findByText(/Top 10 today!/)
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
@@ -415,8 +415,8 @@ describe('leaderboard name prompt', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
 
     await screen.findByRole('heading', { name: 'Game over' })
     expect(screen.queryByLabelText('Name for the leaderboard')).not.toBeInTheDocument()
@@ -429,8 +429,8 @@ describe('insights leaderboard activity', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
     await screen.findByRole('heading', { name: 'Game over' })
 
     const expected = recordGameResult({}, getLocalDateString(), 2, [])

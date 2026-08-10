@@ -17,9 +17,9 @@ export function PositionSlot({ index, value, isValid, hardMode, isSuggested, acc
   // same; a wrong tap is a silent no-op (place() already rejects it).
   const revealValid = isValid && !hardMode
   const canTap = !filled && (hardMode || isValid)
-  // The "usual spot" marker is a nudge among already-legal choices, not a
-  // new source of legality information — so it only ever shows alongside
-  // the existing valid-position highlight, never in hard mode.
+  // The suggestion is a nudge among already-legal choices, not a new source
+  // of legality information — so it only ever shows alongside the existing
+  // valid-position highlight, never in hard mode.
   const showSuggestion = revealValid && isSuggested
 
   const label = filled
@@ -27,7 +27,7 @@ export function PositionSlot({ index, value, isValid, hardMode, isSuggested, acc
     : hardMode
       ? `Position ${displayPosition}, empty`
       : revealValid
-        ? `Position ${displayPosition}, empty, valid placement${showSuggestion ? ', where players usually place this range' : ''}`
+        ? `Position ${displayPosition}, empty, valid placement${showSuggestion ? ', suggested for this number' : ''}`
         : `Position ${displayPosition}, empty, not a valid placement`
 
   return (

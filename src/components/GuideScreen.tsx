@@ -9,6 +9,17 @@ interface Entry {
   desc: string
 }
 
+const PLAYING_ENTRIES: Entry[] = [
+  {
+    term: 'Suggested position',
+    desc: "Among the positions currently legal for a roll, a small dot marks the one it fits best. It works this out from the board in front of you rather than from what anyone else has done, so it is right on a board nobody has ever seen. It is a better guess, not the answer: following it every single turn still fills only about half the board on average, so there is plenty left to play for. Hard mode turns it off along with everything else.",
+  },
+  {
+    term: 'Where a number belongs',
+    desc: "The idea behind the dot, and the single most useful habit to pick up. Judge a number against the two numbers either side of it, not against the whole board. A 515 on an empty board belongs about halfway down. The same 515 having to fit between an existing 480 and 520 belongs near the bottom of whatever room is left between them, because it is nearly as big as the 520 already is. Thinking that way is worth roughly one extra position a game.",
+  },
+]
+
 const STATS_ENTRIES: Entry[] = [
   {
     term: 'Heatmap',
@@ -138,6 +149,13 @@ export function GuideScreen({ onClose }: GuideScreenProps) {
       </div>
 
       <div className="stats-screen__body">
+        <p className="guide-section__label">Playing</p>
+        <div className="guide-list">
+          {PLAYING_ENTRIES.map(entry => (
+            <GuideEntry key={entry.term} {...entry} />
+          ))}
+        </div>
+
         <p className="guide-section__label">Stats</p>
         <div className="guide-list">
           {STATS_ENTRIES.map(entry => (

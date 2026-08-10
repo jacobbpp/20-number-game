@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.52.0',
+    date: '2026-08-10',
+    title: 'The dot knows what it is talking about now',
+    description:
+      "The suggested position used to point at wherever other people had put numbers of that size before, so it could only ever repeat the group's instinct. It now works out where a number actually belongs from the board in front of you, judging it against the two numbers either side of it rather than against the whole board. A 515 that has to squeeze between an existing 480 and 520 belongs near the far end of that gap, not halfway down the board. Playing that way is worth about one extra position a game. It also works on a brand new device, with no group history behind it, which the old one never did.",
+  },
+  {
     version: '1.51.0',
     date: '2026-08-10',
     title: 'A nudge when the challenge lands',

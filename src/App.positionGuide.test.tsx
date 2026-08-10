@@ -3,32 +3,36 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { APP_VERSION } from './version'
 
-function emptyMatrix() {
-  return Array.from({ length: 20 }, () => Array(10).fill(0))
-}
+const SUGGESTED = /empty, valid placement, suggested for this number$/
 
-function seedFreshRolledGame(currentRoll: number) {
+// Seeds a game mid-roll so the board under test is exactly the one described,
+// rather than whatever a sequence of random rolls happens to produce.
+function seedRolledGame(currentRoll: number, placed: Record<number, number> = {}) {
+  const positions: (number | null)[] = Array(20).fill(null)
+  for (const [slot, value] of Object.entries(placed)) positions[Number(slot)] = value
+
+  const validPositions = positions
+    .map((_, slot) => slot)
+    .filter(slot => {
+      if (positions[slot] !== null) return false
+      const before = positions.slice(0, slot).filter(v => v !== null) as number[]
+      const after = positions.slice(slot + 1).filter(v => v !== null) as number[]
+      const lower = before.length > 0 ? before[before.length - 1] : -Infinity
+      const upper = after.length > 0 ? after[0] : Infinity
+      return currentRoll > lower && currentRoll < upper
+    })
+
   localStorage.setItem(
     'order20-current-game',
     JSON.stringify({
-      positions: Array(20).fill(null),
-      usedNumbers: [currentRoll],
+      positions,
+      usedNumbers: [...Object.values(placed), currentRoll],
       currentRoll,
-      validPositions: Array.from({ length: 20 }, (_, i) => i),
-      placedCount: 0,
+      validPositions,
+      placedCount: Object.keys(placed).length,
       status: 'rolled',
       lossReason: null,
     }),
-  )
-}
-
-// The dot now reflects community history fetched from the stats API rather
-// than anything read from localStorage — so tests stub the network call
-// instead of seeding order20-stats.
-function mockCommunitySummary(matrix: number[][]) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ boardSize: 20, matrix }), { status: 200 }))),
   )
 }
 
@@ -44,43 +48,82 @@ afterEach(() => {
   cleanup()
 })
 
-describe('position guide', () => {
-  it('marks the position with the strongest community history for this roll among valid slots', async () => {
-    seedFreshRolledGame(250) // bucket 2
-    const matrix = emptyMatrix()
-    matrix[5][2] = 5
-    mockCommunitySummary(matrix)
+describe('the suggested position', () => {
+  it('marks where the number belongs on an open board', async () => {
+    // 250 is roughly a quarter of the way up the range, so on an empty board
+    // it belongs roughly a quarter of the way down.
+    seedRolledGame(250)
 
     render(<App />)
 
-    expect(
-      await screen.findByRole('button', { name: 'Position 6, empty, valid placement, where players usually place this range' }),
-    ).toBeInTheDocument()
-    // No other position should carry the note.
-    expect(screen.queryByRole('button', { name: /Position 7,.*usually place/ })).not.toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /^Position 6, empty, valid placement, suggested/ })).toBeInTheDocument()
   })
 
-  it('does not mark anything without enough community history behind it', async () => {
-    seedFreshRolledGame(250)
-    mockCommunitySummary(emptyMatrix())
+  it('marks only one position', async () => {
+    seedRolledGame(250)
 
     render(<App />)
 
-    await screen.findByRole('button', { name: 'Position 1, empty, valid placement' })
-    expect(screen.queryByText(/usually place/)).not.toBeInTheDocument()
+    await screen.findByRole('button', { name: SUGGESTED })
+    expect(screen.getAllByRole('button', { name: SUGGESTED })).toHaveLength(1)
   })
 
-  it('never shows the guide when hard mode is on', async () => {
+  it('places by the gap the number lands in, not by its size on the board', async () => {
+    // This is the whole reason the suggestion was rewritten. 515 sits about
+    // halfway along 1 to 1000, so judging it against the board says "about
+    // position 10". But it has to fit between an existing 480 and 520, and
+    // against that pair it is nearly as big as the 520, so it belongs near
+    // the far end of the room left between them.
+    seedRolledGame(515, { 2: 480, 17: 520 })
+
+    render(<App />)
+
+    expect(await screen.findByRole('button', { name: /^Position 15, empty, valid placement, suggested/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Position 11, empty, valid placement, suggested/ })).not.toBeInTheDocument()
+  })
+
+  it('appears with no community history behind it at all', async () => {
+    // The old suggestion was read from the community placement matrix and so
+    // showed nothing until enough other people had played. A brand new player
+    // on a brand new board got no help from it whatsoever. This one is worked
+    // out from the board in front of them, so there is nothing to wait for.
+    seedRolledGame(250)
+
+    render(<App />)
+
+    expect(await screen.findByRole('button', { name: SUGGESTED })).toBeInTheDocument()
+  })
+
+  it('survives the stats API being unreachable', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('offline'))))
+    seedRolledGame(250)
+
+    render(<App />)
+
+    expect(await screen.findByRole('button', { name: SUGGESTED })).toBeInTheDocument()
+  })
+
+  it('says nothing when only one position is legal', async () => {
+    // 490 can only go in the single empty slot between 480 and 500. Pointing
+    // at the only option available is noise.
+    seedRolledGame(490, { 2: 480, 4: 500 })
+
+    render(<App />)
+
+    await screen.findByRole('button', { name: /^Position 4, empty, valid placement/ })
+    expect(screen.queryByRole('button', { name: SUGGESTED })).not.toBeInTheDocument()
+  })
+
+  it('never appears in hard mode', async () => {
+    // Hard mode hides which positions are even legal, so a dot narrowing them
+    // down would hand back exactly what was turned off.
     localStorage.setItem('order20-hard-mode', '1')
-    seedFreshRolledGame(250)
-    const matrix = emptyMatrix()
-    matrix[5][2] = 5
-    mockCommunitySummary(matrix)
+    seedRolledGame(250)
 
     render(<App />)
 
     await screen.findByRole('button', { name: 'Position 1, empty' })
-    expect(screen.queryByText(/usually place/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: SUGGESTED })).not.toBeInTheDocument()
     expect(document.querySelector('.slot__suggested')).toBeNull()
   })
 })

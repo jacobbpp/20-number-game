@@ -37,6 +37,12 @@ export function HowToPlayScreen({ onClose }: HowToPlayScreenProps) {
 
         <p className="howto__body">One illegal roll ends the run. Fill all {BOARD_SIZE} to win.</p>
 
+        <p className="howto__body">
+          One tip: judge a number against the two either side of it, not against the whole board. A 515
+          belongs halfway down an empty board, but if it has to fit between an existing 480 and 520 it
+          belongs near the bottom of the room left between them. The dot points there.
+        </p>
+
         <button type="button" className="btn btn--primary" onClick={onClose} autoFocus>
           Got it
         </button>

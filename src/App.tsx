@@ -20,7 +20,8 @@ import { CHANGELOG } from './changelog'
 import { ACHIEVEMENTS, countUnlocked } from './game/achievements'
 import { createDailyRng, getDailyBoardSize, getLocalDateString, recordDailyStreak } from './game/daily'
 import { place, roll } from './game/engine'
-import { extractPlacements, suggestedPosition } from './game/stats'
+import { suggestedPosition } from './game/hint'
+import { extractPlacements } from './game/stats'
 import { createInitialState, type ResultBadge } from './game/types'
 import { useAchievements } from './hooks/useAchievements'
 import { useBestScore } from './hooks/useBestScore'
@@ -62,7 +63,11 @@ function App() {
   const [leaderboardWindows, setLeaderboardWindows] = useState<LeaderboardWindow[] | null>(null)
   const { bestScore, bestRun, reportScore } = useBestScore()
   const { stats, recordCompletedGame } = useGameStats()
-  const { matrix: communityMatrix, reportPlacements, reportGame } = useCommunityStats()
+  // The community matrix this hook also fetches used to drive the in-game
+  // suggestion and no longer does (see game/hint.ts). It is left collecting
+  // rather than torn out, since it is what the community insights are built
+  // from, but nothing in the game reads it now.
+  const { reportPlacements, reportGame } = useCommunityStats()
   const {
     name: leaderboardName,
     dailyActivity,
@@ -376,11 +381,15 @@ function App() {
     return () => navigator.serviceWorker.removeEventListener('message', handleMessage)
   }, [])
 
-  // Free play only — daily board sizes vary, so "position 5" doesn't mean
-  // the same thing across days the way it does for the fixed-size matrix
-  // this is built from.
+  // Free play only, and now by choice rather than by limitation. The old
+  // suggestion could not work in the daily at all, because it read a
+  // fixed-size matrix and "position 5" means something different on a board
+  // that changes size every day. This one reads the board in front of it, so
+  // it would work at any size. The daily stays without it because everyone
+  // gets the same rolls there, which makes it the one mode where the score
+  // should be entirely the player's own.
   const freePlaySuggestion =
-    state.currentRoll !== null ? suggestedPosition(communityMatrix, state.currentRoll, state.validPositions) : null
+    state.currentRoll !== null ? suggestedPosition(state.positions, state.currentRoll, state.validPositions) : null
 
   return (
     <div className="app">

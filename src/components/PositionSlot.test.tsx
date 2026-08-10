@@ -16,7 +16,7 @@ describe('PositionSlot in normal mode', () => {
       </>,
     )
 
-    const validSlot = screen.getByRole('button', { name: 'Position 1, empty, valid placement' })
+    const validSlot = screen.getByRole('button', { name: /^Position 1, empty, valid placement/ })
     expect(validSlot).toHaveTextContent('tap')
     expect(validSlot).not.toBeDisabled()
 
@@ -29,7 +29,7 @@ describe('PositionSlot in normal mode', () => {
       <PositionSlot index={4} value={null} isValid onSelect={vi.fn()} hardMode={false} isSuggested accentColor="#000" />,
     )
 
-    const slot = screen.getByRole('button', { name: 'Position 5, empty, valid placement, where players usually place this range' })
+    const slot = screen.getByRole('button', { name: 'Position 5, empty, valid placement, suggested for this number' })
     expect(slot.querySelector('.slot__suggested')).not.toBeNull()
   })
 

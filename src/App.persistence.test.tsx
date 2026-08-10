@@ -38,7 +38,7 @@ describe('free play persistence', () => {
     render(<App />)
 
     expect(await screen.findByText('64')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Position 1, empty, valid placement' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Position 1, empty, valid placement/ }))
     await screen.findByText('75')
 
     cleanup()
@@ -54,8 +54,8 @@ describe('free play persistence', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
     await screen.findByRole('heading', { name: 'Game over' })
 
     cleanup()

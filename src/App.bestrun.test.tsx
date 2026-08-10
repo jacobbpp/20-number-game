@@ -52,8 +52,8 @@ describe('best run', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
     await screen.findByRole('heading', { name: 'Game over' })
 
     fireEvent.click(screen.getByRole('button', { name: /Best 2/ }))
@@ -65,17 +65,17 @@ describe('best run', () => {
   it('replaces the saved board when a strictly higher best is set', async () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
     await screen.findByRole('heading', { name: 'Game over' })
 
     // Set up the next sequence before restarting — the restart itself
     // triggers the first roll of the new game synchronously.
     mockRollSequence([100, 200, 300, 150])
     fireEvent.click(screen.getByRole('button', { name: 'New game' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 3, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 3, empty, valid placement/ }))
     await screen.findByRole('heading', { name: 'Game over' })
 
     fireEvent.click(screen.getByRole('button', { name: /Best 3/ }))

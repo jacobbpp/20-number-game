@@ -41,7 +41,7 @@ describe('App', () => {
     expect(await screen.findByText('64')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Roll$/ })).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Position 1, empty, valid placement' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Position 1, empty, valid placement/ }))
 
     expect(await screen.findByText('500')).toBeInTheDocument()
     expect(screen.getByText(/1 of 20 placed/)).toBeInTheDocument()
@@ -52,8 +52,8 @@ describe('App', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
 
     expect(await screen.findByRole('heading', { name: 'Game over' })).toBeInTheDocument()
     expect(screen.getAllByRole('heading', { name: 'Game over' })).toHaveLength(1)
@@ -64,8 +64,8 @@ describe('App', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
 
     expect(await screen.findByText(/2 of 20 placed · 3 away from your record/)).toBeInTheDocument()
   })
@@ -74,8 +74,8 @@ describe('App', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
 
     expect(await screen.findByText(/new best!/)).toBeInTheDocument()
     expect(screen.queryByText(/away from your record/)).not.toBeInTheDocument()
@@ -85,8 +85,8 @@ describe('App', () => {
     mockRollSequence([64, 75, 63])
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 1, empty, valid placement' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 2, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 1, empty, valid placement/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 2, empty, valid placement/ }))
 
     await screen.findByRole('heading', { name: 'Game over' })
 

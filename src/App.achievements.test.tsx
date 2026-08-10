@@ -105,7 +105,7 @@ describe('achievements', () => {
     seedOneMoveFromWinning()
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 20, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 20, empty, valid placement/ }))
     // The toast waits for the win overlay to clear rather than floating on
     // top of its scrim — dismissing it (New game) is what surfaces the toast.
     fireEvent.click(await screen.findByRole('button', { name: 'New game' }))
@@ -126,7 +126,7 @@ describe('achievements', () => {
     seedOneMoveFromWinning()
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 20, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 20, empty, valid placement/ }))
     fireEvent.click(await screen.findByRole('button', { name: 'New game' }))
 
     const firstToast = await screen.findByRole('status')
@@ -147,7 +147,7 @@ describe('achievements', () => {
     seedOneMoveFromWinning()
 
     render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Position 20, empty, valid placement' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Position 20, empty, valid placement/ }))
 
     await screen.findByRole('alertdialog', { name: 'Perfect order!' })
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
