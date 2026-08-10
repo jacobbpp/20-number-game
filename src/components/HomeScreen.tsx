@@ -4,7 +4,11 @@ import type { DailyResult } from '../hooks/useDailyChallenge'
 
 interface HomeScreenProps {
   bestScore: number
-  winStreak: number
+  // The daily streak, not a win streak. A win streak on a board nobody has
+  // ever filled is a zero that can never move, which is not a statistic so
+  // much as a running tally of failure. Days played is the number people
+  // actually chase.
+  dailyStreak: number
   todayResult: DailyResult | null
   dailyBoardSize: number
   // Absent until Order 6 has been found, and this screen is the only thing
@@ -21,7 +25,7 @@ interface HomeScreenProps {
 
 export function HomeScreen({
   bestScore,
-  winStreak,
+  dailyStreak,
   todayResult,
   dailyBoardSize,
   shortBoardUnlocked,
@@ -102,8 +106,8 @@ export function HomeScreen({
           <p className="home-stat-card__value">{bestScore}</p>
         </div>
         <div className="home-stat-card">
-          <p className="home-stat-card__label">Win streak</p>
-          <p className="home-stat-card__value">{winStreak}</p>
+          <p className="home-stat-card__label">Daily streak</p>
+          <p className="home-stat-card__value">{dailyStreak}</p>
         </div>
       </div>
 

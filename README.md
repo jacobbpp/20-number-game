@@ -17,6 +17,8 @@ Hard mode drops the highlight entirely: no hints, just a silent no-op on a bad t
 
 Community stats, the leaderboards, and the group activity feed are backed by a small Cloudflare Worker and D1 database (`worker/`), with no sign-in or personal data involved.
 
+Numbers derived from wins stay off screen until something has been won. Nobody ever has on a twenty-slot board, so a hard-mode card comparing 0% against 0% concluded that hard mode "hasn't slowed you down", and a three-way heatmap filter offered one empty view, one duplicate, and the real one. Both are gated on `hasWins()` and return the moment a board is filled. The wins figure itself stays on the overview: it is the honest number, and it is load-bearing (see below). On the home screen the second stat card counts days played rather than a win streak.
+
 ## Order 6
 
 A six-slot board, hidden behind a three-second press on the "wins" tile in Stats. Spoiler for anyone reading this before playing: the tile is the point. A twenty-slot board is not winnable in any practical sense, and across every game the app has logged it has never happened once, which left the win screen and the win streak as decoration nobody would ever see. Six is the size where that stops being true: measured over 50,000 simulated games following the same hint the app shows, it is won about one time in seven, against 33.9% at four slots and 2.0% at ten.

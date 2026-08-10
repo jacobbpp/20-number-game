@@ -20,7 +20,7 @@ import { WhatsNewScreen } from './components/WhatsNewScreen'
 import { WinScreen } from './components/WinScreen'
 import { CHANGELOG } from './changelog'
 import { ACHIEVEMENTS, countUnlocked } from './game/achievements'
-import { createDailyRng, getDailyBoardSize, getLocalDateString, recordDailyStreak } from './game/daily'
+import { createDailyRng, getDailyBoardSize, getLocalDateString, isStreakActive, recordDailyStreak } from './game/daily'
 import { place, roll } from './game/engine'
 import { suggestedPosition } from './game/hint'
 import { extractPlacements } from './game/stats'
@@ -421,7 +421,7 @@ function App() {
       {isHomeOpen ? (
         <HomeScreen
           bestScore={bestScore}
-          winStreak={stats.currentWinStreak}
+          dailyStreak={isStreakActive(streak, dailyDate) ? streak.count : 0}
           todayResult={todayResult}
           dailyBoardSize={dailyBoardSize}
           shortBoardUnlocked={shortBoard.unlocked}

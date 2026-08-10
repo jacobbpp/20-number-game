@@ -28,15 +28,22 @@ describe('home screen', () => {
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument()
   })
 
-  it('shows personal best and win streak on the stat cards', async () => {
+  it('shows personal best and the daily streak on the stat cards', async () => {
+    // The second card used to be a win streak. On a board nobody has ever
+    // filled that is a zero which can never move, so it now counts days
+    // played, which is the number people actually chase.
     localStorage.setItem('order20-best-score', '14')
+    localStorage.setItem(
+      'order20-daily-streak',
+      JSON.stringify({ count: 3, lastPlayedDate: new Date().toISOString().slice(0, 10), bestStreak: 5 }),
+    )
     localStorage.setItem(
       'order20-stats',
       JSON.stringify({
         totalGames: 4,
-        totalWins: 3,
+        totalWins: 0,
         totalTurns: 40,
-        currentWinStreak: 3,
+        currentWinStreak: 0,
         matrix: emptyMatrix(),
         lossBucketCounts: Array(10).fill(0),
         lastGame: null,
@@ -49,7 +56,8 @@ describe('home screen', () => {
     expect(screen.getByText('14')).toBeInTheDocument()
     expect(screen.getByText('Personal best')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
-    expect(screen.getByText('Win streak')).toBeInTheDocument()
+    expect(screen.getByText('Daily streak')).toBeInTheDocument()
+    expect(screen.queryByText('Win streak')).not.toBeInTheDocument()
   })
 
   it("shows the daily challenge as not yet played by default", async () => {

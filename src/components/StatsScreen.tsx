@@ -9,6 +9,7 @@ import {
   computeInsight,
   describeInsight,
   hardModeWinRate,
+  hasWins,
   maxCount,
   signaturePosition,
   streakMomentum,
@@ -642,7 +643,11 @@ export function StatsScreen({
                 </div>
               )}
 
-              {hardRate !== null && (
+              {/* Off until something has actually been won. With no wins at
+                  all this card compares nought per cent against nought per
+                  cent and concludes hard mode "hasn't slowed you down", which
+                  is not encouragement, it is nonsense. */}
+              {hardRate !== null && hasWins(stats) && (
                 <div className="insight-card insight-card--hardmode">
                   <span className="insight-card__icon" aria-hidden="true">
                     🛡️
@@ -715,6 +720,10 @@ export function StatsScreen({
             <>
               <div className="heatmap-section">
                 <p className="stats-screen__caption">Where each value range has landed, by position</p>
+                {/* With nothing ever won, Wins is an empty grid and Losses is
+                    identical to All, so the whole control is three buttons
+                    offering one view. */}
+                {hasWins(stats) && (
                 <div className="heatmap-toggle" role="group" aria-label="Filter heatmap by result">
                   {(['all', 'wins', 'losses'] as const).map(view => (
                     <button
@@ -728,6 +737,7 @@ export function StatsScreen({
                     </button>
                   ))}
                 </div>
+                )}
               </div>
 
               <div className="heatmap" role="img" aria-label={`Heatmap of how often each value range has been placed at each position${heatmapView === 'all' ? ', with last game\'s placements outlined' : ` (${heatmapView} only)`}`}>

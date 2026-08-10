@@ -153,6 +153,21 @@ export function recordGame(
   }
 }
 
+// Whether anything win-shaped is worth putting on screen.
+//
+// Filling a twenty slot board turns up about once in twenty thousand attempts
+// and has never once happened across every game this app has logged. So every
+// number derived from wins sits at zero permanently, and a permanent zero is
+// not a statistic: it is a running tally of failure that can never move. The
+// win itself stays in the game as the thing nobody has done. The arithmetic
+// about it does not need to be on display until there is some.
+//
+// Order 6 deliberately does not feed these (game/shortBoard.ts explains why),
+// so finding the short board does not switch them back on.
+export function hasWins(stats: StatsData): boolean {
+  return stats.totalWins > 0
+}
+
 export function winRate(stats: StatsData): number | null {
   if (stats.totalGames === 0) return null
   return Math.round((stats.totalWins / stats.totalGames) * 100)
