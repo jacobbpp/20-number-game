@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 // Newest first. Only user-facing changes belong here — no internal fixes,
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
+  // Deliberately does not say what it is or how to get at it. This popup is
+  // read by everybody, and spelling out the answer would mean nobody ever
+  // gets to find it. See game/shortBoard.ts.
+  {
+    version: '1.53.0',
+    date: '2026-08-10',
+    title: 'Something is hidden in here',
+    description:
+      "There is a way into a part of this game that is not on any menu. It has been sitting in plain sight the whole time, in the one number that has never once moved. Hold onto it and see what happens. Whoever finds it first, tell the others, or do not.",
+  },
   {
     version: '1.52.0',
     date: '2026-08-10',

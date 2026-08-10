@@ -1605,6 +1605,213 @@ button:focus-visible {
   color: var(--text-dim);
 }
 
+/* Order 6. Nothing here labels the way in: the wins tile fills as it is held,
+   which is the only clue the easter egg gets. See game/shortBoard.ts. */
+
+.stats-hero-strip__card--egg {
+  position: relative;
+  overflow: hidden;
+  /* A long press on touch otherwise selects the number and raises the
+     text-selection callout over the top of it. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+.stats-hero-strip__card--egg::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: var(--egg-progress, 0);
+  background: var(--cta);
+  opacity: 0.2;
+  transition: height 40ms linear;
+  pointer-events: none;
+}
+
+.short-reveal {
+  text-align: center;
+}
+
+.short-reveal__eyebrow {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  color: var(--text-disabled);
+}
+
+.short-reveal__headline {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.short-reveal__line {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.short-reveal__divider {
+  height: 1px;
+  background: rgba(var(--surface-tint-rgb), 0.12);
+  margin: 18px 0;
+}
+
+.short-reveal__badge {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--accent), var(--cta));
+  color: #ffffff;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 26px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.short-reveal__offer-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.short-reveal__offer {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.short-reveal__later {
+  margin-top: 8px;
+}
+
+.short-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 0 24px;
+}
+
+.short-screen__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.short-screen__title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.short-screen__record {
+  margin-left: auto;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text-disabled);
+}
+
+.short-result {
+  text-align: center;
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 20px 16px;
+}
+
+.short-result--won {
+  background: var(--win-bg);
+  box-shadow: inset 0 0 0 1px var(--win);
+}
+
+.short-result__eyebrow {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  color: var(--text-disabled);
+}
+
+.short-result--won .short-result__eyebrow {
+  color: var(--win);
+}
+
+.short-result__score {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.short-result__body {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.short-result__record {
+  margin: 14px 0 0;
+  font-size: 11.5px;
+  color: var(--text-disabled);
+}
+
+.home-short-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--cta);
+  border-radius: 16px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-short-card__badge {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--cta));
+  color: #ffffff;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 17px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-short-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-short-card__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.home-short-card__desc {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.home-short-card__record {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--win);
+}
+
 /* Daily reminder. The illustrated steps deliberately mirror the transfer
    guide's shape rather than sharing its classes: the two guides are about
    unrelated things and neither should move when the other is restyled. */

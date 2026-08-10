@@ -17,6 +17,14 @@ Hard mode drops the highlight entirely: no hints, just a silent no-op on a bad t
 
 Community stats, the leaderboards, and the group activity feed are backed by a small Cloudflare Worker and D1 database (`worker/`), with no sign-in or personal data involved.
 
+## Order 6
+
+A six-slot board, hidden behind a three-second press on the "wins" tile in Stats. Spoiler for anyone reading this before playing: the tile is the point. A twenty-slot board is not winnable in any practical sense, and across every game the app has logged it has never happened once, which left the win screen and the win streak as decoration nobody would ever see. Six is the size where that stops being true: measured over 50,000 simulated games following the same hint the app shows, it is won about one time in seven, against 33.9% at four slots and 2.0% at ten.
+
+It keeps entirely to itself. Order 6 never reaches the leaderboard (the best-runs board ranks by share of board filled, so a 6 of 6 would sit at 100% above every real run forever), never reaches the group feed or the game log, never counts toward the main stats or the daily streak, and holds its own saved game so switching to it cannot cost anyone a twenty they were partway through. `src/App.shortBoard.test.tsx` asserts each of those.
+
+The reveal quotes real numbers, fetched once when the press begins so the hold doubles as the loading window. It has three forms: the community count when the worker answers, the player's own history when it does not, and a different claim entirely once somebody has actually filled a board, because copy that went on insisting nobody ever had would become a bug the day one of them did.
+
 ## Home screen
 
 "Ready to play?" greets you on launch: a Play button, today's daily challenge, and your best score and win streak. Hide it from Settings, or right from the screen itself.

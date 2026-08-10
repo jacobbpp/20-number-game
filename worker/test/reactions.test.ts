@@ -1,6 +1,7 @@
 import { SELF } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
-import { REACTION_EMOJI, type FeedSnapshot } from '../src/index'
+import { REACTION_EMOJI } from '../src/constants'
+import { type FeedSnapshot } from '../src/index'
 
 const [CLAP, FIRE, SCREAM, LAUGH] = REACTION_EMOJI
 

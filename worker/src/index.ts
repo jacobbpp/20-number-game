@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers'
+import { REACTION_EMOJI, REMINDER_CRON } from './constants'
 import { isSubscriptionGone, sendPush } from './push'
 
 export interface Env {
@@ -884,13 +885,6 @@ async function handlePushUnsubscribe(request: Request, env: Env): Promise<Respon
   return new Response(null, { status: 204, headers: corsHeaders() })
 }
 
-// Ten past midnight UTC: the day being summarised has ended and every game
-// for it is in.
-export const ROLLUP_CRON = '10 0 * * *'
-// 08:00 UTC, which is 9am British summer time and 8am in winter. Early enough
-// to catch the morning, late enough not to wake anyone.
-export const REMINDER_CRON = '0 8 * * *'
-
 export interface ReminderRun {
   sent: number
   // Already played today's daily, so left alone.
@@ -1114,6 +1108,30 @@ async function handleYesterdayRecap(request: Request, env: Env): Promise<Respons
   return json({ date, summary })
 }
 
+// Totals across every game that has been logged, for the one place in the app
+// that says out loud how rare finishing a board is. Deliberately not a
+// pre-computed summary row: it is read once, by one person, at the moment
+// they go looking, so a live count over a few hundred rows is cheaper than
+// keeping a rolled-up total correct.
+//
+// game_log only began on 2026-07-25, so this is every game counted rather than
+// every game ever played, and the app words it that way.
+async function handleCommunityRecord(request: Request, env: Env): Promise<Response> {
+  const row = await env.DB.prepare(
+    `SELECT COUNT(*) AS games,
+            COUNT(DISTINCT device_id) AS players,
+            SUM(CASE WHEN placed_count >= board_size THEN 1 ELSE 0 END) AS wins
+     FROM game_log`,
+  ).first<{ games: number; players: number; wins: number | null }>()
+
+  return json({
+    games: row?.games ?? 0,
+    players: row?.players ?? 0,
+    // SUM over no rows is null rather than zero.
+    wins: row?.wins ?? 0,
+  })
+}
+
 export interface FeedReaction {
   emoji: string
   count: number
@@ -1164,7 +1182,6 @@ const RUNS_PER_PERSON = 3
 // Deliberately small and fixed. Free text would need moderating, and this
 // covers what actually happens in this game: well played, on fire, brutal,
 // and funny-bad.
-export const REACTION_EMOJI = ['\u{1F44F}', '\u{1F525}', '\u{1F631}', '\u{1F602}']
 
 function isWebSocketUpgrade(request: Request): boolean {
   return request.headers.get('Upgrade')?.toLowerCase() === 'websocket'
@@ -1553,6 +1570,10 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/community/yesterday') {
       return handleYesterdayRecap(request, env)
+    }
+
+    if (request.method === 'GET' && url.pathname === '/community/record') {
+      return handleCommunityRecord(request, env)
     }
 
     if (request.method === 'GET' && url.pathname === '/activity') {

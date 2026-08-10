@@ -11,6 +11,8 @@ import { HomeScreen } from './components/HomeScreen'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { LeaderboardScreen } from './components/LeaderboardScreen'
 import { NotificationsScreen } from './components/NotificationsScreen'
+import { ShortBoardReveal } from './components/ShortBoardReveal'
+import { ShortBoardScreen } from './components/ShortBoardScreen'
 import { RollDisplay } from './components/RollDisplay'
 import { SettingsScreen } from './components/SettingsScreen'
 import { StatsScreen } from './components/StatsScreen'
@@ -37,6 +39,7 @@ import { useHardMode } from './hooks/useHardMode'
 import { useLeaderboard, type LeaderboardWindow } from './hooks/useLeaderboard'
 import { useOnboarding } from './hooks/useOnboarding'
 import { usePushReminder } from './hooks/usePushReminder'
+import { useShortBoard } from './hooks/useShortBoard'
 import { useShowHomeScreen } from './hooks/useShowHomeScreen'
 import { useSoundSetting } from './hooks/useSoundSetting'
 import { useTheme } from './hooks/useTheme'
@@ -53,6 +56,8 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isTransferOpen, setIsTransferOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isShortBoardOpen, setIsShortBoardOpen] = useState(false)
+  const [isShortRevealOpen, setIsShortRevealOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [isChangelogOpen, setIsChangelogOpen] = useState(false)
   const [isGuideOpen, setIsGuideOpen] = useState(false)
@@ -84,6 +89,11 @@ function App() {
   const [dailyLeaderboardQualifies, setDailyLeaderboardQualifies] = useState(false)
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const pushReminder = usePushReminder()
+  // Order 6 keeps entirely to itself: its own game, its own record, and none
+  // of the leaderboard, community reporting or daily streak wired up below.
+  // A six-slot board would sit at 100% filled on the best-runs board and stay
+  // there, and mixing it into the win rate would make that number meaningless.
+  const shortBoard = useShortBoard()
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
   const { hardMode, toggleHardMode } = useHardMode()
@@ -334,6 +344,7 @@ function App() {
     setIsGuideOpen(false)
     setIsLeaderboardOpen(false)
     setIsNotificationsOpen(false)
+    setIsShortBoardOpen(false)
     setIsDailyOpen(true)
   }
 
@@ -344,10 +355,24 @@ function App() {
     setIsGuideOpen(false)
     setIsLeaderboardOpen(false)
     setIsNotificationsOpen(false)
+    setIsShortBoardOpen(false)
     setIsSettingsOpen(true)
   }
 
   const handlePlay = () => setIsHomeOpen(false)
+
+  const openShortBoard = () => {
+    shortBoard.start()
+    setIsShortRevealOpen(false)
+    setIsHomeOpen(false)
+    setIsStatsOpen(false)
+    setIsDailyOpen(false)
+    setIsSettingsOpen(false)
+    setIsGuideOpen(false)
+    setIsLeaderboardOpen(false)
+    setIsNotificationsOpen(false)
+    setIsShortBoardOpen(true)
+  }
 
   // Held in a ref because the deep-link effect below runs once on mount and
   // openDaily is rebuilt on every render, same reason as gameIdRef above.
@@ -399,6 +424,9 @@ function App() {
           winStreak={stats.currentWinStreak}
           todayResult={todayResult}
           dailyBoardSize={dailyBoardSize}
+          shortBoardUnlocked={shortBoard.unlocked}
+          shortBoardRecord={shortBoard.record}
+          onPlayShortBoard={openShortBoard}
           onPlay={handlePlay}
           onPlayDaily={openDaily}
           onOpenStats={openStats}
@@ -448,6 +476,17 @@ function App() {
           groupRecapLoaded={groupRecapLoaded}
           unlockedAchievementCount={countUnlocked(unlockedAchievements)}
           totalAchievementCount={ACHIEVEMENTS.length}
+          shortBoardUnlocked={shortBoard.unlocked}
+          shortBoardRecord={shortBoard.record}
+          // Fired when the press begins rather than when it completes, so the
+          // three second hold doubles as the window for the numbers the
+          // reveal is about to quote.
+          onShortBoardPressStart={shortBoard.loadCommunity}
+          onShortBoardFound={() => {
+            shortBoard.unlock()
+            setIsShortRevealOpen(true)
+          }}
+          onOpenShortBoard={openShortBoard}
           onClose={() => setIsStatsOpen(false)}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
           onOpenAchievements={() => setIsAchievementsOpen(true)}
@@ -498,6 +537,15 @@ function App() {
             setIsTransferOpen(false)
             setIsSettingsOpen(true)
           }}
+        />
+      ) : isShortBoardOpen && shortBoard.state ? (
+        <ShortBoardScreen
+          state={shortBoard.state}
+          record={shortBoard.record}
+          hardMode={hardMode}
+          onSelect={shortBoard.select}
+          onRestart={shortBoard.restart}
+          onClose={() => setIsShortBoardOpen(false)}
         />
       ) : isNotificationsOpen ? (
         <NotificationsScreen
@@ -556,7 +604,7 @@ function App() {
         </>
       )}
 
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && state.status === 'lost' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && !isShortBoardOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
@@ -573,7 +621,7 @@ function App() {
           onSkipScore={() => setLeaderboardWindows(null)}
         />
       )}
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && state.status === 'won' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && !isShortBoardOpen && state.status === 'won' && (
         <WinScreen
           positions={state.positions}
           onNewGame={handleRestart}
@@ -587,6 +635,15 @@ function App() {
         />
       )}
       {isHowToPlayOpen && <HowToPlayScreen onClose={handleCloseHowToPlay} />}
+
+      {isShortRevealOpen && (
+        <ShortBoardReveal
+          community={shortBoard.community}
+          ownGames={stats.totalGames}
+          onPlay={openShortBoard}
+          onClose={() => setIsShortRevealOpen(false)}
+        />
+      )}
       {isWhatsNewOpen && <WhatsNewScreen entries={unseenEntries} onClose={closeWhatsNew} />}
       {isChangelogOpen && <WhatsNewScreen entries={CHANGELOG} onClose={() => setIsChangelogOpen(false)} />}
       {isBestRunOpen && <BestRunScreen bestScore={bestScore} bestRun={bestRun} onClose={() => setIsBestRunOpen(false)} />}

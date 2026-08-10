@@ -1,4 +1,5 @@
 import tommyHead from '../brand/assets/tommy-head-orange.png'
+import { SHORT_BOARD_SIZE, type ShortRecord } from '../game/shortBoard'
 import type { DailyResult } from '../hooks/useDailyChallenge'
 
 interface HomeScreenProps {
@@ -6,8 +7,13 @@ interface HomeScreenProps {
   winStreak: number
   todayResult: DailyResult | null
   dailyBoardSize: number
+  // Absent until Order 6 has been found, and this screen is the only thing
+  // that ever mentions it unprompted.
+  shortBoardUnlocked: boolean
+  shortBoardRecord: ShortRecord
   onPlay: () => void
   onPlayDaily: () => void
+  onPlayShortBoard: () => void
   onOpenStats: () => void
   onOpenHowToPlay: () => void
   onHideHomeScreen: () => void
@@ -18,8 +24,11 @@ export function HomeScreen({
   winStreak,
   todayResult,
   dailyBoardSize,
+  shortBoardUnlocked,
+  shortBoardRecord,
   onPlay,
   onPlayDaily,
+  onPlayShortBoard,
   onOpenStats,
   onOpenHowToPlay,
   onHideHomeScreen,
@@ -67,6 +76,25 @@ export function HomeScreen({
           {todayResult ? "View today's result" : 'Play daily board'}
         </button>
       </div>
+
+      {shortBoardUnlocked && (
+        <button type="button" className="home-short-card" onClick={onPlayShortBoard}>
+          <span className="home-short-card__badge" aria-hidden="true">
+            {SHORT_BOARD_SIZE}
+          </span>
+          <span className="home-short-card__text">
+            <span className="home-short-card__title">Order {SHORT_BOARD_SIZE}</span>
+            <span className="home-short-card__desc">The short board</span>
+            <span className="home-short-card__record">
+              {shortBoardRecord.wins > 0
+                ? `Won ${shortBoardRecord.wins} ${shortBoardRecord.wins === 1 ? 'time' : 'times'}`
+                : shortBoardRecord.games > 0
+                  ? `${shortBoardRecord.games} ${shortBoardRecord.games === 1 ? 'try' : 'tries'}, no win yet`
+                  : 'Not played yet'}
+            </span>
+          </span>
+        </button>
+      )}
 
       <div className="home-stats-row">
         <div className="home-stat-card">

@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
-import { REMINDER_CRON, ROLLUP_CRON } from '../src/index'
+import { REMINDER_CRON, ROLLUP_CRON } from '../src/constants'
 
 // scheduled() picks its branch by comparing controller.cron against a string.
 // If wrangler.toml and those constants ever drift apart, nothing breaks
