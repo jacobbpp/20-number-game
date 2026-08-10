@@ -91,6 +91,27 @@ CREATE TABLE IF NOT EXISTS transfers (
 
 CREATE INDEX IF NOT EXISTS idx_transfers_expires ON transfers (expires_at);
 
+-- One row per browser that has asked for the daily reminder. The endpoint is
+-- the push service's own URL for that specific browser and is unique by
+-- construction, so it doubles as the primary key: turning the reminder off
+-- and on again replaces the row rather than adding a second one and sending
+-- the same person two notifications.
+--
+-- p256dh and auth are the subscription's encryption keys. Nothing sends an
+-- encrypted payload today (worker/src/push.ts explains why), but they only
+-- ever arrive with the original subscription and cannot be asked for again
+-- later, so they are kept rather than thrown away.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  endpoint TEXT PRIMARY KEY,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  device_id TEXT,
+  created_at TEXT NOT NULL,
+  last_sent_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_device ON push_subscriptions (device_id);
+
 CREATE TABLE IF NOT EXISTS device_placements (
   device_id TEXT NOT NULL,
   board_size INTEGER NOT NULL,

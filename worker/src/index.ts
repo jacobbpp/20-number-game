@@ -1,9 +1,16 @@
 import { DurableObject } from 'cloudflare:workers'
+import { isSubscriptionGone, sendPush } from './push'
 
 export interface Env {
   DB: D1Database
   ACTIVITY: DurableObjectNamespace<ActivityFeed>
   RATE_LIMITER: DurableObjectNamespace<RateLimiter>
+  // Plain var in wrangler.toml: browsers are handed this to subscribe with,
+  // so it is public by design.
+  VAPID_PUBLIC_KEY: string
+  // Secret, set with `wrangler secret put VAPID_PRIVATE_KEY`. Never in the
+  // repository, and not recoverable from Cloudflare once set.
+  VAPID_PRIVATE_KEY: string
 }
 
 // Mirrors src/game/stats.ts: VALUE_BUCKETS on the frontend, and the same
@@ -795,6 +802,183 @@ async function handleTransferStatus(request: Request, env: Env): Promise<Respons
   return json({ claimed: row?.claimed_at != null })
 }
 
+// A push subscription is issued by the browser's own push service, so the
+// endpoint host is not ours to predict. It must at least be https and a real
+// URL, so a malformed one cannot be stored and retried every morning forever.
+const MAX_ENDPOINT_LENGTH = 1024
+const MAX_KEY_LENGTH = 256
+
+function isValidEndpoint(endpoint: unknown): endpoint is string {
+  if (typeof endpoint !== 'string' || endpoint.length === 0 || endpoint.length > MAX_ENDPOINT_LENGTH) return false
+  try {
+    return new URL(endpoint).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function isValidKey(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= MAX_KEY_LENGTH
+}
+
+async function handlePushSubscribe(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON.' }, 400)
+  }
+
+  const { endpoint, p256dh, auth, deviceId } = (body ?? {}) as Record<string, unknown>
+
+  if (!isValidEndpoint(endpoint)) {
+    return json({ error: 'A https endpoint is required.' }, 400)
+  }
+  if (!isValidKey(p256dh) || !isValidKey(auth)) {
+    return json({ error: 'p256dh and auth are required.' }, 400)
+  }
+  if (deviceId != null && (typeof deviceId !== 'string' || !DEVICE_ID_PATTERN.test(deviceId))) {
+    return json({ error: 'deviceId is not valid.' }, 400)
+  }
+
+  if (!(await allowWrite(request, env, typeof deviceId === 'string' ? deviceId : null))) {
+    return json({ error: 'Too many requests.' }, 429)
+  }
+
+  // Re-subscribing replaces the row. created_at is deliberately not reset, so
+  // it keeps reading as when this browser first opted in.
+  await env.DB.prepare(
+    `INSERT INTO push_subscriptions (endpoint, p256dh, auth, device_id, created_at)
+     VALUES (?1, ?2, ?3, ?4, ?5)
+     ON CONFLICT(endpoint) DO UPDATE SET p256dh = ?2, auth = ?3, device_id = ?4`,
+  )
+    .bind(endpoint, p256dh, auth, typeof deviceId === 'string' ? deviceId : null, new Date().toISOString())
+    .run()
+
+  return new Response(null, { status: 204, headers: corsHeaders() })
+}
+
+async function handlePushUnsubscribe(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON.' }, 400)
+  }
+
+  const { endpoint } = (body ?? {}) as Record<string, unknown>
+
+  if (!isValidEndpoint(endpoint)) {
+    return json({ error: 'A https endpoint is required.' }, 400)
+  }
+
+  if (!(await allowWrite(request, env))) {
+    return json({ error: 'Too many requests.' }, 429)
+  }
+
+  // No 404 for an endpoint that was never stored: turning something off that
+  // is already off has succeeded, and saying otherwise would leave the app
+  // showing an error for a state the player wanted anyway.
+  await env.DB.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?1').bind(endpoint).run()
+
+  return new Response(null, { status: 204, headers: corsHeaders() })
+}
+
+// Ten past midnight UTC: the day being summarised has ended and every game
+// for it is in.
+export const ROLLUP_CRON = '10 0 * * *'
+// 08:00 UTC, which is 9am British summer time and 8am in winter. Early enough
+// to catch the morning, late enough not to wake anyone.
+export const REMINDER_CRON = '0 8 * * *'
+
+export interface ReminderRun {
+  sent: number
+  // Already played today's daily, so left alone.
+  skipped: number
+  // Subscriptions the push service said are gone for good, now deleted.
+  removed: number
+  // Refused for some other reason; the row stays and tomorrow tries again.
+  failed: number
+  // Sends not attempted because the run hit its own ceiling.
+  deferred: number
+}
+
+// The Workers free plan allows 50 subrequests per invocation, and each send is
+// one. This leaves headroom for the queries around them. Well above the number
+// of people who will ever have this turned on, but a silent truncation would
+// be indistinguishable from everyone being reached, so anything skipped is
+// counted and logged.
+const MAX_SENDS_PER_RUN = 40
+
+// Sends the one notification a day. Everything it needs is passed in rather
+// than read from a clock, so a test can run a specific morning.
+export async function sendDailyReminders(env: Env, today: string, nowMs: number): Promise<ReminderRun> {
+  const run: ReminderRun = { sent: 0, skipped: 0, removed: 0, failed: 0, deferred: 0 }
+
+  const subscriptions = await env.DB.prepare('SELECT endpoint, device_id FROM push_subscriptions')
+    .all<{ endpoint: string; device_id: string | null }>()
+
+  if (subscriptions.results.length === 0) return run
+
+  // An early bird who has already done today's challenge does not need
+  // telling it exists. Free play does not count: the daily is the thing being
+  // reminded about, and someone can play a dozen free games without touching it.
+  const alreadyPlayed = await env.DB.prepare(
+    "SELECT DISTINCT device_id FROM game_log WHERE date = ?1 AND mode = 'daily'",
+  )
+    .bind(today)
+    .all<{ device_id: string }>()
+  const played = new Set(alreadyPlayed.results.map(row => row.device_id))
+
+  const due = subscriptions.results.filter(row => {
+    if (row.device_id && played.has(row.device_id)) {
+      run.skipped += 1
+      return false
+    }
+    return true
+  })
+
+  const sending = due.slice(0, MAX_SENDS_PER_RUN)
+  run.deferred = due.length - sending.length
+
+  const keys = { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY }
+  const statuses = await Promise.all(sending.map(row => sendPush(row.endpoint, keys, nowMs)))
+
+  const gone: string[] = []
+  const delivered: string[] = []
+
+  statuses.forEach((status, index) => {
+    const { endpoint } = sending[index]
+    if (isSubscriptionGone(status)) {
+      gone.push(endpoint)
+      run.removed += 1
+    } else if (status >= 200 && status < 300) {
+      delivered.push(endpoint)
+      run.sent += 1
+    } else {
+      run.failed += 1
+    }
+  })
+
+  const writes: D1PreparedStatement[] = []
+  if (gone.length > 0) {
+    writes.push(
+      env.DB.prepare(`DELETE FROM push_subscriptions WHERE endpoint IN (${gone.map((_, i) => `?${i + 1}`).join(', ')})`).bind(...gone),
+    )
+  }
+  if (delivered.length > 0) {
+    const sentAt = new Date(nowMs).toISOString()
+    writes.push(
+      env.DB.prepare(
+        `UPDATE push_subscriptions SET last_sent_at = ?1 WHERE endpoint IN (${delivered.map((_, i) => `?${i + 2}`).join(', ')})`,
+      ).bind(sentAt, ...delivered),
+    )
+  }
+  if (writes.length > 0) await env.DB.batch(writes)
+
+  return run
+}
+
 export interface DailySummary {
   date: string
   games: number
@@ -1387,6 +1571,14 @@ export default {
       return handleTransferClaim(request, env)
     }
 
+    if (request.method === 'POST' && url.pathname === '/push/subscribe') {
+      return handlePushSubscribe(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/push/unsubscribe') {
+      return handlePushUnsubscribe(request, env)
+    }
+
     if (request.method === 'GET' && url.pathname === '/transfer/status') {
       return handleTransferStatus(request, env)
     }
@@ -1394,15 +1586,25 @@ export default {
     return json({ error: 'Not found.' }, 404)
   },
 
-  // Fires just after midnight UTC, so the day being summarised has already
-  // ended and every game for it is in. Keying daily_summary on date makes a
-  // retried invocation an upsert rather than a duplicate.
+  // Two schedules arrive here and are told apart by controller.cron. Both
+  // strings have to match wrangler.toml exactly or the wrong branch runs, so
+  // test/cron.test.ts reads the file and asserts they do.
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     // controller.scheduledTime rather than Date.now(): it's the instant this
     // run was *meant* to fire. A delayed or retried invocation then still
-    // rolls up the day it was scheduled for, instead of whichever day it
+    // works on the day it was scheduled for, instead of whichever day it
     // happened to actually run on.
     const firedAt = new Date(controller.scheduledTime).toISOString()
+
+    if (controller.cron === REMINDER_CRON) {
+      const run = await sendDailyReminders(env, firedAt.slice(0, 10), controller.scheduledTime)
+      console.log(`daily reminder ${JSON.stringify(run)}`)
+      return
+    }
+
+    // The roll-up is also the fallback. It is an upsert keyed on date, so an
+    // unrecognised schedule landing here repeats work rather than corrupting
+    // anything, which is the safer way round to be wrong.
     await rollUpDay(env, yesterday(firedAt.slice(0, 10)), firedAt)
   },
 }

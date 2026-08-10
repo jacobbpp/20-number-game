@@ -16,6 +16,9 @@ function renderScreen(overrides: Partial<Parameters<typeof SettingsScreen>[0]> =
     onOpenChangelog: vi.fn(),
     onOpenGuide: vi.fn(),
     onOpenTransfer: vi.fn(),
+    reminderAvailability: 'available' as const,
+    reminderEnabled: false,
+    onOpenNotifications: vi.fn(),
     onClose: vi.fn(),
     ...overrides,
   }
@@ -28,6 +31,38 @@ afterEach(() => {
   vi.unstubAllGlobals()
   cleanup()
   localStorage.clear()
+})
+
+describe('the daily reminder row', () => {
+  it('opens the reminder screen', () => {
+    const props = renderScreen()
+    fireEvent.click(screen.getByRole('button', { name: /Daily reminder/ }))
+    expect(props.onOpenNotifications).toHaveBeenCalledOnce()
+  })
+
+  it('says whether it is on without having to open it', () => {
+    renderScreen({ reminderEnabled: true })
+    expect(screen.getByText('On, at 9am each day')).toBeInTheDocument()
+
+    cleanup()
+    renderScreen({ reminderEnabled: false })
+    expect(screen.getByText('Off')).toBeInTheDocument()
+  })
+
+  it('says which of the three things is in the way when it cannot be turned on', () => {
+    // "Off" would be a lie in all three cases, and each one needs a different
+    // thing done about it.
+    renderScreen({ reminderAvailability: 'needs-install' })
+    expect(screen.getByText('Add to your Home Screen first')).toBeInTheDocument()
+
+    cleanup()
+    renderScreen({ reminderAvailability: 'blocked' })
+    expect(screen.getByText('Blocked in your browser settings')).toBeInTheDocument()
+
+    cleanup()
+    renderScreen({ reminderAvailability: 'unsupported' })
+    expect(screen.getByText('Not available on this browser')).toBeInTheDocument()
+  })
 })
 
 describe('SettingsScreen', () => {

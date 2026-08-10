@@ -39,9 +39,12 @@ Leaderboard tracks the top 10 free-play scores by day, week, month, and all time
 - **Theme** switches dark and light.
 - **Hard mode** turns off the placement highlight.
 - **Home screen** toggles the landing screen.
+- **Daily reminder** sends one notification a morning when the new challenge lands.
 - **Version** shows the changelog.
 - **Learn about the app** opens a guide to every stat and setting.
 - **Reset all data** wipes this device.
+
+The daily reminder is off until it's asked for. Turned on, it delivers a single notification at 9am saying the new challenge is ready and who won yesterday, and nothing else: no alerts when somebody beats a score, and a morning that's already been played is skipped. Delivery runs from a scheduled Cloudflare Worker using Web Push with a VAPID-signed, bodyless message; the wording is assembled on the device when the notification is shown, so no payload has to be encrypted per subscription and the text reflects the standings at the moment it's read. iOS and iPadOS only expose the Push API to apps launched from the Home Screen, so the screen detects that case and walks through Add to Home Screen instead of offering a switch that would fail.
 
 ## Sharing
 

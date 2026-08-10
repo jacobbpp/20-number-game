@@ -100,6 +100,10 @@ const SETTINGS_ENTRIES: Entry[] = [
     desc: 'Turns the "Ready to play?" landing screen on or off. Off skips straight to the board on every load.',
   },
   {
+    term: 'Daily reminder',
+    desc: "One notification a morning, at 9am, saying the new daily challenge is ready and who won yesterday. That's the only thing it ever sends: no alerts when somebody beats your score, and a morning you've already played is skipped entirely. iPhone and iPad only allow notifications for apps added to the Home Screen, so if that hasn't been done yet the screen walks through it rather than offering a switch that would fail. Turn it off there any time.",
+  },
+  {
     term: 'Move my game',
     desc: "Puts your stats, streak, achievements and name onto another device. The device that has your game shows a six character code, good for fifteen minutes and usable once; you type that code into the new device and everything comes across. It's a one-time move, not a running sync, so afterwards you carry on playing on the new device. Receiving replaces whatever was already on that device, and once it lands the old one offers to clear itself but never does so on its own.",
   },

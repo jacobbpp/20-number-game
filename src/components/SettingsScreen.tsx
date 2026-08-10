@@ -1,6 +1,17 @@
 import { useState } from 'react'
+import type { PushAvailability } from '../game/push'
 import type { Theme } from '../hooks/useTheme'
 import { clearAllData } from '../utils/resetData'
+
+// Shown under the row so the state can be read without opening it. The reason
+// a reminder cannot be turned on matters more than the fact, which is why an
+// unavailable one says which of the three things is in the way.
+function reminderStatus(availability: PushAvailability, enabled: boolean): string {
+  if (availability === 'needs-install') return 'Add to your Home Screen first'
+  if (availability === 'blocked') return 'Blocked in your browser settings'
+  if (availability === 'unsupported') return 'Not available on this browser'
+  return enabled ? 'On, at 9am each day' : 'Off'
+}
 
 interface SettingsScreenProps {
   muted: boolean
@@ -12,9 +23,12 @@ interface SettingsScreenProps {
   showHomeScreen: boolean
   onToggleShowHomeScreen: () => void
   version: string
+  reminderAvailability: PushAvailability
+  reminderEnabled: boolean
   onOpenChangelog: () => void
   onOpenGuide: () => void
   onOpenTransfer: () => void
+  onOpenNotifications: () => void
   onClose: () => void
 }
 
@@ -28,9 +42,12 @@ export function SettingsScreen({
   showHomeScreen,
   onToggleShowHomeScreen,
   version,
+  reminderAvailability,
+  reminderEnabled,
   onOpenChangelog,
   onOpenGuide,
   onOpenTransfer,
+  onOpenNotifications,
   onClose,
 }: SettingsScreenProps) {
   const [isConfirmingReset, setIsConfirmingReset] = useState(false)
@@ -152,6 +169,16 @@ export function SettingsScreen({
             v{version}
           </button>
         </div>
+
+        <button type="button" className="stats-menu__row" onClick={onOpenNotifications}>
+          <span className="stats-menu__row-text">
+            <span className="stats-menu__row-title">Daily reminder</span>
+            <span className="stats-menu__row-preview">{reminderStatus(reminderAvailability, reminderEnabled)}</span>
+          </span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
 
         <button type="button" className="stats-menu__row" onClick={onOpenTransfer}>
           <span className="stats-menu__row-text">

@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.51.0',
+    date: '2026-08-10',
+    title: 'A nudge when the challenge lands',
+    description:
+      "Settings now has a Daily reminder. Turn it on and one notification arrives each morning at 9am, saying the new challenge is up and who won yesterday. Nothing else is ever sent, and a morning you have already played is skipped. On iPhone and iPad the app has to be added to your Home Screen first, and there's an illustrated guide in there showing how.",
+  },
+  {
     version: '1.49.0',
     date: '2026-08-10',
     title: 'React to each other',

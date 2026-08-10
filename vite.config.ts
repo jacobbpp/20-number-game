@@ -14,6 +14,16 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
+      workbox: {
+        // Adds the push and notificationclick listeners to the generated
+        // worker instead of taking ownership of the whole thing with
+        // injectManifest. The precaching and the update handling that
+        // src/registerSW.ts drives stay exactly as Workbox writes them.
+        importScripts: ['push-sw.js'],
+        // ...and it must not also be precached as an ordinary asset: it is
+        // already part of the worker script itself.
+        globIgnores: ['**/node_modules/**/*', 'push-sw.js'],
+      },
       includeAssets: ['favicon-32.png', 'favicon-16.png', 'apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-512-maskable.png'],
       manifest: {
         name: 'Order 20',

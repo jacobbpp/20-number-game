@@ -7,10 +7,21 @@ binding = "DB"
 database_name = "order20-community-stats"
 database_id = "49b5b071-db4b-4edf-91c5-1fafaf078dcd"
 
-# 00:10 UTC, ten minutes after the day it summarises has ended, so there is no
-# race with a game logged in the last seconds before midnight.
+# Two schedules, both handled by scheduled() and told apart by controller.cron.
+# ROLLUP_CRON in src/index.ts must match the first string and REMINDER_CRON the
+# second; test/cron.test.ts reads this file and asserts they still do.
+#
+# 00:10 UTC is ten minutes after the day it summarises has ended, so there is
+# no race with a game logged in the last seconds before midnight. 08:00 UTC is
+# the daily reminder, which is 9am British summer time.
 [triggers]
-crons = ["10 0 * * *"]
+crons = ["10 0 * * *", "0 8 * * *"]
+
+# The public half of the Web Push signing pair. Browsers are handed this to
+# subscribe with, so it is not a secret. The private half is set separately
+# with `wrangler secret put VAPID_PRIVATE_KEY` and never lives in this repo.
+[vars]
+VAPID_PUBLIC_KEY = "BPUHR96Z7cvcUYgYY5LnJgrLijZFH5fp9CRBHysc1kMgY2hS6wzTyJTXFqQSOJK_J0RdR-1DjvDi85a4V_YIeVY"
 
 [[durable_objects.bindings]]
 name = "ACTIVITY"

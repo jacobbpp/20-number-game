@@ -44,8 +44,29 @@ class SilentWebSocket {
 // override this with their own vi.stubGlobal('fetch', ...) — this just
 // re-establishes safe, empty defaults before every test: an all-zero
 // community matrix, and a leaderboard check that never qualifies.
+// jsdom has no matchMedia at all, and usePushReminder asks about display-mode
+// the moment <App /> mounts. Answering "not standalone" is both what a test
+// browser is and what keeps the reminder screen in its ordinary state; a test
+// that wants the installed-app case overrides this.
+function stubMatchMedia() {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  )
+}
+
 beforeEach(() => {
   vi.stubGlobal('WebSocket', SilentWebSocket)
+  stubMatchMedia()
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL) => {

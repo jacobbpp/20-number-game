@@ -10,6 +10,7 @@ import { Header } from './components/Header'
 import { HomeScreen } from './components/HomeScreen'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { LeaderboardScreen } from './components/LeaderboardScreen'
+import { NotificationsScreen } from './components/NotificationsScreen'
 import { RollDisplay } from './components/RollDisplay'
 import { SettingsScreen } from './components/SettingsScreen'
 import { StatsScreen } from './components/StatsScreen'
@@ -34,6 +35,7 @@ import { useGameStats } from './hooks/useGameStats'
 import { useHardMode } from './hooks/useHardMode'
 import { useLeaderboard, type LeaderboardWindow } from './hooks/useLeaderboard'
 import { useOnboarding } from './hooks/useOnboarding'
+import { usePushReminder } from './hooks/usePushReminder'
 import { useShowHomeScreen } from './hooks/useShowHomeScreen'
 import { useSoundSetting } from './hooks/useSoundSetting'
 import { useTheme } from './hooks/useTheme'
@@ -49,6 +51,7 @@ function App() {
   const [isDailyOpen, setIsDailyOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isTransferOpen, setIsTransferOpen] = useState(false)
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [isChangelogOpen, setIsChangelogOpen] = useState(false)
   const [isGuideOpen, setIsGuideOpen] = useState(false)
@@ -75,6 +78,7 @@ function App() {
   } = useLeaderboard()
   const [dailyLeaderboardQualifies, setDailyLeaderboardQualifies] = useState(false)
   const { hasSeenOnboarding, markSeen } = useOnboarding()
+  const pushReminder = usePushReminder()
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
   const { hardMode, toggleHardMode } = useHardMode()
@@ -324,6 +328,7 @@ function App() {
     setIsSettingsOpen(false)
     setIsGuideOpen(false)
     setIsLeaderboardOpen(false)
+    setIsNotificationsOpen(false)
     setIsDailyOpen(true)
   }
 
@@ -333,10 +338,43 @@ function App() {
     setIsDailyOpen(false)
     setIsGuideOpen(false)
     setIsLeaderboardOpen(false)
+    setIsNotificationsOpen(false)
     setIsSettingsOpen(true)
   }
 
   const handlePlay = () => setIsHomeOpen(false)
+
+  // Held in a ref because the deep-link effect below runs once on mount and
+  // openDaily is rebuilt on every render, same reason as gameIdRef above.
+  const openDailyRef = useRef(openDaily)
+  useEffect(() => {
+    openDailyRef.current = openDaily
+  })
+
+  // Arriving from the morning notification. Two routes in: the app was not
+  // running and was launched at ?open=daily, or a copy was already open and
+  // the service worker focused it and posted a message (see public/push-sw.js,
+  // which prefers the message so an unfinished game is not thrown away).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('open') === 'daily') {
+      openDailyRef.current()
+      // Cleared straight away, so a later refresh or a shared link does not
+      // keep jumping back into the daily challenge.
+      params.delete('open')
+      const query = params.toString()
+      window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`)
+    }
+
+    if (!('serviceWorker' in navigator)) return
+
+    const handleMessage = (event: MessageEvent) => {
+      if ((event.data as { type?: string } | null)?.type === 'OPEN_DAILY') openDailyRef.current()
+    }
+
+    navigator.serviceWorker.addEventListener('message', handleMessage)
+    return () => navigator.serviceWorker.removeEventListener('message', handleMessage)
+  }, [])
 
   // Free play only — daily board sizes vary, so "position 5" doesn't mean
   // the same thing across days the way it does for the fixed-size matrix
@@ -430,6 +468,12 @@ function App() {
             setIsSettingsOpen(false)
             setIsTransferOpen(true)
           }}
+          reminderAvailability={pushReminder.availability}
+          reminderEnabled={pushReminder.enabled}
+          onOpenNotifications={() => {
+            setIsSettingsOpen(false)
+            setIsNotificationsOpen(true)
+          }}
           onClose={() => setIsSettingsOpen(false)}
         />
       ) : isGuideOpen ? (
@@ -443,6 +487,19 @@ function App() {
         <TransferScreen
           onClose={() => {
             setIsTransferOpen(false)
+            setIsSettingsOpen(true)
+          }}
+        />
+      ) : isNotificationsOpen ? (
+        <NotificationsScreen
+          availability={pushReminder.availability}
+          enabled={pushReminder.enabled}
+          busy={pushReminder.busy}
+          error={pushReminder.error}
+          onEnable={pushReminder.enable}
+          onDisable={pushReminder.disable}
+          onClose={() => {
+            setIsNotificationsOpen(false)
             setIsSettingsOpen(true)
           }}
         />
@@ -490,7 +547,7 @@ function App() {
         </>
       )}
 
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && state.status === 'lost' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
@@ -507,7 +564,7 @@ function App() {
           onSkipScore={() => setLeaderboardWindows(null)}
         />
       )}
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && state.status === 'won' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && state.status === 'won' && (
         <WinScreen
           positions={state.positions}
           onNewGame={handleRestart}

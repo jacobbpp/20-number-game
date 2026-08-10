@@ -1605,6 +1605,229 @@ button:focus-visible {
   color: var(--text-dim);
 }
 
+/* Daily reminder. The illustrated steps deliberately mirror the transfer
+   guide's shape rather than sharing its classes: the two guides are about
+   unrelated things and neither should move when the other is restyled. */
+
+.reminder-hero {
+  text-align: center;
+  padding: 18px 8px 4px;
+}
+
+.reminder-hero__bell {
+  display: block;
+  margin: 0 auto 14px;
+  padding: 14px;
+  box-sizing: content-box;
+  background: var(--accent-tint);
+  border-radius: 50%;
+}
+
+.reminder-hero__title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.reminder-hero__body {
+  margin: 0 auto;
+  max-width: 30ch;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.reminder-switch {
+  margin-top: 18px;
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.reminder-switch__label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.reminder-switch__state {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-disabled);
+}
+
+.reminder-switch__state--on {
+  color: var(--win);
+}
+
+.reminder-toggle {
+  flex-shrink: 0;
+  width: 50px;
+  height: 30px;
+  padding: 3px;
+  border: none;
+  border-radius: 15px;
+  background: var(--slot-filled);
+  box-shadow: inset 0 0 0 1px rgba(var(--surface-tint-rgb), 0.16);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.reminder-toggle:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.reminder-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.reminder-toggle__knob {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--text-disabled);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.reminder-toggle--on {
+  background: var(--win);
+  box-shadow: none;
+}
+
+.reminder-toggle--on .reminder-toggle__knob {
+  background: var(--bg);
+  transform: translateX(20px);
+}
+
+.reminder-gate {
+  margin-top: 16px;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.reminder-gate__title {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.reminder-gate__body {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.reminder-error {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.reminder-list__label {
+  margin: 24px 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.reminder-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 9px;
+}
+
+.reminder-list__item {
+  position: relative;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.reminder-list__item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--win);
+}
+
+.reminder-list__item--never::before {
+  background: var(--danger);
+}
+
+.reminder-note {
+  margin: 20px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-disabled);
+}
+
+.install-guide {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.install-step {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 14px 14px 16px;
+}
+
+.install-step__art {
+  margin: 0 0 12px;
+  background: rgba(var(--surface-tint-rgb), 0.04);
+  border-radius: 12px;
+  padding: 10px 8px;
+}
+
+.install-step__art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.install-step__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-on);
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.install-step__title {
+  margin: 0 0 5px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.install-step__body {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
 .activity-cal__dows {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
