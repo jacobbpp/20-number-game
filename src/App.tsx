@@ -39,6 +39,7 @@ import { useHardMode } from './hooks/useHardMode'
 import { useLeaderboard, type LeaderboardWindow } from './hooks/useLeaderboard'
 import { useOnboarding } from './hooks/useOnboarding'
 import { useLongPress } from './hooks/useLongPress'
+import { useHeadToHead } from './hooks/useHeadToHead'
 import { usePushReminder } from './hooks/usePushReminder'
 import { useShortBoard } from './hooks/useShortBoard'
 import { useShowHomeScreen } from './hooks/useShowHomeScreen'
@@ -91,6 +92,9 @@ function App() {
     submitStreak,
     fetchStreakLeaderboard,
   } = useLeaderboard()
+  // Daily-challenge record against everyone else, keyed on the saved
+  // leaderboard name. Nothing is fetched until there is one.
+  const headToHead = useHeadToHead(leaderboardName)
   const [dailyLeaderboardQualifies, setDailyLeaderboardQualifies] = useState(false)
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const pushReminder = usePushReminder()
@@ -490,6 +494,7 @@ function App() {
           groupFeed={groupFeed}
           groupRecap={groupRecap}
           groupRecapLoaded={groupRecapLoaded}
+          headToHead={headToHead}
           unlockedAchievementCount={countUnlocked(unlockedAchievements)}
           totalAchievementCount={ACHIEVEMENTS.length}
           shortBoardUnlocked={shortBoard.unlocked}

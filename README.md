@@ -19,6 +19,12 @@ Community stats, the leaderboards, and the group activity feed are backed by a s
 
 Numbers derived from wins stay off screen until something has been won. Nobody ever has on a twenty-slot board, so a hard-mode card comparing 0% against 0% concluded that hard mode "hasn't slowed you down", and a three-way heatmap filter offered one empty view, one duplicate, and the real one. Both are gated on `hasWins()` and return the moment a board is filled. The wins figure itself stays on the overview: it is the honest number, and it is load-bearing (see below). On the home screen the second stat card counts days played rather than a win streak.
 
+## Nemesis
+
+Stats works out who beats you most, from the daily challenge only: it is the one board everybody plays with identical rolls, so two scores can honestly be compared, where a higher free-play score says nothing about who played better. The card reports won, lost and level, because on a shared board level is routinely the most common outcome of the three and a bare win-loss line would quietly drop the largest part of the record. A second card names whoever you have shared plenty of days with and who has never once come out ahead. Both need at least five shared days, so a couple of unlucky mornings never get called a rivalry.
+
+Keyed on the chosen leaderboard name, because `daily_scores` stores a name and no device id. Fine for a group with distinct names; two people who both pick "DAD" would count as one rival.
+
 ## Order 6
 
 A six-slot board, hidden behind a three-second press on the rolled number, which fills with colour as it is held. It hid on the "wins" tile in Stats first and then on the wordmark; both were poor targets on a phone. The rolled number is the biggest thing on the screen, never scrolls, and is the one element every player looks at on every single turn. A twenty-slot board is not winnable in any practical sense, and across every game the app has logged it has never happened once, which left the win screen and the win streak as decoration nobody would ever see. Six is the size where that stops being true: measured over 50,000 simulated games following the same hint the app shows, it is won about one time in seven, against 33.9% at four slots and 2.0% at ten.

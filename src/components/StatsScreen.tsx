@@ -17,6 +17,13 @@ import {
   type StatsData,
 } from '../game/stats'
 import { addDays, isStreakActive, type StreakData } from '../game/daily'
+import {
+  describeNemesis,
+  describeNeverBeaten,
+  pickNemesis,
+  pickNeverBeaten,
+  type HeadToHead,
+} from '../game/nemesis'
 import { SHORT_BOARD_SIZE, type ShortRecord } from '../game/shortBoard'
 import {
   ACTIVITY_LEVELS,
@@ -61,6 +68,9 @@ interface StatsScreenProps {
   groupFeed: CommunityFeed
   groupRecap: GroupRecap | null
   groupRecapLoaded: boolean
+  // Daily-challenge record against everyone else. Empty until a leaderboard
+  // name has been saved, since the record is keyed on that name.
+  headToHead: HeadToHead[]
   onClose: () => void
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
@@ -105,6 +115,7 @@ export function StatsScreen({
   groupFeed,
   groupRecap,
   groupRecapLoaded,
+  headToHead,
   shortBoardUnlocked,
   shortBoardRecord,
   onOpenShortBoard,
@@ -116,6 +127,10 @@ export function StatsScreen({
   const { totalGames, lastGame } = stats
   const [section, setSection] = useState<StatsSection>('stats')
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
+  // Both are null until there are enough shared dailies behind them, so a
+  // couple of unlucky mornings never get called a rivalry.
+  const nemesis = pickNemesis(headToHead)
+  const neverBeaten = pickNeverBeaten(headToHead)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [openRunId, setOpenRunId] = useState<number | null>(null)
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
@@ -169,6 +184,8 @@ export function StatsScreen({
   const trendPolyline = trendPoints.map(point => `${point.x},${point.y}`).join(' ')
 
   const patternCount = [
+    nemesis !== null,
+    neverBeaten !== null,
     bestPosition !== null,
     boardHalf !== null,
     momentum !== null,
@@ -620,6 +637,37 @@ export function StatsScreen({
                   all this card compares nought per cent against nought per
                   cent and concludes hard mode "hasn't slowed you down", which
                   is not encouragement, it is nonsense. */}
+              {nemesis && (
+                <div className="insight-card insight-card--nemesis">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🗡️
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Your nemesis</p>
+                    <p className="nemesis__name">{nemesis.name}</p>
+                    <p className="insight-card__desc">{describeNemesis(nemesis)}</p>
+                    <div className="nemesis__record">
+                      <span className="nemesis__tally nemesis__tally--won">{nemesis.won} won</span>
+                      <span className="nemesis__tally nemesis__tally--drew">{nemesis.drew} level</span>
+                      <span className="nemesis__tally nemesis__tally--lost">{nemesis.lost} lost</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {neverBeaten && (
+                <div className="insight-card insight-card--never-beaten">
+                  <span className="insight-card__icon" aria-hidden="true">
+                    🍀
+                  </span>
+                  <div>
+                    <p className="insight-card__title">Never beaten you</p>
+                    <p className="nemesis__name">{neverBeaten.name}</p>
+                    <p className="insight-card__desc">{describeNeverBeaten(neverBeaten)}</p>
+                  </div>
+                </div>
+              )}
+
               {hardRate !== null && hasWins(stats) && (
                 <div className="insight-card insight-card--hardmode">
                   <span className="insight-card__icon" aria-hidden="true">

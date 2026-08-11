@@ -1605,6 +1605,57 @@ button:focus-visible {
   color: var(--text-dim);
 }
 
+/* Nemesis. Built from the daily challenge, the one board everyone plays
+   identically, so two scores can honestly be compared. */
+
+.insight-card--nemesis {
+  box-shadow: inset 0 0 0 1px var(--danger);
+}
+
+.insight-card--never-beaten {
+  box-shadow: inset 0 0 0 1px var(--win);
+}
+
+.nemesis__name {
+  margin: 2px 0 6px;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.nemesis__record {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.nemesis__tally {
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.nemesis__tally--won {
+  background: var(--win-bg);
+  color: var(--win);
+}
+
+/* Level games are not a footnote here. On a board everybody plays with the
+   same rolls they are routinely the biggest column of the three. */
+.nemesis__tally--drew {
+  background: var(--accent-tint);
+  color: var(--text-dim);
+}
+
+.nemesis__tally--lost {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
 /* Order 6. Nothing here labels the way in: the wins tile fills as it is held,
    which is the only clue the easter egg gets. See game/shortBoard.ts. */
 

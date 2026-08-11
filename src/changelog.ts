@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 // Newest first. Only user-facing changes belong here — no internal fixes,
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.54.0',
+    date: '2026-08-11',
+    title: 'Meet your nemesis',
+    description:
+      "Stats now works out who keeps beating you. It only counts the daily challenge, since that is the one board everybody plays with the same rolls, so the comparison is honest. It shows the whole record: won, lost, and level, because on a shared board level is routinely the most common of the three. There is a card for the other side of it too, whoever you have played plenty and who has never once come out ahead. Both stay hidden until there are enough shared days to mean anything.",
+  },
   // Deliberately does not say what it is or how to get at it. This popup is
   // read by everybody, and spelling out the answer would mean nobody ever
   // gets to find it. See game/shortBoard.ts.

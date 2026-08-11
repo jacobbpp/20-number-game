@@ -1132,6 +1132,53 @@ async function handleCommunityRecord(request: Request, env: Env): Promise<Respon
   })
 }
 
+// One row per person this player has ever shared a daily challenge with.
+//
+// The daily is the only board everyone plays identically, which makes it the
+// only fair basis for a head to head: same rolls, same size, same day. Free
+// play is a different board every time and cannot be compared.
+//
+// Keyed on the chosen name, because daily_scores stores a name and no device
+// id. Fine for a group of people with distinct names; two people who both
+// pick "DAD" would be counted as one rival.
+async function handleHeadToHead(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const name = (url.searchParams.get('name') ?? '').trim()
+
+  // Same bounds the score endpoints accept a name under, so nothing that
+  // could have been stored can be rejected when read back.
+  if (name.length < 1 || name.length > 8 || !NAME_PATTERN.test(name)) {
+    return json({ error: 'name is required.' }, 400)
+  }
+
+  // MAX per day and player throughout: somebody can submit more than once for
+  // the same day, and only their best should stand on either side.
+  const { results } = await env.DB.prepare(
+    `WITH mine AS (
+       SELECT challenge_date, MAX(score) AS score
+       FROM daily_scores WHERE name = ?1 GROUP BY challenge_date
+     ),
+     theirs AS (
+       SELECT challenge_date, name, MAX(score) AS score
+       FROM daily_scores WHERE name <> ?1 GROUP BY challenge_date, name
+     )
+     SELECT theirs.name AS name,
+            COUNT(*) AS days,
+            SUM(CASE WHEN mine.score > theirs.score THEN 1 ELSE 0 END) AS won,
+            SUM(CASE WHEN mine.score < theirs.score THEN 1 ELSE 0 END) AS lost,
+            SUM(CASE WHEN mine.score = theirs.score THEN 1 ELSE 0 END) AS drew
+     FROM mine JOIN theirs ON mine.challenge_date = theirs.challenge_date
+     GROUP BY theirs.name
+     ORDER BY lost DESC, days DESC`,
+  )
+    .bind(name)
+    .all<{ name: string; days: number; won: number; lost: number; drew: number }>()
+
+  // Everything is returned rather than just the worst of them: which record
+  // counts as a nemesis is a presentation question, and the app decides it.
+  return json({ name, records: results })
+}
+
 export interface FeedReaction {
   emoji: string
   count: number
@@ -1570,6 +1617,10 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/community/yesterday') {
       return handleYesterdayRecap(request, env)
+    }
+
+    if (request.method === 'GET' && url.pathname === '/community/head-to-head') {
+      return handleHeadToHead(request, env)
     }
 
     if (request.method === 'GET' && url.pathname === '/community/record') {
