@@ -38,7 +38,8 @@ function mockApi(record: { games: number; players: number; wins: number } | 'dow
 
 // Needed only by the tests that visit Stats: that screen shows nothing but
 // "play a full game" until there is a game behind it. The egg itself is on
-// the game header, so it is reachable from the first second.
+// game screen behind the rolled number, so it is reachable from the first
+// second.
 function seedOneFinishedGame() {
   localStorage.setItem(
     STATS_STORAGE_KEY,
@@ -57,14 +58,12 @@ function seedOneFinishedGame() {
   )
 }
 
-// The wordmark in the game header. Deliberately not a button and carrying no
-// name that hints at it, so there is nothing to query by role: finding it by
-// its text is the test paying the same price a player does.
-function wordmark(): HTMLElement {
-  const name = screen.getByText('order-20')
-  const mark = name.parentElement
-  if (!mark) throw new Error('the wordmark has no wrapper around it')
-  return mark
+// The rolled number. Deliberately not a button and carrying no name that
+// hints at it, so there is nothing to query by role: reaching it through the
+// label the game already gives it is the test paying the same price a player
+// does.
+function rollTile(): HTMLElement {
+  return screen.getByLabelText(/^Rolled \d+$/)
 }
 
 async function openStats() {
@@ -73,8 +72,8 @@ async function openStats() {
 
 // A real finger drifts a few pixels over three seconds, which is exactly what
 // used to cancel the hold on a phone. The wobble here is deliberate.
-async function holdWordmark(ms = HOLD_MS, drift = 6) {
-  const mark = wordmark()
+async function holdRollTile(ms = HOLD_MS, drift = 6) {
+  const mark = rollTile()
   fireEvent.pointerDown(mark, { clientX: 100, clientY: 100, pointerId: 1 })
   await act(async () => {
     vi.advanceTimersByTime(ms / 2)
@@ -126,12 +125,12 @@ describe('before it has been found', () => {
     expect(screen.queryByText(/Order 6/)).not.toBeInTheDocument()
   })
 
-  it('ignores an ordinary tap on the wordmark', async () => {
+  it('ignores an ordinary tap on the rolled number', async () => {
     mockApi()
     render(<App />)
 
-    fireEvent.pointerDown(wordmark())
-    fireEvent.pointerUp(wordmark())
+    fireEvent.pointerDown(rollTile())
+    fireEvent.pointerUp(rollTile())
     await act(async () => {
       vi.advanceTimersByTime(HOLD_MS)
     })
@@ -143,7 +142,7 @@ describe('before it has been found', () => {
     mockApi()
     render(<App />)
 
-    const tile = wordmark()
+    const tile = rollTile()
     fireEvent.pointerDown(tile)
     await act(async () => {
       vi.advanceTimersByTime(HOLD_MS - 400)
@@ -161,7 +160,7 @@ describe('finding it', () => {
   it('opens the reveal after a long enough hold', async () => {
     mockApi()
     render(<App />)
-    await holdWordmark()
+    await holdRollTile()
 
     expect(await screen.findByText('Nobody has ever won')).toBeInTheDocument()
   })
@@ -169,7 +168,7 @@ describe('finding it', () => {
   it('quotes the real numbers rather than any that were written down', async () => {
     mockApi({ games: 1204, players: 11, wins: 0 })
     render(<App />)
-    await holdWordmark()
+    await holdRollTile()
 
     expect(await screen.findByText(/1,204 games counted between 11 of you/)).toBeInTheDocument()
   })
@@ -177,7 +176,7 @@ describe('finding it', () => {
   it('changes what it claims once somebody has actually won', async () => {
     mockApi({ games: 3140, players: 9, wins: 1 })
     render(<App />)
-    await holdWordmark()
+    await holdRollTile()
 
     expect(await screen.findByText('It has happened. Once.')).toBeInTheDocument()
     expect(screen.queryByText('Nobody has ever won')).not.toBeInTheDocument()
@@ -186,7 +185,7 @@ describe('finding it', () => {
   it('still opens when the worker cannot be reached', async () => {
     mockApi('down')
     render(<App />)
-    await holdWordmark()
+    await holdRollTile()
 
     expect(await screen.findByText('You have never won')).toBeInTheDocument()
   })
@@ -194,7 +193,7 @@ describe('finding it', () => {
   it('stays found across a reload', async () => {
     mockApi()
     render(<App />)
-    await holdWordmark()
+    await holdRollTile()
     await screen.findByText('Nobody has ever won')
 
     cleanup()
@@ -207,7 +206,7 @@ describe('finding it', () => {
   it('can be dismissed and picked up again from the stats menu', async () => {
     mockApi()
     render(<App />)
-    await holdWordmark()
+    await holdRollTile()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Later' }))
     expect(screen.queryByText('Nobody has ever won')).not.toBeInTheDocument()
@@ -222,7 +221,7 @@ describe('finding it', () => {
 describe('playing it', () => {
   async function unlockAndOpen() {
     render(<App />)
-    await holdWordmark()
+    await holdRollTile()
     fireEvent.click(await screen.findByRole('button', { name: 'Try it now' }))
     await screen.findByText('Order 6')
   }
@@ -252,7 +251,7 @@ describe('playing it', () => {
     const freePlayBefore = localStorage.getItem('order20-current-game')
     expect(freePlayBefore).not.toBeNull()
 
-    await holdWordmark()
+    await holdRollTile()
     fireEvent.click(await screen.findByRole('button', { name: 'Try it now' }))
     await screen.findByText('Order 6')
 
@@ -267,7 +266,7 @@ describe('playing it', () => {
 describe('what it must not touch', () => {
   async function playOneShortGame() {
     render(<App />)
-    await holdWordmark()
+    await holdRollTile()
     fireEvent.click(await screen.findByRole('button', { name: 'Try it now' }))
     await screen.findByText('Order 6')
     await playShortBoardToTheEnd()

@@ -38,6 +38,7 @@ import { useGameStats } from './hooks/useGameStats'
 import { useHardMode } from './hooks/useHardMode'
 import { useLeaderboard, type LeaderboardWindow } from './hooks/useLeaderboard'
 import { useOnboarding } from './hooks/useOnboarding'
+import { useLongPress } from './hooks/useLongPress'
 import { usePushReminder } from './hooks/usePushReminder'
 import { useShortBoard } from './hooks/useShortBoard'
 import { useShowHomeScreen } from './hooks/useShowHomeScreen'
@@ -47,6 +48,10 @@ import { useWhatsNew } from './hooks/useWhatsNew'
 import { vibrate } from './utils/haptics'
 import { playSound } from './utils/sound'
 import { APP_VERSION } from './version'
+
+// Long enough that it cannot be hit by a clumsy tap, short enough that anyone
+// who holds it wondering "does this do anything" gets an answer.
+const SHORT_BOARD_HOLD_MS = 3000
 
 function App() {
   const { state, setState, hasRecorded, setHasRecorded, restart } = useCurrentGame()
@@ -94,6 +99,17 @@ function App() {
   // A six-slot board would sit at 100% filled on the best-runs board and stay
   // there, and mixing it into the win rate would make that number meaningless.
   const shortBoard = useShortBoard()
+  // Held on the rolled number. Fired when the press begins rather than when
+  // it completes, so the three second hold doubles as the window for fetching
+  // the numbers the reveal is about to quote.
+  const secretHold = useLongPress({
+    durationMs: SHORT_BOARD_HOLD_MS,
+    onStart: shortBoard.loadCommunity,
+    onComplete: () => {
+      shortBoard.unlock()
+      setIsShortRevealOpen(true)
+    },
+  })
   const { muted, toggleMuted } = useSoundSetting()
   const { theme, toggleTheme } = useTheme()
   const { hardMode, toggleHardMode } = useHardMode()
@@ -583,17 +599,15 @@ function App() {
               setLeaderboardReturnsToStats(false)
               setIsLeaderboardOpen(true)
             }}
-            shortBoardUnlocked={shortBoard.unlocked}
-            // Fired when the press begins rather than when it completes, so
-            // the three second hold doubles as the window for fetching the
-            // numbers the reveal is about to quote.
-            onShortBoardPressStart={shortBoard.loadCommunity}
-            onShortBoardFound={() => {
-              shortBoard.unlock()
-              setIsShortRevealOpen(true)
-            }}
           />
-          <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={state.positions.length} />
+          <RollDisplay
+            currentRoll={state.currentRoll}
+            placedCount={state.placedCount}
+            total={state.positions.length}
+            // Once it has been found there is nothing left to find, and the
+            // rolled number goes back to being just the rolled number.
+            secretHold={shortBoard.unlocked ? null : secretHold}
+          />
           <Board
             key={gameId}
             positions={state.positions}

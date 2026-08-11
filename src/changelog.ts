@@ -16,7 +16,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '2026-08-10',
     title: 'Something is hidden in here',
     description:
-      "There is a way into a part of this game that is not on any menu. It has been sitting in plain sight the whole time, right at the top of the screen. Hold onto it and see what happens. Whoever finds it first, tell the others, or do not.",
+      "There is a way into a part of this game that is not on any menu. It has been sitting in plain sight the whole time, the thing you stare at on every single turn. Hold onto it and see what happens. Whoever finds it first, tell the others, or do not.",
   },
   {
     version: '1.52.0',
