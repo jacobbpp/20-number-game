@@ -1605,6 +1605,147 @@ button:focus-visible {
   color: var(--text-dim);
 }
 
+/* Head to head. One board, two people, and the same rolls built on both
+   phones from six characters. */
+
+.nemesis__challenge {
+  margin-top: 12px;
+  width: 100%;
+}
+
+.h2h-intro {
+  text-align: center;
+  padding: 20px 4px;
+}
+
+.h2h-intro__title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.h2h-intro__body {
+  margin: 0 auto 22px;
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.h2h-intro__or {
+  margin: 22px 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.h2h-waiting {
+  text-align: center;
+  padding: 18px 4px;
+}
+
+.h2h-waiting__eyebrow,
+.h2h-result__eyebrow {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  color: var(--text-disabled);
+}
+
+.h2h-waiting__score {
+  margin: 0 0 10px;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.h2h-waiting__desc {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.h2h-code {
+  margin: 0 auto 18px;
+  padding: 14px;
+  max-width: 220px;
+  border-radius: 14px;
+  background: var(--cta-tint);
+  box-shadow: inset 0 0 0 1.4px var(--cta);
+  color: var(--cta);
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.h2h-waiting__note {
+  margin: 16px auto 0;
+  max-width: 32ch;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-disabled);
+}
+
+.h2h-result {
+  text-align: center;
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 20px 16px;
+}
+
+.h2h-result--won {
+  background: var(--win-bg);
+  box-shadow: inset 0 0 0 1px var(--win);
+}
+
+.h2h-result--lost {
+  background: var(--danger-bg);
+  box-shadow: inset 0 0 0 1px var(--danger);
+}
+
+.h2h-result__scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.h2h-side {
+  padding: 14px 8px;
+  border-radius: 14px;
+  background: rgba(var(--surface-tint-rgb), 0.06);
+}
+
+/* Both sides are lit on a draw, which is the honest way to show one. */
+.h2h-side--ahead {
+  box-shadow: inset 0 0 0 1.4px var(--accent-strong);
+}
+
+.h2h-side__who {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.h2h-side__score {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.h2h-result__desc {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
 /* Nemesis. Built from the daily challenge, the one board everyone plays
    identically, so two scores can honestly be compared. */
 

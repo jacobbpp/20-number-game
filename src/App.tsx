@@ -11,6 +11,7 @@ import { HomeScreen } from './components/HomeScreen'
 import { HowToPlayScreen } from './components/HowToPlayScreen'
 import { LeaderboardScreen } from './components/LeaderboardScreen'
 import { NotificationsScreen } from './components/NotificationsScreen'
+import { ChallengeScreen } from './components/ChallengeScreen'
 import { ShortBoardReveal } from './components/ShortBoardReveal'
 import { ShortBoardScreen } from './components/ShortBoardScreen'
 import { RollDisplay } from './components/RollDisplay'
@@ -39,6 +40,7 @@ import { useHardMode } from './hooks/useHardMode'
 import { useLeaderboard, type LeaderboardWindow } from './hooks/useLeaderboard'
 import { useOnboarding } from './hooks/useOnboarding'
 import { useLongPress } from './hooks/useLongPress'
+import { useChallenge } from './hooks/useChallenge'
 import { useHeadToHead } from './hooks/useHeadToHead'
 import { usePushReminder } from './hooks/usePushReminder'
 import { useShortBoard } from './hooks/useShortBoard'
@@ -63,6 +65,7 @@ function App() {
   const [isTransferOpen, setIsTransferOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isShortBoardOpen, setIsShortBoardOpen] = useState(false)
+  const [isChallengeOpen, setIsChallengeOpen] = useState(false)
   const [isShortRevealOpen, setIsShortRevealOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [isChangelogOpen, setIsChangelogOpen] = useState(false)
@@ -95,6 +98,10 @@ function App() {
   // Daily-challenge record against everyone else, keyed on the saved
   // leaderboard name. Nothing is fetched until there is one.
   const headToHead = useHeadToHead(leaderboardName)
+  // Head to head on a shared board. Deliberately silent: nobody is notified
+  // that a challenge has been answered, because the reminder screen promises
+  // the morning nudge is the only thing this app ever sends.
+  const challenge = useChallenge(leaderboardName)
   const [dailyLeaderboardQualifies, setDailyLeaderboardQualifies] = useState(false)
   const { hasSeenOnboarding, markSeen } = useOnboarding()
   const pushReminder = usePushReminder()
@@ -365,6 +372,7 @@ function App() {
     setIsLeaderboardOpen(false)
     setIsNotificationsOpen(false)
     setIsShortBoardOpen(false)
+    setIsChallengeOpen(false)
     setIsDailyOpen(true)
   }
 
@@ -376,10 +384,23 @@ function App() {
     setIsLeaderboardOpen(false)
     setIsNotificationsOpen(false)
     setIsShortBoardOpen(false)
+    setIsChallengeOpen(false)
     setIsSettingsOpen(true)
   }
 
   const handlePlay = () => setIsHomeOpen(false)
+
+  const openChallenge = () => {
+    setIsHomeOpen(false)
+    setIsStatsOpen(false)
+    setIsDailyOpen(false)
+    setIsSettingsOpen(false)
+    setIsGuideOpen(false)
+    setIsLeaderboardOpen(false)
+    setIsNotificationsOpen(false)
+    setIsShortBoardOpen(false)
+    setIsChallengeOpen(true)
+  }
 
   const openShortBoard = () => {
     shortBoard.start()
@@ -391,6 +412,7 @@ function App() {
     setIsGuideOpen(false)
     setIsLeaderboardOpen(false)
     setIsNotificationsOpen(false)
+    setIsChallengeOpen(false)
     setIsShortBoardOpen(true)
   }
 
@@ -495,6 +517,7 @@ function App() {
           groupRecap={groupRecap}
           groupRecapLoaded={groupRecapLoaded}
           headToHead={headToHead}
+          onOpenChallenge={openChallenge}
           unlockedAchievementCount={countUnlocked(unlockedAchievements)}
           totalAchievementCount={ACHIEVEMENTS.length}
           shortBoardUnlocked={shortBoard.unlocked}
@@ -550,6 +573,13 @@ function App() {
             setIsTransferOpen(false)
             setIsSettingsOpen(true)
           }}
+        />
+      ) : isChallengeOpen ? (
+        <ChallengeScreen
+          challenge={challenge}
+          playerName={leaderboardName}
+          hardMode={hardMode}
+          onClose={() => setIsChallengeOpen(false)}
         />
       ) : isShortBoardOpen && shortBoard.state ? (
         <ShortBoardScreen
@@ -624,7 +654,7 @@ function App() {
         </>
       )}
 
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && !isShortBoardOpen && state.status === 'lost' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && !isShortBoardOpen && !isChallengeOpen && state.status === 'lost' && (
         <GameOverScreen
           reason={state.lossReason ?? 'No legal position remained for the rolled number.'}
           placedCount={state.placedCount}
@@ -641,7 +671,7 @@ function App() {
           onSkipScore={() => setLeaderboardWindows(null)}
         />
       )}
-      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && !isShortBoardOpen && state.status === 'won' && (
+      {!isHomeOpen && !isStatsOpen && !isDailyOpen && !isSettingsOpen && !isGuideOpen && !isLeaderboardOpen && !isNotificationsOpen && !isShortBoardOpen && !isChallengeOpen && state.status === 'won' && (
         <WinScreen
           positions={state.positions}
           onNewGame={handleRestart}

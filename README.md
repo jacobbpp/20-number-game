@@ -19,6 +19,16 @@ Community stats, the leaderboards, and the group activity feed are backed by a s
 
 Numbers derived from wins stay off screen until something has been won. Nobody ever has on a twenty-slot board, so a hard-mode card comparing 0% against 0% concluded that hard mode "hasn't slowed you down", and a three-way heatmap filter offered one empty view, one duplicate, and the real one. Both are gated on `hasWins()` and return the moment a board is filled. The wins figure itself stays on the overview: it is the honest number, and it is load-bearing (see below). On the home screen the second stat card counts days played rather than a win streak.
 
+## Head to head
+
+Play a board, get a six-character code, send it to somebody. They get the identical roll sequence. The board is never transmitted: both devices build it from the code with the same seeded generator the daily challenge uses, so all the worker ever holds is two scores.
+
+The challenger's score is withheld from anybody who hasn't played yet, because knowing the target changes how you play for it, and a challenge can only be answered once, so nobody can replay the same board until they beat it. Challenges expire after a week and are swept when the next one is made.
+
+Deliberately silent. Nothing is pushed when a challenge is answered, because the reminder screen promises the morning nudge is the only notification this app ever sends; both sides find out when they next open the app.
+
+The generator can't be serialised, so a reload rebuilds it from the start of the sequence. `rollNumber` skips anything already in `usedNumbers`, which lands it back on the next unused roll, so a refresh mid-game cannot hand one player a different board from the other. `src/game/challenge.test.ts` plays a board straight through and again with a generator reset partway, and asserts the two are identical.
+
 ## Nemesis
 
 Stats works out who beats you most, from the daily challenge only: it is the one board everybody plays with identical rolls, so two scores can honestly be compared, where a higher free-play score says nothing about who played better. The card reports won, lost and level, because on a shared board level is routinely the most common outcome of the three and a bare win-loss line would quietly drop the largest part of the record. A second card names whoever you have shared plenty of days with and who has never once come out ahead. Both need at least five shared days, so a couple of unlucky mornings never get called a rivalry.

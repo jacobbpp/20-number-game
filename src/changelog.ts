@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.55.0',
+    date: '2026-08-11',
+    title: 'Challenge someone to the same board',
+    description:
+      "Stats has a Head to head. You play a board, you get a six character code, and whoever you send it to gets the exact same twenty rolls. Neither of you sees the other's score until you have both finished, and a challenge can only be answered once, so nobody gets to keep replaying it until they win. Nothing is notified: you will see their answer next time you open the app, same as they will see yours. There is a Challenge button on your nemesis card too.",
+  },
+  {
     version: '1.54.0',
     date: '2026-08-11',
     title: 'Meet your nemesis',

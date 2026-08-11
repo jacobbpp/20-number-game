@@ -34,8 +34,16 @@ function mulberry32(seed: number): () => number {
   }
 }
 
+// Any string in, the same sequence out, every time and on every device.
+// Exported so a head-to-head challenge can build a board from its code the
+// same way the daily builds one from its date, rather than growing a second
+// generator that would have to be kept in step with this one.
+export function createSeededRng(seed: string): () => number {
+  return mulberry32(hashStringToSeed(seed))
+}
+
 export function createDailyRng(dateString: string): () => number {
-  return mulberry32(hashStringToSeed(dateString))
+  return createSeededRng(dateString)
 }
 
 // Cycles through a spread of difficulties rather than always being the same

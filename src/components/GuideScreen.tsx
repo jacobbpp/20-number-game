@@ -22,6 +22,14 @@ const PLAYING_ENTRIES: Entry[] = [
 
 const STATS_ENTRIES: Entry[] = [
   {
+    term: 'Head to head',
+    desc: "Play a board, get a six character code, send it to somebody. They get the exact same rolls, so it is a real comparison rather than two different games. Neither of you sees the other's score until you have both finished, and it can only be answered once, so nobody gets to keep retrying until they win. Nobody is notified either: you will see their answer the next time you open the app. Codes last a week.",
+  },
+  {
+    term: 'Your nemesis',
+    desc: "Whoever has beaten you most on the daily challenge, which is the only board everybody plays with identical rolls and so the only fair comparison. It shows the whole record, including how many ended level, because on a shared board level is often the most common of the three. There is a card for whoever has never beaten you as well. Both need at least five days you have both played.",
+  },
+  {
     term: 'Heatmap',
     desc: "Where each value range has landed, by position, across every completed game. Darker cells mean it's landed there more often. Filter to wins only, losses only, or both; the outline marks where your last game's numbers went.",
   },

@@ -91,6 +91,27 @@ CREATE TABLE IF NOT EXISTS transfers (
 
 CREATE INDEX IF NOT EXISTS idx_transfers_expires ON transfers (expires_at);
 
+-- One head to head on a shared board. The board itself is never stored: both
+-- devices build the identical roll sequence from the code alone, exactly as
+-- the daily challenge builds one from its date. All this holds is who played
+-- and what they got.
+--
+-- challenger_score is set at creation, because a challenge is only ever made
+-- by somebody who has just finished the board. The opponent columns stay null
+-- until it is answered, which is also how "still waiting" is recognised.
+CREATE TABLE IF NOT EXISTS challenges (
+  code TEXT PRIMARY KEY,
+  board_size INTEGER NOT NULL,
+  challenger_name TEXT NOT NULL,
+  challenger_score INTEGER NOT NULL,
+  opponent_name TEXT,
+  opponent_score INTEGER,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_challenges_expires ON challenges (expires_at);
+
 -- One row per browser that has asked for the daily reminder. The endpoint is
 -- the push service's own URL for that specific browser and is unique by
 -- construction, so it doubles as the primary key: turning the reminder off

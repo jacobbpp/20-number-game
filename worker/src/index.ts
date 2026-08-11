@@ -803,6 +803,171 @@ async function handleTransferStatus(request: Request, env: Env): Promise<Respons
   return json({ claimed: row?.claimed_at != null })
 }
 
+// A challenge lives a week. Long enough that somebody can answer it after a
+// weekend away, short enough that the table never becomes a graveyard.
+const CHALLENGE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+// Deliberately the same alphabet and length as a transfer code: both get read
+// aloud and typed by hand, so both leave out the characters people confuse.
+const CHALLENGE_CODE_PATTERN = new RegExp(`^[${TRANSFER_ALPHABET}]{6}$`)
+
+interface ChallengeRow {
+  code: string
+  board_size: number
+  challenger_name: string
+  challenger_score: number
+  opponent_name: string | null
+  opponent_score: number | null
+}
+
+function isValidPlayerName(name: unknown): name is string {
+  if (typeof name !== 'string') return false
+  const trimmed = name.trim()
+  return trimmed.length >= 1 && trimmed.length <= 8 && NAME_PATTERN.test(trimmed)
+}
+
+// The challenger's score is withheld from anybody who has not played yet.
+// Knowing the target changes how you play for it, which is the same reason
+// the daily hides other people's boards until you have finished your own.
+function presentChallenge(row: ChallengeRow, viewer: string | null) {
+  const settled = row.opponent_score !== null
+  const isChallenger = viewer !== null && viewer === row.challenger_name
+
+  return {
+    code: row.code,
+    boardSize: row.board_size,
+    challengerName: row.challenger_name,
+    challengerScore: settled || isChallenger ? row.challenger_score : null,
+    opponentName: row.opponent_name,
+    opponentScore: row.opponent_score,
+  }
+}
+
+async function handleChallengeCreate(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON.' }, 400)
+  }
+
+  const { code, boardSize, name, score } = (body ?? {}) as Record<string, unknown>
+
+  if (typeof code !== 'string' || !CHALLENGE_CODE_PATTERN.test(code)) {
+    return json({ error: 'A well-formed code is required.' }, 400)
+  }
+  if (typeof boardSize !== 'number' || !VALID_BOARD_SIZES.has(boardSize)) {
+    return json({ error: 'boardSize is not valid.' }, 400)
+  }
+  if (!isValidPlayerName(name)) {
+    return json({ error: 'name is required.' }, 400)
+  }
+  if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > boardSize) {
+    return json({ error: 'score is not valid.' }, 400)
+  }
+
+  if (!(await allowWrite(request, env))) {
+    return json({ error: 'Too many requests.' }, 429)
+  }
+
+  const now = Date.now()
+  // Swept here rather than on a schedule, same as transfers: the only moment
+  // the table grows is the only moment worth tidying it.
+  await env.DB.prepare('DELETE FROM challenges WHERE expires_at < ?1').bind(new Date(now).toISOString()).run()
+
+  try {
+    await env.DB.prepare(
+      `INSERT INTO challenges (code, board_size, challenger_name, challenger_score, created_at, expires_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
+    )
+      .bind(code, boardSize, name.trim(), score, new Date(now).toISOString(), new Date(now + CHALLENGE_TTL_MS).toISOString())
+      .run()
+  } catch {
+    // The primary key caught a code already in play. Astronomically unlikely,
+    // but handing back the same code to two people would hand one of them the
+    // other's game.
+    return json({ error: 'That code is already in use.' }, 409)
+  }
+
+  return new Response(null, { status: 204, headers: corsHeaders() })
+}
+
+async function handleChallengeRead(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const code = (url.searchParams.get('code') ?? '').trim().toUpperCase()
+  const viewer = url.searchParams.get('name')
+
+  if (!CHALLENGE_CODE_PATTERN.test(code)) {
+    return json({ error: 'A well-formed code is required.' }, 400)
+  }
+
+  const row = await env.DB.prepare(
+    'SELECT code, board_size, challenger_name, challenger_score, opponent_name, opponent_score FROM challenges WHERE code = ?1 AND expires_at > ?2',
+  )
+    .bind(code, new Date().toISOString())
+    .first<ChallengeRow>()
+
+  if (!row) {
+    return json({ error: 'That challenge has expired or never existed.' }, 404)
+  }
+
+  return json({ challenge: presentChallenge(row, viewer) })
+}
+
+async function handleChallengeAnswer(request: Request, env: Env): Promise<Response> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Invalid JSON.' }, 400)
+  }
+
+  const { code, name, score } = (body ?? {}) as Record<string, unknown>
+
+  if (typeof code !== 'string' || !CHALLENGE_CODE_PATTERN.test(code.trim().toUpperCase())) {
+    return json({ error: 'A well-formed code is required.' }, 400)
+  }
+  if (!isValidPlayerName(name)) {
+    return json({ error: 'name is required.' }, 400)
+  }
+
+  const normalised = code.trim().toUpperCase()
+
+  if (!(await allowWrite(request, env))) {
+    return json({ error: 'Too many requests.' }, 429)
+  }
+
+  const row = await env.DB.prepare(
+    'SELECT code, board_size, challenger_name, challenger_score, opponent_name, opponent_score FROM challenges WHERE code = ?1 AND expires_at > ?2',
+  )
+    .bind(normalised, new Date().toISOString())
+    .first<ChallengeRow>()
+
+  if (!row) {
+    return json({ error: 'That challenge has expired or never existed.' }, 404)
+  }
+  if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > row.board_size) {
+    return json({ error: 'score is not valid.' }, 400)
+  }
+
+  // First answer wins, and only the first. Without this an opponent could
+  // replay the same board until they beat it, which is exactly the thing a
+  // head to head is meant to rule out.
+  const result = await env.DB.prepare(
+    'UPDATE challenges SET opponent_name = ?1, opponent_score = ?2 WHERE code = ?3 AND opponent_score IS NULL',
+  )
+    .bind(name.trim(), score, normalised)
+    .run()
+
+  if (result.meta.changes === 0) {
+    return json({ error: 'That challenge has already been answered.' }, 409)
+  }
+
+  return json({
+    challenge: presentChallenge({ ...row, opponent_name: name.trim(), opponent_score: score }, name.trim()),
+  })
+}
+
 // A push subscription is issued by the browser's own push service, so the
 // endpoint host is not ours to predict. It must at least be https and a real
 // URL, so a malformed one cannot be stored and retried every morning forever.
@@ -1641,6 +1806,18 @@ export default {
 
     if (request.method === 'POST' && url.pathname === '/transfer/claim') {
       return handleTransferClaim(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/challenge') {
+      return handleChallengeCreate(request, env)
+    }
+
+    if (request.method === 'GET' && url.pathname === '/challenge') {
+      return handleChallengeRead(request, env)
+    }
+
+    if (request.method === 'POST' && url.pathname === '/challenge/answer') {
+      return handleChallengeAnswer(request, env)
     }
 
     if (request.method === 'POST' && url.pathname === '/push/subscribe') {
