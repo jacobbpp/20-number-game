@@ -32,6 +32,11 @@ export function ShortBoardScreen({ state, record, hardMode, onSelect, onRestart,
         </span>
       </div>
 
+      {/* Header stays put; everything else sits centred in what is left. Six
+          slots do not need the whole screen, and the answer to a board that
+          was too small is not a board stretched to three times the row height
+          of every other one in the app. */}
+      <div className="short-screen__content">
       {finished ? (
         <div className={`short-result${state.status === 'won' ? ' short-result--won' : ''}`}>
           <p className="short-result__eyebrow">{state.status === 'won' ? `ORDER ${SHORT_BOARD_SIZE} COMPLETE` : 'NO LEGAL POSITION'}</p>
@@ -62,6 +67,7 @@ export function ShortBoardScreen({ state, record, hardMode, onSelect, onRestart,
         suggestedPosition={finished ? null : suggestion}
         onSelect={onSelect}
       />
+      </div>
     </div>
   )
 }

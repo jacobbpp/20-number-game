@@ -1692,16 +1692,31 @@ button:focus-visible {
   margin-top: 8px;
 }
 
-/* flex: 1 and min-height: 0, exactly as .daily-screen does it. The board
-   inside is flex: 1 and stretches to whatever it is given, so without a
-   parent that claims the height of .app it sizes to its content instead and
-   six slots leave two thirds of the screen empty. */
 .short-screen {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* Everything below the header, centred in whatever height is left over. */
+.short-screen__content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+
+/* .board is flex: 1 and will take everything it is offered. On a twenty slot
+   board that is right; on six it inflates each row to about 93px, roughly
+   three times the row height everywhere else in the app, and a placed number
+   ends up adrift in the corner of a large empty rectangle. Capping it lets
+   six rows land at a normal size and leaves the rest as breathing room. */
+.short-screen .board {
+  max-height: 400px;
 }
 
 .short-screen__header {
