@@ -1,6 +1,11 @@
 import { RestartButton } from './RestartButton'
 import type { DailyResult } from '../hooks/useDailyChallenge'
+import { useLongPress } from '../hooks/useLongPress'
 import tommyHead from '../brand/assets/tommy-head-orange.png'
+
+// Long enough that it cannot be hit by a clumsy tap, short enough that anyone
+// who holds it wondering "does this do anything" gets an answer.
+const SHORT_BOARD_HOLD_MS = 3000
 
 interface HeaderProps {
   bestScore: number
@@ -13,6 +18,12 @@ interface HeaderProps {
   onOpenSettings: () => void
   onOpenBestRun: () => void
   onOpenLeaderboard: () => void
+  // Order 6 hides behind the wordmark. Nothing here names it: it is found by
+  // holding onto the one thing on screen that is obviously the app's own
+  // badge. See game/shortBoard.ts.
+  shortBoardUnlocked: boolean
+  onShortBoardPressStart: () => void
+  onShortBoardFound: () => void
 }
 
 export function Header({
@@ -26,14 +37,35 @@ export function Header({
   onOpenSettings,
   onOpenBestRun,
   onOpenLeaderboard,
+  shortBoardUnlocked,
+  onShortBoardPressStart,
+  onShortBoardFound,
 }: HeaderProps) {
+  const press = useLongPress({
+    durationMs: SHORT_BOARD_HOLD_MS,
+    onStart: onShortBoardPressStart,
+    onComplete: onShortBoardFound,
+  })
+  // Once it has been found there is nothing left to find, and the wordmark
+  // goes back to being a wordmark.
+  const eggHandlers = shortBoardUnlocked ? {} : press.handlers
+  const eggProgress = shortBoardUnlocked ? 0 : press.progress
+
   return (
     <header className="header">
       <div className="header__brand" aria-hidden="true">
         <span className="brand-badge">
           <img src={tommyHead} alt="" className="brand-badge__img" />
         </span>
-        <span className="brand-wordmark">
+        {/* Deliberately not a button and not focusable. Giving this a name
+            that hinted at what it does would hand it to everybody at once,
+            which is the opposite of the point. It reads as decoration to a
+            screen reader, exactly as it did before. */}
+        <span
+          className="brand-wordmark brand-wordmark--egg"
+          style={eggProgress > 0 ? { ['--egg-progress' as string]: `${eggProgress * 100}%` } : undefined}
+          {...eggHandlers}
+        >
           <span className="brand-wordmark__symbol">~/</span>
           <span className="brand-wordmark__name">order-20</span>
         </span>

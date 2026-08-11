@@ -1608,29 +1608,34 @@ button:focus-visible {
 /* Order 6. Nothing here labels the way in: the wins tile fills as it is held,
    which is the only clue the easter egg gets. See game/shortBoard.ts. */
 
-.stats-hero-strip__card--egg {
+/* The wordmark in the game header. It never scrolls, nothing sits beside it,
+   and it is the one thing on screen that obviously belongs to the app rather
+   than to the game, which makes it the natural thing to prod. */
+.brand-wordmark--egg {
   position: relative;
+  display: inline-block;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 7px;
   overflow: hidden;
-  /* A long press on touch otherwise selects the number and raises the
-     text-selection callout over the top of it. */
+  /* A long press on touch otherwise selects the text and raises the
+     selection callout over the top of it. */
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
-  /* none, not manipulation. This sits on a page that scrolls, and with any
-     panning still permitted the browser claims the touch for a scroll a
-     moment into the hold and fires pointercancel, so the hold could never
-     finish on a real phone. The cost is that a scroll cannot be started with
-     a finger on this one small tile. */
+  /* none, not manipulation: with any panning still permitted the browser
+     claims the touch for a scroll partway through the hold and fires
+     pointercancel, so the hold could never finish on a real phone. */
   touch-action: none;
 }
 
-.stats-hero-strip__card--egg::before {
+.brand-wordmark--egg::before {
   content: '';
   position: absolute;
   inset: auto 0 0 0;
   height: var(--egg-progress, 0);
   background: var(--cta);
-  opacity: 0.2;
+  opacity: 0.22;
   transition: height 40ms linear;
   pointer-events: none;
 }

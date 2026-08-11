@@ -478,14 +478,6 @@ function App() {
           totalAchievementCount={ACHIEVEMENTS.length}
           shortBoardUnlocked={shortBoard.unlocked}
           shortBoardRecord={shortBoard.record}
-          // Fired when the press begins rather than when it completes, so the
-          // three second hold doubles as the window for the numbers the
-          // reveal is about to quote.
-          onShortBoardPressStart={shortBoard.loadCommunity}
-          onShortBoardFound={() => {
-            shortBoard.unlock()
-            setIsShortRevealOpen(true)
-          }}
           onOpenShortBoard={openShortBoard}
           onClose={() => setIsStatsOpen(false)}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
@@ -590,6 +582,15 @@ function App() {
             onOpenLeaderboard={() => {
               setLeaderboardReturnsToStats(false)
               setIsLeaderboardOpen(true)
+            }}
+            shortBoardUnlocked={shortBoard.unlocked}
+            // Fired when the press begins rather than when it completes, so
+            // the three second hold doubles as the window for fetching the
+            // numbers the reveal is about to quote.
+            onShortBoardPressStart={shortBoard.loadCommunity}
+            onShortBoardFound={() => {
+              shortBoard.unlock()
+              setIsShortRevealOpen(true)
             }}
           />
           <RollDisplay currentRoll={state.currentRoll} placedCount={state.placedCount} total={state.positions.length} />

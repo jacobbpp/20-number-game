@@ -18,7 +18,6 @@ import {
 } from '../game/stats'
 import { addDays, isStreakActive, type StreakData } from '../game/daily'
 import { SHORT_BOARD_SIZE, type ShortRecord } from '../game/shortBoard'
-import { useLongPress } from '../hooks/useLongPress'
 import {
   ACTIVITY_LEVELS,
   activityLevel,
@@ -66,18 +65,12 @@ interface StatsScreenProps {
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
   onOpenLeaderboard: () => void
-  // Order 6. Nothing on this screen names it: it is found by holding the one
-  // number that has never moved. See game/shortBoard.ts.
+  // Order 6 is found by holding the wordmark in the game header, not here.
+  // This screen only offers the way back to it once it has been found.
   shortBoardUnlocked: boolean
   shortBoardRecord: ShortRecord
-  onShortBoardPressStart: () => void
-  onShortBoardFound: () => void
   onOpenShortBoard: () => void
 }
-
-// Long enough that it cannot be hit by a clumsy tap, short enough that anyone
-// who holds it wondering "does this do anything" gets an answer.
-const SHORT_BOARD_HOLD_MS = 3000
 
 const SECTION_TITLES: Record<Exclude<StatsSection, 'stats'>, string> = {
   heatmap: 'Heatmap',
@@ -114,8 +107,6 @@ export function StatsScreen({
   groupRecapLoaded,
   shortBoardUnlocked,
   shortBoardRecord,
-  onShortBoardPressStart,
-  onShortBoardFound,
   onOpenShortBoard,
   onClose,
   onOpenHowToPlay,
@@ -125,15 +116,6 @@ export function StatsScreen({
   const { totalGames, lastGame } = stats
   const [section, setSection] = useState<StatsSection>('stats')
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
-  // Once it has been found there is nothing left to find, and the row below
-  // is how you get back to it.
-  const shortBoardPress = useLongPress({
-    durationMs: SHORT_BOARD_HOLD_MS,
-    onStart: onShortBoardPressStart,
-    onComplete: onShortBoardFound,
-  })
-  const eggHandlers = shortBoardUnlocked ? {} : shortBoardPress.handlers
-  const eggProgress = shortBoardUnlocked ? 0 : shortBoardPress.progress
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [openRunId, setOpenRunId] = useState<number | null>(null)
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
@@ -273,16 +255,7 @@ export function StatsScreen({
                     ))}
                   </div>
                 </div>
-                {/* Deliberately not a button and not focusable: the way into
-                    Order 6 is meant to be found, not advertised, and giving
-                    this a name that hints at it would give the game away to
-                    everyone at once. It still reads exactly as it did before
-                    to a screen reader, which is the number and its label. */}
-                <div
-                  className="stats-hero-strip__card stats-hero-strip__card--egg"
-                  style={eggProgress > 0 ? { ['--egg-progress' as string]: `${eggProgress * 100}%` } : undefined}
-                  {...eggHandlers}
-                >
+                <div className="stats-hero-strip__card">
                   <p className="stats-hero-strip__value">{stats.totalWins}</p>
                   <p className="stats-hero-strip__label">wins</p>
                 </div>
