@@ -21,6 +21,7 @@ function record(overrides: Partial<ChallengeRecord> = {}): ChallengeRecord {
     boardSize: CHALLENGE_BOARD_SIZE,
     challengerName: 'JRC',
     challengerScore: 14,
+    invitedName: null,
     opponentName: null,
     opponentScore: null,
     ...overrides,

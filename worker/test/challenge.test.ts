@@ -151,6 +151,49 @@ describe('GET /challenge, before it has been answered', () => {
   })
 })
 
+describe('a challenge sent to somebody in particular', () => {
+  it('lets the person it was sent to answer it', async () => {
+    await create({ ...VALID, invitedName: 'YRC' })
+
+    const response = await answer({ code: VALID.code, name: 'YRC', score: 16 })
+    expect(response.status).toBe(200)
+  })
+
+  it('turns away anybody else, by name', async () => {
+    // A code pasted into a group chat should not be takeable by whoever
+    // happens to read it first when it was meant for one person.
+    await create({ ...VALID, invitedName: 'YRC' })
+
+    const response = await answer({ code: VALID.code, name: 'SJW', score: 16 })
+    expect(response.status).toBe(403)
+    expect(((await response.json()) as { error: string }).error).toContain('YRC')
+  })
+
+  it('says who it was for, so the opponent knows before playing', async () => {
+    await create({ ...VALID, invitedName: 'YRC' })
+
+    const body = (await (await read(VALID.code, 'YRC')).json()) as { challenge: { invitedName: string | null } }
+    expect(body.challenge.invitedName).toBe('YRC')
+  })
+
+  it('stays open to anyone when nobody was named', async () => {
+    await create(VALID)
+
+    expect((await answer({ code: VALID.code, name: 'ANYONE', score: 11 })).status).toBe(200)
+  })
+
+  it('reports no invitation on an open one', async () => {
+    await create(VALID)
+
+    const body = (await (await read(VALID.code)).json()) as { challenge: { invitedName: string | null } }
+    expect(body.challenge.invitedName).toBeNull()
+  })
+
+  it('refuses a malformed name to send it to', async () => {
+    expect((await create({ ...VALID, invitedName: 'WAY TOO LONG' })).status).toBe(400)
+  })
+})
+
 describe('POST /challenge/answer', () => {
   it('records the answer and hands back both scores', async () => {
     const code = await seedChallenge()

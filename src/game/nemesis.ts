@@ -54,6 +54,20 @@ export function pickNeverBeaten(records: readonly HeadToHead[]): HeadToHead | nu
   })[0]
 }
 
+// Everybody worth offering as an opponent for a head to head, most-played
+// first. No MIN_SHARED_DAYS here: one shared morning is not enough to call
+// somebody a nemesis, but it is plenty to send them a code. Capped because
+// this is a row of buttons on a phone, and the people at the bottom of a long
+// list are the ones least likely to answer anyway.
+export const MAX_CHALLENGE_ROSTER = 8
+
+export function challengeRoster(records: readonly HeadToHead[], limit = MAX_CHALLENGE_ROSTER): string[] {
+  return [...records]
+    .sort((a, b) => (b.days !== a.days ? b.days - a.days : a.name.localeCompare(b.name)))
+    .slice(0, limit)
+    .map(record => record.name)
+}
+
 function plural(count: number, one: string, many: string): string {
   return count === 1 ? one : many
 }

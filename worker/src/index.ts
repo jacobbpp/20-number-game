@@ -816,6 +816,7 @@ interface ChallengeRow {
   board_size: number
   challenger_name: string
   challenger_score: number
+  invited_name: string | null
   opponent_name: string | null
   opponent_score: number | null
 }
@@ -837,6 +838,7 @@ function presentChallenge(row: ChallengeRow, viewer: string | null) {
     code: row.code,
     boardSize: row.board_size,
     challengerName: row.challenger_name,
+    invitedName: row.invited_name,
     challengerScore: settled || isChallenger ? row.challenger_score : null,
     opponentName: row.opponent_name,
     opponentScore: row.opponent_score,
@@ -851,7 +853,7 @@ async function handleChallengeCreate(request: Request, env: Env): Promise<Respon
     return json({ error: 'Invalid JSON.' }, 400)
   }
 
-  const { code, boardSize, name, score } = (body ?? {}) as Record<string, unknown>
+  const { code, boardSize, name, score, invitedName } = (body ?? {}) as Record<string, unknown>
 
   if (typeof code !== 'string' || !CHALLENGE_CODE_PATTERN.test(code)) {
     return json({ error: 'A well-formed code is required.' }, 400)
@@ -865,6 +867,10 @@ async function handleChallengeCreate(request: Request, env: Env): Promise<Respon
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > boardSize) {
     return json({ error: 'score is not valid.' }, 400)
   }
+  // Optional. Absent means open to whoever answers first.
+  if (invitedName !== undefined && invitedName !== null && !isValidPlayerName(invitedName)) {
+    return json({ error: 'invitedName is not valid.' }, 400)
+  }
 
   if (!(await allowWrite(request, env))) {
     return json({ error: 'Too many requests.' }, 429)
@@ -877,10 +883,18 @@ async function handleChallengeCreate(request: Request, env: Env): Promise<Respon
 
   try {
     await env.DB.prepare(
-      `INSERT INTO challenges (code, board_size, challenger_name, challenger_score, created_at, expires_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
+      `INSERT INTO challenges (code, board_size, challenger_name, challenger_score, invited_name, created_at, expires_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
     )
-      .bind(code, boardSize, name.trim(), score, new Date(now).toISOString(), new Date(now + CHALLENGE_TTL_MS).toISOString())
+      .bind(
+        code,
+        boardSize,
+        name.trim(),
+        score,
+        typeof invitedName === 'string' ? invitedName.trim() : null,
+        new Date(now).toISOString(),
+        new Date(now + CHALLENGE_TTL_MS).toISOString(),
+      )
       .run()
   } catch {
     // The primary key caught a code already in play. Astronomically unlikely,
@@ -902,7 +916,7 @@ async function handleChallengeRead(request: Request, env: Env): Promise<Response
   }
 
   const row = await env.DB.prepare(
-    'SELECT code, board_size, challenger_name, challenger_score, opponent_name, opponent_score FROM challenges WHERE code = ?1 AND expires_at > ?2',
+    'SELECT code, board_size, challenger_name, challenger_score, invited_name, opponent_name, opponent_score FROM challenges WHERE code = ?1 AND expires_at > ?2',
   )
     .bind(code, new Date().toISOString())
     .first<ChallengeRow>()
@@ -938,7 +952,7 @@ async function handleChallengeAnswer(request: Request, env: Env): Promise<Respon
   }
 
   const row = await env.DB.prepare(
-    'SELECT code, board_size, challenger_name, challenger_score, opponent_name, opponent_score FROM challenges WHERE code = ?1 AND expires_at > ?2',
+    'SELECT code, board_size, challenger_name, challenger_score, invited_name, opponent_name, opponent_score FROM challenges WHERE code = ?1 AND expires_at > ?2',
   )
     .bind(normalised, new Date().toISOString())
     .first<ChallengeRow>()
@@ -948,6 +962,17 @@ async function handleChallengeAnswer(request: Request, env: Env): Promise<Respon
   }
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > row.board_size) {
     return json({ error: 'score is not valid.' }, 400)
+  }
+
+  // Sent to somebody in particular, so it is theirs to answer. An open
+  // challenge has no invited_name and stays first come, first served.
+  //
+  // This is a courtesy rather than a lock: names are chosen, not proved, so
+  // anybody determined enough could claim one. It exists to stop a code
+  // pasted into a group chat being taken by the wrong person, which is the
+  // thing that actually happens.
+  if (row.invited_name !== null && row.invited_name !== name.trim()) {
+    return json({ error: `That challenge was sent to ${row.invited_name}.` }, 403)
   }
 
   // First answer wins, and only the first. Without this an opponent could

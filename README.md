@@ -21,7 +21,7 @@ Numbers derived from wins stay off screen until something has been won. Nobody e
 
 ## Head to head
 
-Play a board, get a six-character code, send it to somebody. They get the identical roll sequence. The board is never transmitted: both devices build it from the code with the same seeded generator the daily challenge uses, so all the worker ever holds is two scores.
+Play a board, get a six-character code, send it to somebody. They get the identical roll sequence. A challenge can name its opponent, picked from the people you have a daily record against, and the worker then refuses an answer under any other name: a code pasted into a group chat should not be takeable by whoever reads it first. It is a courtesy rather than a lock, since names are chosen rather than proved. Leaving it open to anyone is still the default. The board is never transmitted: both devices build it from the code with the same seeded generator the daily challenge uses, so all the worker ever holds is two scores.
 
 The challenger's score is withheld from anybody who hasn't played yet, because knowing the target changes how you play for it, and a challenge can only be answered once, so nobody can replay the same board until they beat it. Challenges expire after a week and are swept when the next one is made.
 

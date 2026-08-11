@@ -10,11 +10,25 @@ interface ChallengeScreenProps {
   challenge: Challenge
   playerName: string
   hardMode: boolean
+  // Everybody this player has a daily record against, most-played first.
+  opponents: string[]
+  // Preselected when the screen was opened from a Challenge button that
+  // already had somebody in mind.
+  initialOpponent: string | null
   onClose: () => void
 }
 
-export function ChallengeScreen({ challenge, playerName, hardMode, onClose }: ChallengeScreenProps) {
+export function ChallengeScreen({
+  challenge,
+  playerName,
+  hardMode,
+  opponents,
+  initialOpponent,
+  onClose,
+}: ChallengeScreenProps) {
   const [typed, setTyped] = useState('')
+  // Null is the open challenge: whoever answers first takes it.
+  const [invited, setInvited] = useState<string | null>(initialOpponent)
   const { copied, copy } = useCopyFeedback()
 
   const { game, record, role, code } = challenge
@@ -66,8 +80,10 @@ export function ChallengeScreen({ challenge, playerName, hardMode, onClose }: Ch
               </div>
             </div>
             <p className="h2h-result__desc">{describeOutcome(outcomeOf(mine, theirs), mine, theirs, record.boardSize)}</p>
-            <button type="button" className="btn btn--primary" onClick={challenge.start} autoFocus>
-              Rematch
+            {/* A rematch goes back to the same person rather than out to
+                anybody, which is what asking for one means. */}
+            <button type="button" className="btn btn--primary" onClick={() => challenge.start(opponentName ?? null)} autoFocus>
+              {opponentName ? `Rematch ${opponentName}` : 'Rematch'}
             </button>
             <button type="button" className="btn btn--secondary short-reveal__later" onClick={challenge.clear}>
               Done
@@ -79,12 +95,20 @@ export function ChallengeScreen({ challenge, playerName, hardMode, onClose }: Ch
             <p className="h2h-waiting__score">
               {game.placedCount} of {game.positions.length}
             </p>
-            <p className="h2h-waiting__desc">Send this code. They get the exact same rolls.</p>
+            <p className="h2h-waiting__desc">
+              {challenge.invitedName
+                ? `Send this to ${challenge.invitedName}. They get the exact same rolls, and only they can answer it.`
+                : 'Send this code. They get the exact same rolls.'}
+            </p>
             <p className="h2h-code">{code}</p>
             <button
               type="button"
               className="btn btn--primary"
-              onClick={() => copy(`Beat this on Order 20: ${game.placedCount} of ${game.positions.length}. Code ${code}`)}
+              onClick={() =>
+                copy(
+                  `${challenge.invitedName ? `${challenge.invitedName}, beat` : 'Beat'} this on Order 20: ${game.placedCount} of ${game.positions.length}. Code ${code}`,
+                )
+              }
             >
               {copied ? 'Copied' : 'Copy and share'}
             </button>
@@ -92,7 +116,8 @@ export function ChallengeScreen({ challenge, playerName, hardMode, onClose }: Ch
               {challenge.busy ? 'Checking' : 'Check for their answer'}
             </button>
             <p className="h2h-waiting__note">
-              Nobody is notified. They will see it when they open the app, and so will you.
+              Nobody is notified. {challenge.invitedName ?? 'They'} will see it when they open the app, and so will
+              you.
             </p>
           </div>
         ) : finished ? (
@@ -125,8 +150,39 @@ export function ChallengeScreen({ challenge, playerName, hardMode, onClose }: Ch
               score until you have both finished.
             </p>
 
-            <button type="button" className="btn btn--primary" onClick={challenge.start}>
-              Start a challenge
+            {/* Only shown to somebody who has a daily record against other
+                people, because those names are where this list comes from.
+                Anyone stays first, and stays the default, so the open
+                challenge is never buried behind picking a person. */}
+            {opponents.length > 0 && (
+              <>
+                <p className="h2h-pick__label">WHO IS IT FOR</p>
+                <div className="h2h-pick" role="group" aria-label="Who the challenge is for">
+                  <button
+                    type="button"
+                    className={`h2h-pick__name${invited === null ? ' h2h-pick__name--on' : ''}`}
+                    aria-pressed={invited === null}
+                    onClick={() => setInvited(null)}
+                  >
+                    Anyone
+                  </button>
+                  {opponents.map(name => (
+                    <button
+                      key={name}
+                      type="button"
+                      className={`h2h-pick__name${invited === name ? ' h2h-pick__name--on' : ''}`}
+                      aria-pressed={invited === name}
+                      onClick={() => setInvited(name)}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <button type="button" className="btn btn--primary" onClick={() => challenge.start(invited)}>
+              {invited ? `Challenge ${invited}` : 'Start a challenge'}
             </button>
 
             <p className="h2h-intro__or">or answer one</p>

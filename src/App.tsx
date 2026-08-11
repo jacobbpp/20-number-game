@@ -24,6 +24,7 @@ import { ACHIEVEMENTS, countUnlocked } from './game/achievements'
 import { createDailyRng, getDailyBoardSize, getLocalDateString, isStreakActive, recordDailyStreak } from './game/daily'
 import { place, roll } from './game/engine'
 import { suggestedPosition } from './game/hint'
+import { challengeRoster } from './game/nemesis'
 import { extractPlacements } from './game/stats'
 import { createInitialState, type ResultBadge } from './game/types'
 import { useAchievements } from './hooks/useAchievements'
@@ -66,6 +67,9 @@ function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isShortBoardOpen, setIsShortBoardOpen] = useState(false)
   const [isChallengeOpen, setIsChallengeOpen] = useState(false)
+  // Who the Head to head screen should open with already picked, set by a
+  // Challenge button that had somebody in mind.
+  const [challengeInvite, setChallengeInvite] = useState<string | null>(null)
   const [isShortRevealOpen, setIsShortRevealOpen] = useState(false)
   const [isBestRunOpen, setIsBestRunOpen] = useState(false)
   const [isChangelogOpen, setIsChangelogOpen] = useState(false)
@@ -390,7 +394,8 @@ function App() {
 
   const handlePlay = () => setIsHomeOpen(false)
 
-  const openChallenge = () => {
+  const openChallenge = (invited: string | null = null) => {
+    setChallengeInvite(invited)
     setIsHomeOpen(false)
     setIsStatsOpen(false)
     setIsDailyOpen(false)
@@ -517,7 +522,7 @@ function App() {
           groupRecap={groupRecap}
           groupRecapLoaded={groupRecapLoaded}
           headToHead={headToHead}
-          onOpenChallenge={openChallenge}
+          onOpenChallenge={name => openChallenge(name ?? null)}
           unlockedAchievementCount={countUnlocked(unlockedAchievements)}
           totalAchievementCount={ACHIEVEMENTS.length}
           shortBoardUnlocked={shortBoard.unlocked}
@@ -579,6 +584,8 @@ function App() {
           challenge={challenge}
           playerName={leaderboardName}
           hardMode={hardMode}
+          opponents={challengeRoster(headToHead)}
+          initialOpponent={challengeInvite}
           onClose={() => setIsChallengeOpen(false)}
         />
       ) : isShortBoardOpen && shortBoard.state ? (

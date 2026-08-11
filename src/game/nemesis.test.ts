@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  MAX_CHALLENGE_ROSTER,
   MIN_SHARED_DAYS,
+  challengeRoster,
   describeNemesis,
   describeNeverBeaten,
   pickNemesis,
@@ -132,5 +134,36 @@ describe('how the record reads', () => {
     expect(copy).toContain('taken 5')
     expect(copy).toContain('8 of them level')
     expect(copy).not.toContain('13')
+  })
+})
+
+describe('who you can send a challenge to', () => {
+  it('offers everybody, most-played first', () => {
+    expect(challengeRoster(REAL)).toEqual(['SJW', 'YRC', 'ALEXANDR', 'ALR', 'DAD', 'NIG'])
+  })
+
+  it('offers people the nemesis rules leave out', () => {
+    // Two shared days is not enough to call somebody a nemesis. It is plenty
+    // to send them a code.
+    const roster = challengeRoster([record('DAD', 2, 0, 1, 1)])
+
+    expect(roster).toEqual(['DAD'])
+    expect(pickNemesis([record('DAD', 2, 0, 1, 1)])).toBeNull()
+  })
+
+  it('splits a tie by name, so the same record always lists the same order', () => {
+    const roster = challengeRoster([record('NIG', 2, 2, 0, 0), record('DAD', 2, 0, 1, 1)])
+
+    expect(roster).toEqual(['DAD', 'NIG'])
+  })
+
+  it('stops at a row of buttons somebody can actually read', () => {
+    const many = Array.from({ length: 20 }, (_, index) => record(`P${index}`, 20 - index, 1, 1, 1))
+
+    expect(challengeRoster(many)).toHaveLength(MAX_CHALLENGE_ROSTER)
+  })
+
+  it('has nobody to offer before you have played anybody', () => {
+    expect(challengeRoster([])).toEqual([])
   })
 })

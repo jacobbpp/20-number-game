@@ -104,6 +104,11 @@ CREATE TABLE IF NOT EXISTS challenges (
   board_size INTEGER NOT NULL,
   challenger_name TEXT NOT NULL,
   challenger_score INTEGER NOT NULL,
+  -- Who it was sent to, when it was sent to somebody in particular. Null
+  -- means open: whoever answers first takes it. Added after the table
+  -- shipped, so the deployed database got it via ALTER rather than by being
+  -- recreated: there was already a real challenge in it.
+  invited_name TEXT,
   opponent_name TEXT,
   opponent_score INTEGER,
   created_at TEXT NOT NULL,

@@ -21,6 +21,10 @@ interface StoredChallenge {
   role: ChallengeRole
   boardSize: number
   game: GameState
+  // Who this one was aimed at, held here so the code can be labelled with
+  // their name while it is still being played and before the server has been
+  // told anything. Null is open to anybody.
+  invitedName: string | null
   // Set once this side's score has reached the server, so a refresh after
   // finishing cannot submit the same run twice.
   submitted: boolean
@@ -28,12 +32,15 @@ interface StoredChallenge {
 
 function isStored(value: unknown): value is StoredChallenge {
   if (!value || typeof value !== 'object') return false
-  const { code, role, boardSize, game, submitted } = value as Record<string, unknown>
+  const { code, role, boardSize, game, submitted, invitedName } = value as Record<string, unknown>
   return (
     typeof code === 'string' &&
     (role === 'challenger' || role === 'opponent') &&
     typeof boardSize === 'number' &&
     typeof submitted === 'boolean' &&
+    // Absent on anything saved before challenges could name an opponent, and
+    // a half-played game should survive the update rather than vanish.
+    (invitedName === undefined || invitedName === null || typeof invitedName === 'string') &&
     isGameState(game)
   )
 }
@@ -44,7 +51,7 @@ function read(): StoredChallenge | null {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const parsed: unknown = JSON.parse(raw)
-    return isStored(parsed) ? parsed : null
+    return isStored(parsed) ? { ...parsed, invitedName: parsed.invitedName ?? null } : null
   } catch {
     return null
   }
@@ -70,11 +77,13 @@ export interface Challenge {
   code: string | null
   role: ChallengeRole | null
   game: GameState | null
+  // Who the live challenge was sent to, if anyone in particular.
+  invitedName: string | null
   // What the server knows. Null until it has been asked.
   record: ChallengeRecord | null
   busy: boolean
   error: string | null
-  start: () => void
+  start: (invitedName?: string | null) => void
   open: (code: string) => Promise<void>
   select: (index: number) => void
   refresh: () => Promise<void>
@@ -123,11 +132,18 @@ export function useChallenge(playerName: string): Challenge {
     [playerName],
   )
 
-  const start = useCallback(() => {
+  const start = useCallback((invitedName: string | null = null) => {
     const code = mintChallengeCode()
     setError(null)
     setRecord(null)
-    setStored({ code, role: 'challenger', boardSize: CHALLENGE_BOARD_SIZE, game: dealFrom(code, CHALLENGE_BOARD_SIZE), submitted: false })
+    setStored({
+      code,
+      role: 'challenger',
+      boardSize: CHALLENGE_BOARD_SIZE,
+      game: dealFrom(code, CHALLENGE_BOARD_SIZE),
+      invitedName: invitedName?.trim() || null,
+      submitted: false,
+    })
   }, [])
 
   const open = useCallback(
@@ -149,16 +165,30 @@ export function useChallenge(playerName: string): Challenge {
           setStored(null)
           return
         }
+        if (found.invitedName !== null && found.invitedName !== playerName) {
+          // Say so now rather than after twenty rolls: the server would turn
+          // the answer away, and playing a board whose score can never be
+          // recorded is the one outcome worth ruling out up front.
+          setError(`That one was sent to ${found.invitedName}. Ask them for a code of your own.`)
+          return
+        }
 
         setRecord(found)
-        setStored({ code, role: 'opponent', boardSize: found.boardSize, game: dealFrom(code, found.boardSize), submitted: false })
+        setStored({
+          code,
+          role: 'opponent',
+          boardSize: found.boardSize,
+          game: dealFrom(code, found.boardSize),
+          invitedName: found.invitedName,
+          submitted: false,
+        })
       } catch {
         setError('Could not reach the challenge. Try again in a moment.')
       } finally {
         setBusy(false)
       }
     },
-    [fetchRecord],
+    [fetchRecord, playerName],
   )
 
   const submit = useCallback(
@@ -169,7 +199,13 @@ export function useChallenge(playerName: string): Challenge {
           const response = await fetch(`${API_BASE}/challenge`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: current.code, boardSize: current.boardSize, name: playerName, score }),
+            body: JSON.stringify({
+              code: current.code,
+              boardSize: current.boardSize,
+              name: playerName,
+              score,
+              invitedName: current.invitedName,
+            }),
           })
           if (!response.ok) throw new Error('could not create')
 
@@ -178,6 +214,7 @@ export function useChallenge(playerName: string): Challenge {
             boardSize: current.boardSize,
             challengerName: playerName,
             challengerScore: score,
+            invitedName: current.invitedName,
             opponentName: null,
             opponentScore: null,
           })
@@ -187,15 +224,25 @@ export function useChallenge(playerName: string): Challenge {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: current.code, name: playerName, score }),
           })
-          if (!response.ok) throw new Error('could not answer')
+          if (!response.ok) {
+            // The server keeps its own record of who a challenge was sent to,
+            // so it has the only answer worth showing here.
+            const refused = (await response.json().catch(() => null)) as { error?: string } | null
+            throw new Error(refused?.error ?? 'could not answer')
+          }
 
           const body = (await response.json()) as { challenge?: ChallengeRecord }
           if (body.challenge) setRecord(body.challenge)
         }
 
         setStored({ ...current, submitted: true })
-      } catch {
-        setError('Your score is saved on this device but did not reach the others. Reopen to try again.')
+      } catch (thrown) {
+        const refusal = thrown instanceof Error && thrown.message.startsWith('That challenge was sent to')
+        setError(
+          refusal
+            ? thrown.message
+            : 'Your score is saved on this device but did not reach the others. Reopen to try again.',
+        )
       } finally {
         setBusy(false)
       }
@@ -247,6 +294,7 @@ export function useChallenge(playerName: string): Challenge {
     code: stored?.code ?? record?.code ?? null,
     role: stored?.role ?? null,
     game: stored?.game ?? null,
+    invitedName: stored?.invitedName ?? record?.invitedName ?? null,
     record,
     busy,
     error,

@@ -71,7 +71,7 @@ interface StatsScreenProps {
   // Daily-challenge record against everyone else. Empty until a leaderboard
   // name has been saved, since the record is keyed on that name.
   headToHead: HeadToHead[]
-  onOpenChallenge: () => void
+  onOpenChallenge: (invited?: string) => void
   onClose: () => void
   onOpenHowToPlay: () => void
   onOpenAchievements: () => void
@@ -648,7 +648,11 @@ export function StatsScreen({
                     <p className="insight-card__title">Your nemesis</p>
                     <p className="nemesis__name">{nemesis.name}</p>
                     <p className="insight-card__desc">{describeNemesis(nemesis)}</p>
-                    <button type="button" className="btn btn--primary nemesis__challenge" onClick={onOpenChallenge}>
+                    <button
+                      type="button"
+                      className="btn btn--primary nemesis__challenge"
+                      onClick={() => onOpenChallenge(nemesis.name)}
+                    >
                       Challenge {nemesis.name}
                     </button>
                     <div className="nemesis__record">
@@ -716,7 +720,7 @@ export function StatsScreen({
                 </span>
                 <ChevronRightIcon />
               </button>
-              <button type="button" className="stats-menu__row" onClick={onOpenChallenge}>
+              <button type="button" className="stats-menu__row" onClick={() => onOpenChallenge()}>
                 <span className="stats-menu__row-text">
                   <span className="stats-menu__row-title">Head to head</span>
                   <span className="stats-menu__row-preview">One board, two of you, same rolls</span>

@@ -56,6 +56,9 @@ export interface ChallengeRecord {
   // cannot change how they play it. The daily hides other people's boards
   // for the same reason.
   challengerScore: number | null
+  // Who it was sent to, when it was sent to somebody in particular. Null is
+  // an open challenge: whoever answers first takes it.
+  invitedName: string | null
   opponentName: string | null
   opponentScore: number | null
 }

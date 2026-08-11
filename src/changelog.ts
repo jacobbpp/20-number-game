@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.56.0',
+    date: '2026-08-11',
+    title: 'Challenge one person by name',
+    description:
+      'Head to head now asks who the challenge is for. Pick anybody you have a daily record against and only they can answer the code, so one pasted into a group chat cannot be taken by whoever reads it first. Anyone is still there and still the default, and the Challenge button on your nemesis card opens with them already picked. Nobody is notified, exactly as before.',
+  },
+  {
     version: '1.55.0',
     date: '2026-08-11',
     title: 'Challenge someone to the same board',
