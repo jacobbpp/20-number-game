@@ -1922,8 +1922,12 @@ button:focus-visible {
    board that is right; on six it inflates each row to about 93px, roughly
    three times the row height everywhere else in the app, and a placed number
    ends up adrift in the corner of a large empty rectangle. Capping it lets
-   six rows land at a normal size and leaves the rest as breathing room. */
-.short-screen .board {
+   six rows land at a normal size and leaves the rest as breathing room.
+
+   Scoped to the short board rather than to .short-screen, whose layout the
+   head to head screen also borrows. Capping that one squashed a full twenty
+   slot board into 400px for no reason at all. */
+.short-screen--six .board {
   max-height: 400px;
 }
 

@@ -18,8 +18,11 @@ export function ShortBoardScreen({ state, record, hardMode, onSelect, onRestart,
   const suggestion =
     state.currentRoll !== null ? suggestedPosition(state.positions, state.currentRoll, state.validPositions) : null
 
+  // --six is what caps the board height. Only six rows need that: the head to
+  // head screen borrows this same layout for a full twenty and must not
+  // inherit it.
   return (
-    <div className="short-screen">
+    <div className="short-screen short-screen--six">
       <div className="short-screen__header">
         <button type="button" className="icon-btn" onClick={onClose} aria-label="Back to game">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
