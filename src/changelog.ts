@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.57.0',
+    date: '2026-08-16',
+    title: 'The group board, rebuilt',
+    description:
+      "Best runs today is now Last 24 hours, and it is one row per person instead of three. The day's best run gets a card of its own, everyone else is a ranked line, and each line shows how much of the board they filled, which is what the order was always based on. Tap anyone to see their other runs and react to them. Two people who have never saved a name no longer both read as \"someone\". Runs older than a day can no longer appear, and the panel has stopped counting you as somebody who has the game open.",
+  },
+  {
     version: '1.56.0',
     date: '2026-08-11',
     title: 'Challenge one person by name',

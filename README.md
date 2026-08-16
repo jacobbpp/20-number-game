@@ -29,6 +29,18 @@ Deliberately silent. Nothing is pushed when a challenge is answered, because the
 
 The generator can't be serialised, so a reload rebuilds it from the start of the sequence. `rollNumber` skips anything already in `usedNumbers`, which lands it back on the next unused roll, so a refresh mid-game cannot hand one player a different board from the other. `src/game/challenge.test.ts` plays a board straight through and again with a generator reset partway, and asserts the two are identical.
 
+## The group board
+
+Everyone's best run from the last 24 hours, one line each, ranked by share of the board filled: board sizes run from 10 to 30, so 30 of 30 beats 18 of 20 even though the raw numbers say otherwise. That share is printed on the line, because it is the whole basis of the order and without it the list reads as random — 14 of 20 above 9 of 15 above 11 of 20 looks arbitrary until you can see 70, 60, 55.
+
+It used to show each person's three best, which was meant to stop one long session burying everybody. With four players it produced nine rows of which six were the same two names, including pairs identical in score and age that read as a rendering fault. One row each now, the day's best given a card of its own, and the other runs a tap away rather than gone.
+
+The window is filtered on read, not only swept on write. Pruning ran when a game was recorded, so a quiet spell left yesterday's runs sitting under a heading that said today, stamped "1d".
+
+Nameless devices are told apart by position — "someone", then "someone else" — because two rows both reading "someone" looks like a duplicate rather than two players. Grouping is decided in the Durable Object, which sends a per-snapshot index rather than the key it grouped on: for a player with no name, that key is their device id.
+
+The live count is other people, not everybody. Counting the viewer's own connection meant the panel opened by telling you that you had the game open.
+
 ## Nemesis
 
 Stats works out who beats you most, from the daily challenge only: it is the one board everybody plays with identical rolls, so two scores can honestly be compared, where a higher free-play score says nothing about who played better. The card reports won, lost and level, because on a shared board level is routinely the most common outcome of the three and a bare win-loss line would quietly drop the largest part of the record. A second card names whoever you have shared plenty of days with and who has never once come out ahead. Both need at least five shared days, so a couple of unlucky mornings never get called a rivalry.

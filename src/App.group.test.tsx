@@ -103,9 +103,12 @@ function pushSnapshot(socket: { current: DrivableSocket | null }, payload: unkno
 
 // Every run now arrives with an id and its reactions, so build them through
 // one place rather than repeating the shape at each call site.
-function run(over: Partial<{ id: number; name: string | null; mode: string; boardSize: number; placedCount: number; at: string; reactions: { emoji: string; count: number }[]; myReaction: string | null }>) {
+function run(over: Partial<{ id: number; person: number; name: string | null; mode: string; boardSize: number; placedCount: number; at: string; reactions: { emoji: string; count: number }[]; myReaction: string | null }>) {
   return {
     id: 1,
+    // Who the run belongs to, decided by the worker. Runs sharing one of these
+    // are one person and collapse to a single row.
+    person: 0,
     name: 'AAA',
     mode: 'freeplay',
     boardSize: 20,
@@ -186,22 +189,81 @@ describe('best runs board', () => {
     pushSnapshot(socket, {
       playing: 0,
       events: [
-        run({ id: 1, name: 'SJW', mode: 'daily', boardSize: 30, placedCount: 30 }),
-        run({ id: 2, name: 'JRC', mode: 'freeplay', boardSize: 20, placedCount: 8 }),
+        run({ id: 1, person: 0, name: 'SJW', mode: 'daily', boardSize: 30, placedCount: 30 }),
+        run({ id: 2, person: 1, name: 'JRC', mode: 'freeplay', boardSize: 20, placedCount: 8 }),
       ],
     })
 
     const rows = await screen.findAllByRole('listitem')
     // The list item is now the wrapper; the tappable row is a button inside it,
-    // with the reactions and picker as siblings.
+    // with the reactions as a sibling. The first is the lead card.
     const feedRows = rows.filter(row => row.className.includes('feed__item'))
     expect(feedRows).toHaveLength(2)
+    expect(feedRows[0].className).toContain('feed__item--lead')
     expect(within(feedRows[0]).getByText('SJW')).toBeInTheDocument()
-    expect(within(feedRows[0]).getByText('daily')).toBeInTheDocument()
     expect(within(feedRows[0]).getByText('30/30')).toBeInTheDocument()
+    expect(within(feedRows[0]).getByText(/100% of the board · daily/)).toBeInTheDocument()
     expect(within(feedRows[1]).getByText('JRC')).toBeInTheDocument()
     expect(within(feedRows[1]).getByText('free play')).toBeInTheDocument()
     expect(within(feedRows[1]).getByText('8/20')).toBeInTheDocument()
+    expect(within(feedRows[1]).getByText('40%')).toBeInTheDocument()
+  })
+
+  it('gives each person one row, with their other runs behind a tap', async () => {
+    // Three each turned a four-player board into nine rows, six of them the
+    // same two names.
+    const socket = captureSocket()
+    mockApi()
+    render(<App />)
+    await openStats()
+
+    pushSnapshot(socket, {
+      playing: 0,
+      events: [
+        run({ id: 1, person: 0, name: 'YRC', placedCount: 14 }),
+        run({ id: 2, person: 0, name: 'YRC', placedCount: 13 }),
+        run({ id: 3, person: 0, name: 'YRC', placedCount: 13 }),
+        run({ id: 4, person: 1, name: 'JRC', placedCount: 11 }),
+      ],
+    })
+
+    const rows = (await screen.findAllByRole('listitem')).filter(row => row.className.includes('feed__item'))
+    expect(rows).toHaveLength(2)
+    expect(screen.queryByText('13/20')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /YRC, free play, 14 of 20/ }))
+
+    expect(screen.getAllByText('13/20')).toHaveLength(2)
+  })
+
+  it('says so when the one row is all they played', async () => {
+    const socket = captureSocket()
+    mockApi()
+    render(<App />)
+    await openStats()
+    pushSnapshot(socket, { playing: 0, events: [run({ id: 1, person: 0, name: 'ALR', placedCount: 11 })] })
+
+    fireEvent.click(await screen.findByRole('button', { name: /ALR, free play, 11 of 20/ }))
+
+    expect(screen.getByText('Their only run today.')).toBeInTheDocument()
+  })
+
+  it('tells two nameless players apart rather than showing someone twice', async () => {
+    const socket = captureSocket()
+    mockApi()
+    render(<App />)
+    await openStats()
+
+    pushSnapshot(socket, {
+      playing: 0,
+      events: [
+        run({ id: 1, person: 0, name: null, placedCount: 12 }),
+        run({ id: 2, person: 1, name: null, placedCount: 7 }),
+      ],
+    })
+
+    expect(await screen.findByText('someone')).toBeInTheDocument()
+    expect(screen.getByText('someone else')).toBeInTheDocument()
   })
 
   it('shows a game from a device that never saved a name as someone', async () => {
@@ -225,11 +287,13 @@ describe('best runs board', () => {
     render(<App />)
     await openStats()
 
+    // Other people, not everybody: counting the viewer's own connection made
+    // the panel tell you that you were online.
     pushSnapshot(socket, { playing: 3, events: [] })
-    expect(await screen.findByText('3 people have the game open.')).toBeInTheDocument()
+    expect(await screen.findByText('3 other people have the game open.')).toBeInTheDocument()
 
     pushSnapshot(socket, { playing: 1, events: [] })
-    expect(await screen.findByText('1 person has the game open.')).toBeInTheDocument()
+    expect(await screen.findByText('1 other person has the game open.')).toBeInTheDocument()
   })
 
   it('says nothing about who is around when nobody is connected', async () => {
@@ -278,13 +342,13 @@ describe('reacting to a run', () => {
 
     fireEvent.click(row)
     expect(row).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('button', { name: 'React with 👏' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'React with 🔥' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'React with 😱' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'React with 😂' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /React with 👏/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /React with 🔥/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /React with 😱/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /React with 😂/ })).toBeInTheDocument()
 
     fireEvent.click(row)
-    expect(screen.queryByRole('button', { name: 'React with 👏' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /React with 👏/ })).not.toBeInTheDocument()
   })
 
   it('posts the chosen reaction for that run', async () => {
@@ -295,7 +359,7 @@ describe('reacting to a run', () => {
     pushSnapshot(socket, { playing: 0, events: [run({ id: 7, name: 'SJW', placedCount: 18 })] })
 
     fireEvent.click(await screen.findByRole('button', { name: /SJW, free play, 18 of 20/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'React with 🔥' }))
+    fireEvent.click(screen.getByRole('button', { name: /React with 🔥/ }))
 
     await waitFor(() => {
       const call = fetchMock.mock.calls.find(entry => String(entry[0]).includes('/activity/react'))
@@ -314,7 +378,7 @@ describe('reacting to a run', () => {
     fireEvent.click(await screen.findByRole('button', { name: /SJW, free play, 18 of 20/ }))
     // Yours reads as "Remove" rather than "React with", and clears rather than
     // re-sending the same emoji.
-    fireEvent.click(screen.getByRole('button', { name: 'Remove 🔥' }))
+    fireEvent.click(screen.getByRole('button', { name: /Remove 🔥/ }))
 
     await waitFor(() => {
       const call = fetchMock.mock.calls.find(entry => String(entry[0]).includes('/activity/react'))
@@ -369,7 +433,11 @@ describe('reacting to a run', () => {
     await openStats()
     pushSnapshot(socket, { playing: 0, events: [run({ id: 9, name: 'ALR', placedCount: 11 })] })
 
-    expect(await screen.findByText('Best runs today')).toBeInTheDocument()
-    expect(screen.getByText("Everyone's three best from the last day. Tap one to react.")).toBeInTheDocument()
+    // "today" was a lie: the window is 24 hours, and runs from yesterday
+    // showed under it stamped "1d".
+    expect(await screen.findByText('Last 24 hours')).toBeInTheDocument()
+    expect(
+      screen.getByText("Everyone's best, ranked by how much of the board they filled. Tap for their other runs."),
+    ).toBeInTheDocument()
   })
 })

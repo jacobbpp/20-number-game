@@ -42,7 +42,7 @@ import {
   weeklyAverageDelta,
   type DailyActivityLog,
 } from '../game/dailyActivity'
-import { describeMode, displayName, formatRelativeTime } from '../game/groupFeed'
+import { describeMode, displayName, formatRelativeTime, formatShare, groupByPerson } from '../game/groupFeed'
 import { formatDailyDateLabel, formatFullDateLabel } from '../game/share'
 import { REACTION_EMOJI, type CommunityFeed, type GroupRecap } from '../hooks/useGroupActivity'
 import type { Theme } from '../hooks/useTheme'
@@ -129,12 +129,17 @@ export function StatsScreen({
   const { totalGames, lastGame } = stats
   const [section, setSection] = useState<StatsSection>('stats')
   const [heatmapView, setHeatmapView] = useState<HeatmapView>('all')
+  // One entry per person rather than one per run: the panel is a board, and
+  // three rows each turned it into a wall of the same two names.
+  const people = groupByPerson(groupFeed.events)
   // Both are null until there are enough shared dailies behind them, so a
   // couple of unlucky mornings never get called a rivalry.
   const nemesis = pickNemesis(headToHead)
   const neverBeaten = pickNeverBeaten(headToHead)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [openRunId, setOpenRunId] = useState<number | null>(null)
+  // Which person's runs are open, if any. Keyed on the person rather than a
+  // run, because the row is now a person.
+  const [openPerson, setOpenPerson] = useState<number | null>(null)
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
   const peak = maxCount(activeMatrix)
   const insight = computeInsight(stats)
@@ -440,66 +445,107 @@ export function StatsScreen({
               <div className="insight-panel insight-panel--group">
                 <p className="insight-panel__label">
                   {groupFeed.live && <span className="live-dot" aria-hidden="true" />}
-                  Best runs today
+                  Last 24 hours
                 </p>
                 {groupFeed.playing > 0 && (
                   // Deliberately "has the game open", not "is playing" — the
                   // socket counts open connections, and claiming more than
                   // that would be a small lie the panel can't back up.
                   <p className="stats-screen__caption" style={{ margin: '-4px 0 10px' }}>
-                    {groupFeed.playing} {groupFeed.playing === 1 ? 'person has' : 'people have'} the game open.
+                    {groupFeed.playing} other {groupFeed.playing === 1 ? 'person has' : 'people have'} the game open.
                   </p>
                 )}
-                {groupFeed.events.length === 0 ? (
+                {people.length === 0 ? (
                   <p className="stats-screen__caption">Nobody has finished a game today.</p>
                 ) : (
                   <>
+                    {/* One row per person, best first, because the panel is a
+                        board rather than a log. Their other runs are a tap
+                        away rather than three rows each on a phone screen. */}
                     <ul className="feed">
-                      {groupFeed.events.map(event => {
-                        const who = displayName(event.name)
-                        const score = `${event.placedCount} of ${event.boardSize}`
+                      {people.map((person, index) => {
+                        const open = openPerson === person.person
+                        const best = person.best
+                        const others = person.runs.slice(1)
                         return (
-                          <li key={event.id} className="feed__item">
+                          <li key={person.person} className={index === 0 ? 'feed__item feed__item--lead' : 'feed__item'}>
                             <button
                               type="button"
-                              className={openRunId === event.id ? 'feed__row feed__row--open' : 'feed__row'}
-                              aria-expanded={openRunId === event.id}
-                              aria-label={`${who}, ${describeMode(event.mode)}, ${score}. React.`}
-                              onClick={() => setOpenRunId(current => (current === event.id ? null : event.id))}
+                              className={open ? 'feed__row feed__row--open' : 'feed__row'}
+                              aria-expanded={open}
+                              aria-label={`${person.label}, ${describeMode(best.mode)}, ${best.placedCount} of ${best.boardSize}, ${formatShare(person.share)} of the board. Show runs and react.`}
+                              onClick={() => setOpenPerson(current => (current === person.person ? null : person.person))}
                             >
-                              <span className="feed__name">{who}</span>
-                              <span className="feed__what">{describeMode(event.mode)}</span>
-                              <span className={event.placedCount === event.boardSize ? 'feed__score feed__score--win' : 'feed__score'}>
-                                {event.placedCount}/{event.boardSize}
-                              </span>
-                              <span className="feed__when">{formatRelativeTime(event.at, now)}</span>
+                              {index === 0 ? (
+                                <>
+                                  <span className="feed__lead-eyebrow">BEST RUN</span>
+                                  <span className="feed__lead-top">
+                                    <span className="feed__name">{person.label}</span>
+                                    <span className={best.placedCount === best.boardSize ? 'feed__lead-score feed__lead-score--win' : 'feed__lead-score'}>
+                                      {best.placedCount}/{best.boardSize}
+                                    </span>
+                                  </span>
+                                  <span className="feed__bar" aria-hidden="true">
+                                    <span className="feed__bar-fill" style={{ width: `${Math.round(person.share * 100)}%` }} />
+                                  </span>
+                                  <span className="feed__lead-meta">
+                                    {formatShare(person.share)} of the board · {describeMode(best.mode)} · {formatRelativeTime(best.at, now)}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="feed__rank">{index + 1}</span>
+                                  <span className="feed__name">{person.label}</span>
+                                  <span className="feed__what">{describeMode(best.mode)}</span>
+                                  <span className={best.placedCount === best.boardSize ? 'feed__score feed__score--win' : 'feed__score'}>
+                                    {best.placedCount}/{best.boardSize}
+                                  </span>
+                                  <span className="feed__share">{formatShare(person.share)}</span>
+                                </>
+                              )}
                             </button>
 
-                            {openRunId === event.id && (
-                              <div className="feed__picker">
-                                {REACTION_EMOJI.map(emoji => (
-                                  <button
-                                    key={emoji}
-                                    type="button"
-                                    className={event.myReaction === emoji ? 'feed__pick feed__pick--on' : 'feed__pick'}
-                                    aria-pressed={event.myReaction === emoji}
-                                    aria-label={`${emoji === event.myReaction ? 'Remove' : 'React with'} ${emoji}`}
-                                    // Tapping the one you already left takes it
-                                    // back, so there's no separate clear button.
-                                    onClick={() => groupFeed.react(event.id, event.myReaction === emoji ? null : emoji)}
-                                  >
-                                    {emoji}
-                                  </button>
+                            {open && (
+                              <div className="feed__runs">
+                                {person.runs.map(run => (
+                                  <div key={run.id} className="feed__run">
+                                    <p className="feed__run-line">
+                                      <span className="feed__run-score">
+                                        {run.placedCount}/{run.boardSize}
+                                      </span>
+                                      <span className="feed__run-meta">
+                                        {describeMode(run.mode)} · {formatRelativeTime(run.at, now)}
+                                      </span>
+                                    </p>
+                                    <div className="feed__picker">
+                                      {REACTION_EMOJI.map(emoji => (
+                                        <button
+                                          key={emoji}
+                                          type="button"
+                                          className={run.myReaction === emoji ? 'feed__pick feed__pick--on' : 'feed__pick'}
+                                          aria-pressed={run.myReaction === emoji}
+                                          aria-label={`${emoji === run.myReaction ? 'Remove' : 'React with'} ${emoji} on ${person.label}'s ${run.placedCount} of ${run.boardSize}`}
+                                          // Tapping the one you already left
+                                          // takes it back, so there's no
+                                          // separate clear button.
+                                          onClick={() => groupFeed.react(run.id, run.myReaction === emoji ? null : emoji)}
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
                                 ))}
+                                {others.length === 0 && <p className="feed__only">Their only run today.</p>}
                               </div>
                             )}
 
-                            {event.reactions.length > 0 && (
+                            {!open && best.reactions.length > 0 && (
                               <div className="feed__reacts">
-                                {event.reactions.map(reaction => (
+                                {best.reactions.map(reaction => (
                                   <span
                                     key={reaction.emoji}
-                                    className={event.myReaction === reaction.emoji ? 'feed__react feed__react--mine' : 'feed__react'}
+                                    className={best.myReaction === reaction.emoji ? 'feed__react feed__react--mine' : 'feed__react'}
                                   >
                                     {reaction.emoji} <b>{reaction.count}</b>
                                   </span>
@@ -511,7 +557,7 @@ export function StatsScreen({
                       })}
                     </ul>
                     <p className="stats-screen__caption" style={{ margin: '10px 0 0' }}>
-                      Everyone's three best from the last day. Tap one to react.
+                      Everyone's best, ranked by how much of the board they filled. Tap for their other runs.
                     </p>
                   </>
                 )}

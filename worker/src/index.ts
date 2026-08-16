@@ -1376,6 +1376,10 @@ export interface FeedReaction {
 
 export interface FeedEvent {
   id: number
+  // Which person this run belongs to, as an index into the ranked list. Lets
+  // the panel put one row per person on screen without ever being told who
+  // anybody is beyond the name they chose to save.
+  person: number
   name: string | null
   mode: string
   boardSize: number
@@ -1523,30 +1527,47 @@ export class ActivityFeed extends DurableObject<Env> {
     return this.buildSnapshot(deviceId)
   }
 
-  private buildSnapshot(viewerDeviceId: string | null, excluding?: WebSocket): FeedSnapshot {
+  private buildSnapshot(viewerDeviceId: string | null, excluding?: WebSocket, self?: WebSocket): FeedSnapshot {
+    // Filtered by the window on the way out, not only swept on the way in.
+    // Pruning happens when a game is recorded, so a quiet spell left runs from
+    // yesterday sitting in a panel headed "today" until somebody else played.
+    const cutoff = new Date(Date.now() - FEED_WINDOW_MS).toISOString()
+
     // Ranked by share of the board filled rather than raw count: board sizes
     // run from 10 to 30, so 30 of 30 is a better run than 18 of 20 even though
     // the raw numbers say otherwise.
     const rows = this.ctx.storage.sql
-      .exec<{ id: number; name: string | null; mode: string; board_size: number; placed_count: number; at: string }>(
+      .exec<{ id: number; person_key: string; name: string | null; mode: string; board_size: number; placed_count: number; at: string }>(
         // Grouped by name first, device second. Name is what a reader actually
         // sees, so grouping by it is what makes "three each" true on screen —
         // and it keeps one person as one person across a Move my game, where
         // the device id deliberately changes. Device id only decides it for
         // someone who has never saved a name, and the row id is a last resort
         // for rows written before device ids were stored at all.
-        `SELECT id, name, mode, board_size, placed_count, at FROM (
-           SELECT *, ROW_NUMBER() OVER (
-             PARTITION BY COALESCE(NULLIF(name, ''), 'device:' || device_id, 'row:' || CAST(id AS TEXT))
-             ORDER BY CAST(placed_count AS REAL) / board_size DESC, placed_count DESC, id DESC
-           ) AS person_rank
+        `SELECT id, person_key, name, mode, board_size, placed_count, at FROM (
+           SELECT *,
+             COALESCE(NULLIF(name, ''), 'device:' || device_id, 'row:' || CAST(id AS TEXT)) AS person_key,
+             ROW_NUMBER() OVER (
+               PARTITION BY COALESCE(NULLIF(name, ''), 'device:' || device_id, 'row:' || CAST(id AS TEXT))
+               ORDER BY CAST(placed_count AS REAL) / board_size DESC, placed_count DESC, id DESC
+             ) AS person_rank
            FROM events
+           WHERE at >= ?2
          )
-         WHERE person_rank <= ?
+         WHERE person_rank <= ?1
          ORDER BY CAST(placed_count AS REAL) / board_size DESC, placed_count DESC, id DESC`,
         RUNS_PER_PERSON,
+        cutoff,
       )
       .toArray()
+
+    // The grouping key itself is never sent: for a nameless player it is their
+    // device id. An index into the ranked list carries everything the panel
+    // needs — which rows are the same person — and identifies nobody.
+    const personIndex = new Map<string, number>()
+    for (const row of rows) {
+      if (!personIndex.has(row.person_key)) personIndex.set(row.person_key, personIndex.size)
+    }
 
     const counts = this.ctx.storage.sql
       .exec<{ event_id: number; emoji: string; n: number }>(
@@ -1566,6 +1587,7 @@ export class ActivityFeed extends DurableObject<Env> {
     return {
       events: rows.map(row => ({
         id: row.id,
+        person: personIndex.get(row.person_key) ?? 0,
         name: row.name,
         mode: row.mode,
         boardSize: row.board_size,
@@ -1578,7 +1600,10 @@ export class ActivityFeed extends DurableObject<Env> {
         })).filter(reaction => reaction.count > 0),
         myReaction: mine.get(row.id) ?? null,
       })),
-      playing: this.ctx.getWebSockets().filter(socket => socket !== excluding).length,
+      // Other people, not everybody: the viewer's own connection is the one
+      // thing they already know about, and counting it made the panel tell you
+      // that you were online.
+      playing: this.ctx.getWebSockets().filter(socket => socket !== excluding && socket !== self).length,
     }
   }
 
@@ -1601,7 +1626,7 @@ export class ActivityFeed extends DurableObject<Env> {
     for (const socket of this.ctx.getWebSockets()) {
       if (socket === excluding) continue
       try {
-        socket.send(JSON.stringify(this.buildSnapshot(this.viewerOf(socket), excluding)))
+        socket.send(JSON.stringify(this.buildSnapshot(this.viewerOf(socket), excluding, socket)))
       } catch {
         // Already closing — its close handler will run and re-broadcast.
       }

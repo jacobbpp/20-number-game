@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { API_BASE } from '../api'
 import { getOrCreateDeviceId } from './useLeaderboard'
+import type { FeedRun } from '../game/groupFeed'
 
 // Mirrors the worker's own allowlist. Anything outside it is rejected there,
 // so keeping the two in step is what stops the picker offering something the
@@ -12,13 +13,7 @@ export interface FeedReaction {
   count: number
 }
 
-export interface FeedEvent {
-  id: number
-  name: string | null
-  mode: string
-  boardSize: number
-  placedCount: number
-  at: string
+export interface FeedEvent extends FeedRun {
   reactions: FeedReaction[]
   // What this device left, if anything. Worked out server side per viewer, so
   // no one else's device id ever reaches the client.
@@ -38,8 +33,9 @@ export interface GroupRecap {
 
 export interface GroupFeed {
   events: FeedEvent[]
-  // How many people currently have the game open. Not "how many are mid-game"
-  // — it counts open connections, which is the honest thing the socket knows.
+  // How many other people currently have the game open. Not "how many are
+  // mid-game" — it counts open connections, which is the honest thing the
+  // socket knows — and never the viewer's own.
   playing: number
   // False when running on the fetch fallback, so the UI can avoid claiming to
   // be live when it is really just a snapshot.

@@ -84,8 +84,8 @@ const INSIGHT_ENTRIES: Entry[] = [
     desc: "Everyone's day, not just yours: games played, how many people played, who played the most, and the best single run. It's worked out once overnight rather than every time you open the app, so it covers whole finished days and appears the morning after.",
   },
   {
-    term: 'Best runs today',
-    desc: "Everyone's three best runs from the last 24 hours, ranked by how much of the board they filled rather than by raw score, so a 30 of 30 daily beats an 18 of 20 free play. Three each means one long session can't push everyone else off. It updates live, and a green dot means that connection is up. When other people have the game open at the same time as you, it says so — that means the app is open, not that they're mid-game. Anyone who has never saved a leaderboard name shows as \"someone\".",
+    term: 'Last 24 hours',
+    desc: "Everyone's best run from the last 24 hours, one line each, ranked by how much of the board they filled rather than by raw score, so a 30 of 30 daily beats an 18 of 20 free play. The share is on the line, because without it the order looks arbitrary. Tap somebody to see their other runs from the day and react to any of them. It updates live, and a green dot means that connection is up. When other people have the game open at the same time as you, it says so — that means the app is open, not that they're mid-game. Anyone who has never saved a leaderboard name shows as \"someone\", and a second one as \"someone else\".",
   },
   {
     term: 'Reactions',
