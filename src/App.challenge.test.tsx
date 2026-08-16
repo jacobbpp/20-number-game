@@ -18,27 +18,63 @@ const LIVE_RECORDS = [
   { name: 'NIG', days: 2, won: 2, lost: 0, drew: 0 },
 ]
 
-function mockApi(records: unknown = LIVE_RECORDS) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+// A challenge of yours that somebody has already answered, which is what the
+// dot on the header is for.
+const SETTLED = {
+  code: 'K7M2QP',
+  boardSize: 20,
+  challengerName: 'JRC',
+  challengerScore: 14,
+  invitedName: 'YRC',
+  opponentName: 'YRC',
+  opponentScore: 16,
+}
 
-      if (url.includes('/community/head-to-head')) {
-        return Promise.resolve(new Response(JSON.stringify({ name: 'JRC', records }), { status: 200 }))
-      }
-      if (url.includes('/community/yesterday')) {
-        return Promise.resolve(new Response(JSON.stringify({ date: '2026-08-10', summary: null }), { status: 200 }))
-      }
-      if (url.includes('/activity')) {
-        return Promise.resolve(new Response(JSON.stringify({ events: [], playing: 0 }), { status: 200 }))
-      }
-      if (url.includes('/check')) {
-        return Promise.resolve(new Response(JSON.stringify({ windows: [], qualifies: false }), { status: 200 }))
-      }
-      return Promise.resolve(new Response(JSON.stringify({ boardSize: 20, matrix: emptyMatrix() }), { status: 200 }))
+function seedFinishedChallenge(over: Record<string, unknown> = {}) {
+  localStorage.setItem(
+    'order20-challenge',
+    JSON.stringify({
+      code: 'K7M2QP',
+      role: 'challenger',
+      boardSize: 20,
+      invitedName: 'YRC',
+      submitted: true,
+      game: {
+        positions: Array(20).fill(null),
+        validPositions: [],
+        currentRoll: 500,
+        usedNumbers: [500],
+        placedCount: 14,
+        status: 'lost',
+      },
+      ...over,
     }),
   )
+}
+
+function mockApi(records: unknown = LIVE_RECORDS, challenge: unknown = null) {
+  const fetchMock = vi.fn((input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
+    if (url.includes('/challenge?')) {
+      return Promise.resolve(new Response(JSON.stringify({ challenge }), { status: challenge ? 200 : 404 }))
+    }
+    if (url.includes('/community/head-to-head')) {
+      return Promise.resolve(new Response(JSON.stringify({ name: 'JRC', records }), { status: 200 }))
+    }
+    if (url.includes('/community/yesterday')) {
+      return Promise.resolve(new Response(JSON.stringify({ date: '2026-08-10', summary: null }), { status: 200 }))
+    }
+    if (url.includes('/activity')) {
+      return Promise.resolve(new Response(JSON.stringify({ events: [], playing: 0 }), { status: 200 }))
+    }
+    if (url.includes('/check')) {
+      return Promise.resolve(new Response(JSON.stringify({ windows: [], qualifies: false }), { status: 200 }))
+    }
+    return Promise.resolve(new Response(JSON.stringify({ boardSize: 20, matrix: emptyMatrix() }), { status: 200 }))
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
 }
 
 function seedPlayer() {
@@ -143,5 +179,70 @@ describe('choosing who a challenge is for', () => {
 
     expect(await screen.findByRole('button', { name: 'Start a challenge' })).toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Who the challenge is for' })).not.toBeInTheDocument()
+  })
+})
+
+describe('getting to a challenge from the game screen', () => {
+  it('has its own button on the top row rather than being buried in stats', async () => {
+    mockApi()
+    seedPlayer()
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Head to head' }))
+
+    expect(await screen.findByText('One board, two of you')).toBeInTheDocument()
+  })
+
+  it('says nothing is waiting when there is no challenge at all', async () => {
+    mockApi()
+    seedPlayer()
+    render(<App />)
+
+    expect(await screen.findByRole('button', { name: 'Head to head' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Head to head, an answer is waiting' })).not.toBeInTheDocument()
+  })
+
+  it('checks for an answer on open and marks the button when one is in', async () => {
+    // Nothing is ever pushed, so without this you would only find out by
+    // going Stats, Head to head, Check for their answer.
+    mockApi(LIVE_RECORDS, SETTLED)
+    seedPlayer()
+    seedFinishedChallenge()
+    render(<App />)
+
+    expect(await screen.findByRole('button', { name: 'Head to head, an answer is waiting' })).toBeInTheDocument()
+  })
+
+  it('leaves it alone while they still have not answered', async () => {
+    mockApi(LIVE_RECORDS, { ...SETTLED, opponentName: null, opponentScore: null })
+    seedPlayer()
+    seedFinishedChallenge()
+    render(<App />)
+
+    await screen.findByRole('button', { name: 'Head to head' })
+    expect(screen.queryByRole('button', { name: /an answer is waiting/ })).not.toBeInTheDocument()
+  })
+
+  it('clears once the result has been read', async () => {
+    mockApi(LIVE_RECORDS, SETTLED)
+    seedPlayer()
+    seedFinishedChallenge()
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Head to head, an answer is waiting' }))
+    // The result is on screen, so there is nothing left to be told about.
+    expect(await screen.findByText(/The same 20 rolls/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Back to game' }))
+
+    expect(await screen.findByRole('button', { name: 'Head to head' })).toBeInTheDocument()
+  })
+
+  it('asks nothing when there is no challenge to ask about', async () => {
+    const fetchMock = mockApi()
+    seedPlayer()
+    render(<App />)
+
+    await screen.findByRole('button', { name: 'Head to head' })
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes('/challenge?'))).toHaveLength(0)
   })
 })

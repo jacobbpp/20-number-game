@@ -3,6 +3,7 @@ import { API_BASE } from '../api'
 import {
   CHALLENGE_BOARD_SIZE,
   createChallengeRng,
+  isSettled,
   mintChallengeCode,
   normaliseCode,
   type ChallengeRecord,
@@ -28,13 +29,17 @@ interface StoredChallenge {
   // Set once this side's score has reached the server, so a refresh after
   // finishing cannot submit the same run twice.
   submitted: boolean
+  // Set once the settled result has actually been looked at, which is what
+  // clears the dot on the header button.
+  resultSeen?: boolean
 }
 
 function isStored(value: unknown): value is StoredChallenge {
   if (!value || typeof value !== 'object') return false
-  const { code, role, boardSize, game, submitted, invitedName } = value as Record<string, unknown>
+  const { code, role, boardSize, game, submitted, invitedName, resultSeen } = value as Record<string, unknown>
   return (
     typeof code === 'string' &&
+    (resultSeen === undefined || typeof resultSeen === 'boolean') &&
     (role === 'challenger' || role === 'opponent') &&
     typeof boardSize === 'number' &&
     typeof submitted === 'boolean' &&
@@ -83,10 +88,15 @@ export interface Challenge {
   record: ChallengeRecord | null
   busy: boolean
   error: string | null
+  // Their answer is in and you have not looked at it yet. Drives the dot on
+  // the header, which is the only thing that ever tells anybody: a challenge
+  // is deliberately silent, so without this you would have to go and check.
+  waiting: boolean
   start: (invitedName?: string | null) => void
   open: (code: string) => Promise<void>
   select: (index: number) => void
   refresh: () => Promise<void>
+  markSeen: () => void
   clear: () => void
 }
 
@@ -131,6 +141,31 @@ export function useChallenge(playerName: string): Challenge {
     },
     [playerName],
   )
+
+  // Asked once when the app opens, so an answer that landed overnight shows
+  // up as a dot without anybody pressing anything. Only for a challenge this
+  // device has already submitted: there is nothing to learn about one that is
+  // still being played, and nothing at all to ask when there isn't one.
+  const checkedRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!stored?.submitted || stored.resultSeen === true) return
+    if (checkedRef.current === stored.code) return
+    checkedRef.current = stored.code
+
+    let cancelled = false
+    fetchRecord(stored.code)
+      .then(found => {
+        if (!cancelled && found) setRecord(found)
+      })
+      .catch(() => {
+        // Offline. The dot just doesn't appear until next time.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [stored?.code, stored?.submitted, stored?.resultSeen, fetchRecord])
 
   const start = useCallback((invitedName: string | null = null) => {
     const code = mintChallengeCode()
@@ -284,6 +319,12 @@ export function useChallenge(playerName: string): Challenge {
     }
   }, [stored, fetchRecord])
 
+  // Marked when the settled result is on screen, so the dot clears by being
+  // read rather than by being dismissed.
+  const markSeen = useCallback(() => {
+    setStored(current => (current === null || current.resultSeen ? current : { ...current, resultSeen: true }))
+  }, [])
+
   const clear = useCallback(() => {
     setStored(null)
     setRecord(null)
@@ -298,10 +339,17 @@ export function useChallenge(playerName: string): Challenge {
     record,
     busy,
     error,
+    waiting:
+      stored !== null &&
+      stored.submitted &&
+      stored.resultSeen !== true &&
+      record !== null &&
+      isSettled(record),
     start,
     open,
     select,
     refresh,
+    markSeen,
     clear,
   }
 }

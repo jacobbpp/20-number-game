@@ -641,6 +641,8 @@ function App() {
               setLeaderboardReturnsToStats(false)
               setIsLeaderboardOpen(true)
             }}
+            onOpenChallenge={() => openChallenge(null)}
+            challengeWaiting={challenge.waiting}
           />
           <RollDisplay
             currentRoll={state.currentRoll}

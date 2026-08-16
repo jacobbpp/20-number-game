@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Board } from './Board'
 import { RollDisplay } from './RollDisplay'
 import { describeOutcome, isChallengeCode, isSettled, normaliseCode, outcomeOf } from '../game/challenge'
@@ -39,6 +39,12 @@ export function ChallengeScreen({
   const mine = record === null ? null : role === 'opponent' ? record.opponentScore : record.challengerScore
   const theirs = record === null ? null : role === 'opponent' ? record.challengerScore : record.opponentScore
   const opponentName = role === 'opponent' ? record?.challengerName : record?.opponentName
+
+  // Reading the result is what clears the dot on the header, so it clears by
+  // being looked at rather than by being dismissed.
+  useEffect(() => {
+    if (settled) challenge.markSeen()
+  }, [settled, challenge])
 
   const suggestion =
     game && game.currentRoll !== null ? suggestedPosition(game.positions, game.currentRoll, game.validPositions) : null

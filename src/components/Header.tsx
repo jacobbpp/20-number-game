@@ -13,6 +13,11 @@ interface HeaderProps {
   onOpenSettings: () => void
   onOpenBestRun: () => void
   onOpenLeaderboard: () => void
+  onOpenChallenge: () => void
+  // Somebody has answered a challenge of yours and you haven't seen it yet.
+  // Nothing is pushed, so this dot is the only way anybody finds out without
+  // going looking.
+  challengeWaiting: boolean
 }
 
 export function Header({
@@ -26,6 +31,8 @@ export function Header({
   onOpenSettings,
   onOpenBestRun,
   onOpenLeaderboard,
+  onOpenChallenge,
+  challengeWaiting,
 }: HeaderProps) {
   return (
     <header className="header">
@@ -75,6 +82,22 @@ export function Header({
               <path d="M3 10h18M8 3v4M16 3v4" />
             </svg>
           </button>
+          {/* Two blades crossed. It sits next to the daily rather than inside
+              Stats because a challenge is something somebody is waiting on,
+              not a number to go and look up. */}
+          <button
+            type="button"
+            className={challengeWaiting ? 'icon-btn icon-btn--dot' : 'icon-btn'}
+            onClick={onOpenChallenge}
+            aria-label={challengeWaiting ? 'Head to head, an answer is waiting' : 'Head to head'}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 8h11" />
+              <path d="M11 5l3 3-3 3" />
+              <path d="M21 16H10" />
+              <path d="M13 13l-3 3 3 3" />
+            </svg>
+          </button>
           <button type="button" className="icon-btn" onClick={onOpenSettings} aria-label="Settings">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="3" />
@@ -82,10 +105,13 @@ export function Header({
             </svg>
           </button>
         </div>
-        <button type="button" className="pill header__best" onClick={onOpenBestRun}>
-          Best {bestScore}
-        </button>
       </div>
+      {/* Off the icon row: six buttons and a pill do not fit a 320px screen,
+          and the pill was the part that went off the edge. It reads as a
+          statistic rather than an action anyway. */}
+      <button type="button" className="header__best" onClick={onOpenBestRun}>
+        Best <b>{bestScore}</b>
+      </button>
     </header>
   )
 }

@@ -186,11 +186,28 @@ button:focus-visible {
   border: 1px solid transparent;
 }
 
+/* A line of its own under the icons, right-aligned to sit over the board.
+   Still the way into the best-run viewer, so it keeps a 40px target. */
 .header__best {
-  color: var(--purple-pill-text);
-  background: var(--purple-pill-bg);
+  align-self: flex-end;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 2px;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  color: var(--text-dim);
+}
+
+.header__best b {
+  margin-left: 5px;
   font-family: var(--font-mono);
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
 
 .icon-btn {
@@ -213,6 +230,26 @@ button:focus-visible {
 
 .icon-btn--ring {
   border: 1.5px solid var(--accent);
+}
+
+/* Something is waiting behind this button. Nothing is ever pushed, so a dot
+   on the icon is the whole notification system for a head to head. */
+.icon-btn--dot {
+  position: relative;
+  border: 1.5px solid var(--cta);
+  color: var(--cta);
+}
+
+.icon-btn--dot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cta);
+  box-shadow: 0 0 0 2px var(--bg);
 }
 
 .icon-btn--confirm {

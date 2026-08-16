@@ -23,7 +23,7 @@ const PLAYING_ENTRIES: Entry[] = [
 const STATS_ENTRIES: Entry[] = [
   {
     term: 'Head to head',
-    desc: "Play a board, get a six character code, send it to somebody. Pick who it is for and only they can answer it, or leave it open to anyone. They get the exact same rolls, so it is a real comparison rather than two different games. Neither of you sees the other's score until you have both finished, and it can only be answered once, so nobody gets to keep retrying until they win. Nobody is notified either: you will see their answer the next time you open the app. Codes last a week.",
+    desc: "The crossed arrows in the header. Play a board, get a six character code, send it to somebody. Pick who it is for and only they can answer it, or leave it open to anyone. They get the exact same rolls, so it is a real comparison rather than two different games. Neither of you sees the other's score until you have both finished, and it can only be answered once, so nobody gets to keep retrying until they win. Nobody is notified either: you will see their answer the next time you open the app. Codes last a week, and the button shows a dot once they have answered.",
   },
   {
     term: 'Your nemesis',
@@ -43,7 +43,7 @@ const STATS_ENTRIES: Entry[] = [
   },
   {
     term: 'Best run',
-    desc: "Tap \"Best\" in the header to see the actual board from your highest-scoring free-play game, not just the number.",
+    desc: "Tap \"Best\" under the header icons to see the actual board from your highest-scoring free-play game, not just the number.",
   },
 ]
 

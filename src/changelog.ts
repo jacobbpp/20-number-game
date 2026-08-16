@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.58.0',
+    date: '2026-08-16',
+    title: 'Head to head has its own button',
+    description:
+      "It sits on the top row next to the daily instead of being two taps into Stats, and it carries a dot when somebody has answered a challenge of yours. The app checks for that answer when it opens, so you find out by opening the game rather than by going to look. Still nothing pushed, still silent. Best moved off the icon row onto its own line underneath, which also stops it running off the edge on a smaller phone.",
+  },
+  {
     version: '1.57.0',
     date: '2026-08-16',
     title: 'The group board, rebuilt',

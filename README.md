@@ -25,7 +25,9 @@ Play a board, get a six-character code, send it to somebody. They get the identi
 
 The challenger's score is withheld from anybody who hasn't played yet, because knowing the target changes how you play for it, and a challenge can only be answered once, so nobody can replay the same board until they beat it. Challenges expire after a week and are swept when the next one is made.
 
-Deliberately silent. Nothing is pushed when a challenge is answered, because the reminder screen promises the morning nudge is the only notification this app ever sends; both sides find out when they next open the app.
+Deliberately silent. Nothing is pushed when a challenge is answered, because the reminder screen promises the morning nudge is the only notification this app ever sends. Which left nothing at all to tell you: it sat two taps inside Stats, and the answer only arrived if you went and pressed for it. It now has its own header button, and the app asks once on open — only when this device has a challenge of its own outstanding — so an answer shows as a dot on that button. Reading the result clears it.
+
+Six 40px icons and the Best pill do not fit a 320px screen; the pill was already running off the edge before the sixth button existed. Best moved to its own line under the icons, which is where a number belongs anyway.
 
 The generator can't be serialised, so a reload rebuilds it from the start of the sequence. `rollNumber` skips anything already in `usedNumbers`, which lands it back on the next unused roll, so a refresh mid-game cannot hand one player a different board from the other. `src/game/challenge.test.ts` plays a board straight through and again with a generator reset partway, and asserts the two are identical.
 
