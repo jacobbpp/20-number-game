@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 interface GuideScreenProps {
   onClose: () => void
 }
@@ -93,13 +91,6 @@ const INSIGHT_ENTRIES: Entry[] = [
   },
   { term: 'Leaderboard reach', desc: "How many of today's games made the day, week, month, and all-time leaderboards." },
   { term: 'Best score over time', desc: 'A line chart of your personal best climbing as you set new records.' },
-  { term: 'Closest calls', desc: 'How many games have ended exactly one placement short of your best.' },
-  { term: 'Signature position', desc: 'Your single most-used board position, across every game.' },
-  { term: 'Last game', desc: 'Whether your last game matched or broke your usual placement pattern.' },
-  { term: 'Best position', desc: 'The board position with your best record behind it.' },
-  { term: 'Board half', desc: 'Whether the top or bottom half of the board treats you better.' },
-  { term: 'Hard mode', desc: 'Whether hard mode has slowed your results down or not.' },
-  { term: 'Streak momentum', desc: 'How close an active win streak is to your all-time best.' },
 ]
 
 const ACHIEVEMENTS_ENTRY: Entry = {
@@ -143,8 +134,6 @@ function GuideEntry({ term, desc }: Entry) {
 }
 
 export function GuideScreen({ onClose }: GuideScreenProps) {
-  const [isInsightsOpen, setIsInsightsOpen] = useState(false)
-
   return (
     <div className="stats-screen">
       <div className="stats-screen__header">
@@ -169,45 +158,9 @@ export function GuideScreen({ onClose }: GuideScreenProps) {
           {STATS_ENTRIES.map(entry => (
             <GuideEntry key={entry.term} {...entry} />
           ))}
-
-          <div className="guide-entry">
-            <p className="guide-entry__term">Insights</p>
-            <p className="guide-entry__desc">
-              A best score, average score, and games-today strip, followed by pattern cards that appear once
-              there's enough data behind them.
-            </p>
-            <button
-              type="button"
-              className="daily-history__toggle guide-entry__toggle"
-              aria-expanded={isInsightsOpen}
-              onClick={() => setIsInsightsOpen(open => !open)}
-            >
-              {isInsightsOpen ? 'Hide each pattern' : 'See each pattern'}
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                className={isInsightsOpen ? 'daily-history__chevron daily-history__chevron--open' : 'daily-history__chevron'}
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </button>
-
-            {isInsightsOpen && (
-              <div className="guide-list guide-list--nested">
-                {INSIGHT_ENTRIES.map(entry => (
-                  <GuideEntry key={entry.term} {...entry} />
-                ))}
-              </div>
-            )}
-          </div>
-
+          {INSIGHT_ENTRIES.map(entry => (
+            <GuideEntry key={entry.term} {...entry} />
+          ))}
           <GuideEntry {...ACHIEVEMENTS_ENTRY} />
         </div>
 

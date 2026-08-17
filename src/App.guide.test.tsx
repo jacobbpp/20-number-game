@@ -32,28 +32,25 @@ describe('guide screen', () => {
     expect(screen.getByText('Reset all data')).toBeInTheDocument()
   })
 
-  it('summarizes insights by default without listing every pattern', async () => {
+  it('lists the insights panels directly, with no pattern cards left to hide behind a toggle', async () => {
     render(<App />)
     await openGuide()
 
-    expect(await screen.findByText('Insights')).toBeInTheDocument()
-    expect(screen.queryByText('Best position')).not.toBeInTheDocument()
-    expect(screen.queryByText('Board half')).not.toBeInTheDocument()
+    expect(await screen.findByText('Last 24 hours')).toBeInTheDocument()
+    expect(screen.getByText('Leaderboard reach')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'See each pattern' })).not.toBeInTheDocument()
   })
 
-  it('expands to show every insight pattern individually when tapped', async () => {
+  it('has nothing left to say about the pattern cards that were removed from Stats', async () => {
     render(<App />)
     await openGuide()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'See each pattern' }))
-
-    expect(screen.getByText('Best position')).toBeInTheDocument()
-    expect(screen.getByText('Board half')).toBeInTheDocument()
-    expect(screen.getByText('Streak momentum')).toBeInTheDocument()
-    expect(screen.getByText('Last game')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Hide each pattern' }))
+    await screen.findByText('Last 24 hours')
     expect(screen.queryByText('Best position')).not.toBeInTheDocument()
+    expect(screen.queryByText('Board half')).not.toBeInTheDocument()
+    expect(screen.queryByText('Streak momentum')).not.toBeInTheDocument()
+    expect(screen.queryByText('Signature position')).not.toBeInTheDocument()
+    expect(screen.queryByText('Closest calls')).not.toBeInTheDocument()
   })
 
   it('returns to settings, not the game, when backing out', async () => {

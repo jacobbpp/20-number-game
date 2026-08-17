@@ -3,8 +3,6 @@ import { BOARD_SIZE } from './types'
 export const VALUE_BUCKETS = 10
 export const BUCKET_SIZE = 1000 / VALUE_BUCKETS
 export const SCORE_BUCKETS = 4
-const MIN_SIGNAL = 2
-const MIN_GAMES_FOR_INSIGHT = 3
 const MIN_LOSSES_FOR_LOSS_INSIGHT = 3
 
 export interface Placement {
@@ -68,12 +66,6 @@ export function createEmptyStats(): StatsData {
 
 export function bucketForValue(value: number): number {
   return Math.min(VALUE_BUCKETS - 1, Math.floor((value - 1) / BUCKET_SIZE))
-}
-
-export function bucketLabel(bucket: number): string {
-  const start = bucket * BUCKET_SIZE + 1
-  const end = (bucket + 1) * BUCKET_SIZE
-  return `${start}–${end}`
 }
 
 // total is the board size the game was actually played on (free play is
@@ -168,11 +160,6 @@ export function hasWins(stats: StatsData): boolean {
   return stats.totalWins > 0
 }
 
-export function winRate(stats: StatsData): number | null {
-  if (stats.totalGames === 0) return null
-  return Math.round((stats.totalWins / stats.totalGames) * 100)
-}
-
 export function averageTurns(stats: StatsData): number | null {
   if (stats.totalGames === 0) return null
   return stats.totalTurns / stats.totalGames
@@ -184,8 +171,6 @@ export function averageTurnsInWins(stats: StatsData): number | null {
 }
 
 const MIN_BUCKET_SIGNAL = 3
-const MIN_GAMES_FOR_SIGNATURE = 5
-const MIN_HARD_MODE_GAMES = 3
 
 export interface ValueRangeStat {
   bucket: number
@@ -233,31 +218,6 @@ export function bestValueRange(stats: StatsData): ValueRangeStat | null {
   return { bucket: best.bucket, winRatePercent: Math.round(best.winRate * 100) }
 }
 
-// The position filled most often across every completed game — not
-// necessarily meaningful on its own, just a "here's your habit" fact.
-// Requires a handful of games so one early run doesn't dominate.
-export function signaturePosition(stats: StatsData): { position: number; count: number } | null {
-  if (stats.totalGames < MIN_GAMES_FOR_SIGNATURE) return null
-
-  let best = 0
-  let bestCount = 0
-  for (let position = 0; position < stats.matrix.length; position++) {
-    const count = stats.matrix[position].reduce((sum, c) => sum + c, 0)
-    if (count > bestCount) {
-      bestCount = count
-      best = position
-    }
-  }
-  return bestCount > 0 ? { position: best, count: bestCount } : null
-}
-
-// Win rate restricted to games played with hard mode on — needs its own
-// threshold since it's a smaller sample than overall win rate.
-export function hardModeWinRate(stats: StatsData): number | null {
-  if (stats.hardModeGames < MIN_HARD_MODE_GAMES) return null
-  return Math.round((stats.hardModeWins / stats.hardModeGames) * 100)
-}
-
 // The in-game suggestion used to live here, picking whichever position
 // similar-value numbers had most often landed on in the community matrix. It
 // now lives in game/hint.ts and is worked out from the board instead, because
@@ -277,80 +237,6 @@ export function mostCommonLossBucket(stats: StatsData): number | null {
   return stats.lossBucketCounts[best] > 0 ? best : null
 }
 
-export interface PositionWinRateStat {
-  position: number
-  winRatePercent: number
-}
-
-// Mirrors bestValueRange, but sliced by board position instead of value
-// range — for each position with enough placements behind it, what
-// fraction of those placements happened in games that were ultimately won.
-export function bestPositionInsight(stats: StatsData): PositionWinRateStat | null {
-  const rates: { position: number; winRate: number; total: number }[] = []
-  for (let position = 0; position < stats.winMatrix.length; position++) {
-    const wins = stats.winMatrix[position].reduce((sum, c) => sum + c, 0)
-    const losses = stats.lossMatrix[position].reduce((sum, c) => sum + c, 0)
-    const total = wins + losses
-    if (total >= MIN_BUCKET_SIGNAL) rates.push({ position, winRate: wins / total, total })
-  }
-  if (rates.length === 0) return null
-  const best = rates.reduce((a, b) => (b.winRate > a.winRate ? b : a))
-  return { position: best.position, winRatePercent: Math.round(best.winRate * 100) }
-}
-
-const MIN_HALF_SIGNAL = 5
-
-export interface BoardHalfStat {
-  strongerHalf: 'top' | 'bottom'
-  strongerWinRatePercent: number
-  weakerWinRatePercent: number
-}
-
-// Splits the board into its top and bottom halves (positions 0-9 vs
-// 10-19 on the fixed 20-slot free-play board) and compares win rate
-// between them — a coarse structural read rather than a specific range
-// or position, using the same win/loss matrices as every other insight.
-export function boardHalfComparison(stats: StatsData): BoardHalfStat | null {
-  const midpoint = Math.floor(stats.winMatrix.length / 2)
-  const halfRate = (from: number, to: number) => {
-    let wins = 0
-    let losses = 0
-    for (let position = from; position < to; position++) {
-      wins += stats.winMatrix[position].reduce((sum, c) => sum + c, 0)
-      losses += stats.lossMatrix[position].reduce((sum, c) => sum + c, 0)
-    }
-    const total = wins + losses
-    return total >= MIN_HALF_SIGNAL ? wins / total : null
-  }
-
-  const topRate = halfRate(0, midpoint)
-  const bottomRate = halfRate(midpoint, stats.winMatrix.length)
-  if (topRate === null || bottomRate === null || topRate === bottomRate) return null
-
-  const strongerHalf = topRate > bottomRate ? 'top' : 'bottom'
-  const strongerRate = Math.max(topRate, bottomRate)
-  const weakerRate = Math.min(topRate, bottomRate)
-  return {
-    strongerHalf,
-    strongerWinRatePercent: Math.round(strongerRate * 100),
-    weakerWinRatePercent: Math.round(weakerRate * 100),
-  }
-}
-
-export interface StreakMomentum {
-  kind: 'record' | 'chasing'
-  winsToTie: number
-}
-
-// Reframes the win-streak numbers already shown elsewhere as forward-looking
-// context rather than a flat readout. Only meaningful while a streak is
-// actually active — a broken streak has nothing to chase.
-export function streakMomentum(stats: StatsData): StreakMomentum | null {
-  if (stats.currentWinStreak === 0) return null
-  if (stats.currentWinStreak >= stats.bestWinStreak) return { kind: 'record', winsToTie: 0 }
-  return { kind: 'chasing', winsToTie: stats.bestWinStreak - stats.currentWinStreak }
-}
-
 export function maxCount(matrix: number[][]): number {
   let max = 0
   for (const row of matrix) {
@@ -359,56 +245,4 @@ export function maxCount(matrix: number[][]): number {
     }
   }
   return max
-}
-
-export interface Insight {
-  kind: 'match' | 'mismatch'
-  position: number
-  value: number
-  bucket: number
-  usualPosition: number
-}
-
-export function computeInsight(stats: StatsData): Insight | null {
-  const { matrix, lastGame, totalGames } = stats
-  if (!lastGame || totalGames < MIN_GAMES_FOR_INSIGHT) return null
-
-  const candidates = lastGame.placements
-    .map(({ position, value }) => {
-      const bucket = bucketForValue(value)
-      // matrix already includes this exact placement (recordGame updates the
-      // matrix and sets lastGame together), so exclude its own +1 here —
-      // otherwise a single prior occurrence plus this game reads as "usually
-      // lands here" when there's really only one real precedent.
-      const column = matrix.map(row => row[bucket])
-      column[position] = Math.max(0, column[position] - 1)
-
-      let usualPosition = 0
-      for (let i = 1; i < column.length; i++) {
-        if (column[i] > column[usualPosition]) usualPosition = i
-      }
-      return { position, value, bucket, usualPosition, usualCount: column[usualPosition], actualCount: column[position] }
-    })
-    .filter(c => c.usualCount >= MIN_SIGNAL)
-
-  if (candidates.length === 0) return null
-
-  const mismatches = candidates.filter(c => c.usualPosition !== c.position)
-  if (mismatches.length > 0) {
-    const top = mismatches.reduce((a, b) => (b.usualCount - b.actualCount > a.usualCount - a.actualCount ? b : a))
-    return { kind: 'mismatch', position: top.position, value: top.value, bucket: top.bucket, usualPosition: top.usualPosition }
-  }
-
-  const top = candidates.reduce((a, b) => (b.usualCount > a.usualCount ? b : a))
-  return { kind: 'match', position: top.position, value: top.value, bucket: top.bucket, usualPosition: top.usualPosition }
-}
-
-export function describeInsight(insight: Insight): string {
-  const range = bucketLabel(insight.bucket)
-  const actualLabel = `position ${insight.position + 1}`
-  if (insight.kind === 'match') {
-    return `${insight.value} landed at ${actualLabel}, right where numbers in the ${range} range usually go.`
-  }
-  const usualLabel = `position ${insight.usualPosition + 1}`
-  return `Numbers in the ${range} range usually land at ${usualLabel}, but this time ${insight.value} landed at ${actualLabel}.`
 }

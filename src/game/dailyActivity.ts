@@ -97,19 +97,6 @@ export function bestScoreTrend(log: DailyActivityLog): { date: string; score: nu
   return points
 }
 
-// How many games, ever, scored exactly one placement short of the given
-// (current) best — recomputed against today's best rather than whatever
-// the record was at the time, so this always answers "how close have I
-// come to what I can do right now."
-export function closestCalls(log: DailyActivityLog, bestScore: number): number {
-  if (bestScore < 2) return 0
-  const targetIndex = bestScore - 2
-  let count = 0
-  for (const entry of Object.values(log)) {
-    count += entry.scoreHistogram[targetIndex] ?? 0
-  }
-  return count
-}
 
 // A fixed-length, oldest-to-newest window ending today, zero-filled for any
 // day with no games — the shape a calendar heatmap needs regardless of how

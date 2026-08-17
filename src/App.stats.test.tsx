@@ -31,7 +31,7 @@ afterEach(() => {
 })
 
 describe('stats screen', () => {
-  it('shows the daily streak line and a not-enough-data message with no signal yet', async () => {
+  it('shows the daily streak line', async () => {
     localStorage.setItem(
       STATS_STORAGE_KEY,
       JSON.stringify({
@@ -52,7 +52,6 @@ describe('stats screen', () => {
     await openStats()
 
     expect(await screen.findByText('Daily streak: No streak yet')).toBeInTheDocument()
-    expect(screen.getByText('Not enough games yet to spot a pattern. Keep playing.')).toBeInTheDocument()
   })
 
   it('navigating back from the heatmap returns to stats, not the game', async () => {
@@ -100,44 +99,6 @@ describe('daily streak line', () => {
 })
 
 describe('insights section', () => {
-  it('shows a signature-position card once there are enough games', async () => {
-    const matrix = emptyMatrix()
-    matrix[3][0] = 5
-
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({ totalGames: 5, totalWins: 2, totalTurns: 20, matrix, lossBucketCounts: Array(10).fill(0), lastGame: null }),
-    )
-
-    render(<App />)
-    await openStats()
-
-    expect(await screen.findByText('Signature position')).toBeInTheDocument()
-    expect(screen.getByText(/Position 4 is your most-used slot, filled 5 times/)).toBeInTheDocument()
-  })
-
-  it('shows a hard-mode card once there are enough hard-mode games', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 6,
-        totalWins: 3,
-        totalTurns: 30,
-        hardModeGames: 4,
-        hardModeWins: 3,
-        matrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openStats()
-
-    expect(await screen.findByText('Hard mode')).toBeInTheDocument()
-    expect(screen.getByText("Hard mode hasn't slowed you down. You do just as well without the hints.")).toBeInTheDocument()
-  })
-
   it('shows a hero strip of best score, average score, games played today, and total wins', async () => {
     localStorage.setItem('order20-best-score', '14')
     localStorage.setItem(
@@ -172,83 +133,6 @@ describe('insights section', () => {
     expect(within(heroStrip).getByText('3')).toBeInTheDocument()
   })
 
-  it('shows a best-position card once a position has enough win-associated signal', async () => {
-    const winMatrix = emptyMatrix()
-    winMatrix[3][0] = 4
-    const lossMatrix = emptyMatrix()
-    lossMatrix[7][0] = 1
-
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 5,
-        totalWins: 4,
-        totalTurns: 20,
-        matrix: emptyMatrix(),
-        winMatrix,
-        lossMatrix,
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openStats()
-
-    expect(await screen.findByText('Best position')).toBeInTheDocument()
-    expect(screen.getByText('Position 4 is where you have your best record.')).toBeInTheDocument()
-  })
-
-  it('shows a board-half card once both halves have enough signal', async () => {
-    const winMatrix = emptyMatrix()
-    winMatrix[0][0] = 8
-    const lossMatrix = emptyMatrix()
-    lossMatrix[1][0] = 2
-    lossMatrix[10][0] = 8
-    winMatrix[11][0] = 2
-
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 20,
-        totalWins: 10,
-        totalTurns: 100,
-        matrix: emptyMatrix(),
-        winMatrix,
-        lossMatrix,
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openStats()
-
-    expect(await screen.findByText('Board half')).toBeInTheDocument()
-    expect(screen.getByText('Numbers you place in the top half of the board tend to work out better than the bottom half.')).toBeInTheDocument()
-  })
-
-  it('shows a streak-momentum card while chasing a past record', async () => {
-    localStorage.setItem(
-      STATS_STORAGE_KEY,
-      JSON.stringify({
-        totalGames: 6,
-        totalWins: 3,
-        totalTurns: 30,
-        currentWinStreak: 2,
-        bestWinStreak: 5,
-        matrix: emptyMatrix(),
-        lossBucketCounts: Array(10).fill(0),
-        lastGame: null,
-      }),
-    )
-
-    render(<App />)
-    await openStats()
-
-    expect(await screen.findByText('Streak momentum')).toBeInTheDocument()
-    expect(screen.getByText('3 more wins ties your best streak ever.')).toBeInTheDocument()
-  })
 })
 
 describe('heatmap section', () => {

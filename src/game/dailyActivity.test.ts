@@ -6,7 +6,6 @@ import {
   bestScoreTrend,
   busiestDay,
   calendarGrid,
-  closestCalls,
   gamesPlayed,
   leaderboardHitsForDay,
   maxScore,
@@ -100,23 +99,6 @@ describe('bestScoreTrend', () => {
 
   it('is empty for an empty log', () => {
     expect(bestScoreTrend({})).toEqual([])
-  })
-})
-
-describe('closestCalls', () => {
-  it('counts games scoring exactly one below the given best', () => {
-    let log: DailyActivityLog = {}
-    log = play(log, D1, 19)
-    log = play(log, D2, 19)
-    log = play(log, D2, 20)
-    log = play(log, D3, 18)
-
-    expect(closestCalls(log, 20)).toBe(2)
-  })
-
-  it('returns 0 when the best is below 2', () => {
-    expect(closestCalls({}, 1)).toBe(0)
-    expect(closestCalls({}, 0)).toBe(0)
   })
 })
 

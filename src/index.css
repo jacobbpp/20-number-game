@@ -2751,60 +2751,12 @@ button.activity-cal__cell:focus-visible {
   color: var(--cta);
 }
 
-.insight-card--best {
-  background: rgba(126, 217, 168, 0.12);
-}
-
-.insight-card--best .insight-card__title {
-  color: var(--win);
-}
-
 .insight-card--worst {
   background: rgba(226, 75, 74, 0.1);
 }
 
 .insight-card--worst .insight-card__title {
   color: var(--danger);
-}
-
-.insight-card--position {
-  background: rgba(111, 95, 142, 0.12);
-}
-
-.insight-card--position .insight-card__title {
-  color: var(--accent);
-}
-
-.insight-card--hardmode {
-  background: var(--purple-tint-bg);
-}
-
-.insight-card--hardmode .insight-card__title {
-  color: var(--purple-pill-text);
-}
-
-.insight-card--boardhalf {
-  background: rgba(111, 95, 142, 0.12);
-}
-
-.insight-card--boardhalf .insight-card__title {
-  color: var(--accent);
-}
-
-.insight-card--streak {
-  background: rgba(207, 143, 95, 0.12);
-}
-
-.insight-card--streak .insight-card__title {
-  color: var(--cta);
-}
-
-.insight-card--neutral {
-  background: rgba(var(--surface-tint-rgb), 0.05);
-}
-
-.insight-card--neutral .insight-card__title {
-  color: var(--text);
 }
 
 .settings-screen {
@@ -2849,14 +2801,6 @@ button.activity-cal__cell:focus-visible {
   margin-bottom: 18px;
 }
 
-.guide-list--nested {
-  margin: 10px 0 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(var(--surface-tint-rgb), 0.05);
-  gap: 12px;
-}
-
 .guide-entry__term {
   margin: 0 0 2px;
   font-size: 13px;
@@ -2868,11 +2812,6 @@ button.activity-cal__cell:focus-visible {
   font-size: 12px;
   color: var(--text-dim);
   line-height: 1.4;
-}
-
-.guide-entry__toggle {
-  padding: 0;
-  margin-top: 4px;
 }
 
 .settings-row {

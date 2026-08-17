@@ -1,21 +1,5 @@
 import { Fragment, useState } from 'react'
-import {
-  BUCKET_SIZE,
-  VALUE_BUCKETS,
-  averageTurns,
-  bestPositionInsight,
-  boardHalfComparison,
-  bucketForValue,
-  computeInsight,
-  describeInsight,
-  hardModeWinRate,
-  hasWins,
-  maxCount,
-  signaturePosition,
-  streakMomentum,
-  winRate,
-  type StatsData,
-} from '../game/stats'
+import { BUCKET_SIZE, VALUE_BUCKETS, averageTurns, bucketForValue, hasWins, maxCount, type StatsData } from '../game/stats'
 import { addDays, isStreakActive, type StreakData } from '../game/daily'
 import {
   describeNemesis,
@@ -32,7 +16,6 @@ import {
   bestScoreTrend,
   busiestDay,
   calendarGrid,
-  closestCalls,
   gamesPlayed,
   leaderboardHitsForDay,
   maxScore,
@@ -142,14 +125,7 @@ export function StatsScreen({
   const [openPerson, setOpenPerson] = useState<number | null>(null)
   const activeMatrix = heatmapView === 'wins' ? stats.winMatrix : heatmapView === 'losses' ? stats.lossMatrix : stats.matrix
   const peak = maxCount(activeMatrix)
-  const insight = computeInsight(stats)
-  const rate = winRate(stats)
   const avgTurns = averageTurns(stats)
-  const bestPosition = bestPositionInsight(stats)
-  const boardHalf = boardHalfComparison(stats)
-  const momentum = streakMomentum(stats)
-  const signature = signaturePosition(stats)
-  const hardRate = hardModeWinRate(stats)
   const currentDailyStreak = isStreakActive(streak, today) ? streak.count : 0
   const dailyStreakText =
     currentDailyStreak > 0
@@ -173,7 +149,6 @@ export function StatsScreen({
   const last7Days = activityWindow(dailyActivity, today, 7)
   const last7DaysMax = Math.max(...last7Days.map(day => day.games), 1)
   const trend = bestScoreTrend(dailyActivity)
-  const closeCalls = closestCalls(dailyActivity, bestScore)
   const weeklyDelta = weeklyAverageDelta(dailyActivity, today)
   const shortToday = shortGamesCount(todayEntry, SHORT_GAME_THRESHOLD)
   const passedToday = reach.gamesToday - shortToday
@@ -189,17 +164,6 @@ export function StatsScreen({
     y: trendMax === trendMin ? 24 : 6 + (1 - (point.score - trendMin) / (trendMax - trendMin)) * 36,
   }))
   const trendPolyline = trendPoints.map(point => `${point.x},${point.y}`).join(' ')
-
-  const patternCount = [
-    nemesis !== null,
-    neverBeaten !== null,
-    bestPosition !== null,
-    boardHalf !== null,
-    momentum !== null,
-    signature !== null,
-    hardRate !== null,
-    insight !== null,
-  ].filter(Boolean).length
 
   const lastGameBucketByPosition = new Map<number, number>()
   lastGame?.placements.forEach(p => lastGameBucketByPosition.set(p.position, bucketForValue(p.value)))
@@ -614,77 +578,6 @@ export function StatsScreen({
                 </div>
               )}
 
-              {closeCalls > 0 && (
-                <div className="insight-card insight-card--streak">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    🤏
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Closest calls</p>
-                    <p className="insight-card__desc">
-                      {closeCalls} game{closeCalls === 1 ? '' : 's'} ended exactly one placement short of your best.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {signature !== null && (
-                <div className="insight-card insight-card--position">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    📍
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Signature position</p>
-                    <p className="insight-card__desc">
-                      Position {signature.position + 1} is your most-used slot, filled {signature.count} times.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {insight && (
-                <div className="insight-card insight-card--neutral">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    🔄
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Last game</p>
-                    <p className="insight-card__desc">{describeInsight(insight)}</p>
-                  </div>
-                </div>
-              )}
-
-              {bestPosition !== null && (
-                <div className="insight-card insight-card--best">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    🧭
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Best position</p>
-                    <p className="insight-card__desc">Position {bestPosition.position + 1} is where you have your best record.</p>
-                  </div>
-                </div>
-              )}
-
-              {boardHalf !== null && (
-                <div className="insight-card insight-card--boardhalf">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    ⚖️
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Board half</p>
-                    <p className="insight-card__desc">
-                      Numbers you place in the {boardHalf.strongerHalf} half of the board tend to work out better than the{' '}
-                      {boardHalf.strongerHalf === 'top' ? 'bottom' : 'top'} half.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Off until something has actually been won. With no wins at
-                  all this card compares nought per cent against nought per
-                  cent and concludes hard mode "hasn't slowed you down", which
-                  is not encouragement, it is nonsense. */}
               {nemesis && (
                 <div className="insight-card insight-card--nemesis">
                   <span className="insight-card__icon" aria-hidden="true">
@@ -721,42 +614,6 @@ export function StatsScreen({
                     <p className="insight-card__desc">{describeNeverBeaten(neverBeaten)}</p>
                   </div>
                 </div>
-              )}
-
-              {hardRate !== null && hasWins(stats) && (
-                <div className="insight-card insight-card--hardmode">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    🛡️
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Hard mode</p>
-                    <p className="insight-card__desc">
-                      {hardRate >= (rate ?? 0)
-                        ? "Hard mode hasn't slowed you down. You do just as well without the hints."
-                        : 'Hard mode is tougher for you than playing with hints on, which tracks.'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {momentum !== null && (
-                <div className="insight-card insight-card--streak">
-                  <span className="insight-card__icon" aria-hidden="true">
-                    🔥
-                  </span>
-                  <div>
-                    <p className="insight-card__title">Streak momentum</p>
-                    <p className="insight-card__desc">
-                      {momentum.kind === 'record'
-                        ? 'This is your best win streak yet.'
-                        : `${momentum.winsToTie} more win${momentum.winsToTie === 1 ? '' : 's'} ties your best streak ever.`}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {patternCount === 0 && (
-                <p className="stats-screen__caption">Not enough games yet to spot a pattern. Keep playing.</p>
               )}
 
               <button type="button" className="stats-menu__row" onClick={() => setSection('heatmap')}>

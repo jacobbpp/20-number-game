@@ -42,9 +42,6 @@ function seedStats(overrides: Record<string, unknown> = {}) {
       winTurns: 0,
       currentWinStreak: 0,
       bestWinStreak: 0,
-      // Enough hard mode games to clear MIN_HARD_MODE_GAMES, which is what
-      // used to make the hard mode card appear at nought per cent.
-      hardModeGames: 12,
       hardModeWins: 0,
       matrix: emptyMatrix(),
       winMatrix: emptyMatrix(),
@@ -76,17 +73,6 @@ afterEach(() => {
 })
 
 describe('with nothing ever won', () => {
-  it('does not claim hard mode has not slowed you down', async () => {
-    // It reached that conclusion by comparing a nought per cent hard mode win
-    // rate against a nought per cent ordinary one and finding them equal.
-    seedStats()
-    render(<App />)
-    await openStats()
-
-    expect(screen.queryByText('Hard mode')).not.toBeInTheDocument()
-    expect(screen.queryByText(/hasn't slowed you down/)).not.toBeInTheDocument()
-  })
-
   it('does not offer to filter the heatmap by a result that has never happened', async () => {
     seedStats()
     render(<App />)
@@ -120,14 +106,6 @@ describe('with nothing ever won', () => {
 })
 
 describe('once something has been won', () => {
-  it('brings the hard mode card back', async () => {
-    seedStats({ totalWins: 3, hardModeWins: 1, winTurns: 60 })
-    render(<App />)
-    await openStats()
-
-    expect(await screen.findByText('Hard mode')).toBeInTheDocument()
-  })
-
   it('brings the heatmap filter back', async () => {
     seedStats({ totalWins: 3, winTurns: 60 })
     render(<App />)

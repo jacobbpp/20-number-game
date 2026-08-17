@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 // refactors, or polish. Dates are the day each feature actually shipped.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.59.0',
+    date: '2026-08-17',
+    title: 'A shorter Stats screen',
+    description:
+      "Signature position, best position, board half, hard mode, streak momentum, closest calls, and last game are gone — seven small cards that had built up over time without earning their place. Your nemesis and never beaten you stay, since those feed Head to head. Everything else on the screen is unchanged.",
+  },
+  {
     version: '1.58.0',
     date: '2026-08-16',
     title: 'Head to head has its own button',
